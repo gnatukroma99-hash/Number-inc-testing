@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>ЧИСЛО — number incremental</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="pos-top">
+
+<div id="app">
+
+  <!-- ============ ГЛАВНОЕ ЧИСЛО (всегда на экране) ============ -->
+  <header id="hero">
+    <div class="hero-main">
+      <div class="hero-number" id="heroN">1</div>
+      <div class="hero-sub">
+        <span id="heroDigits">0 цифр</span>
+        <span class="sep">·</span>
+        <span id="heroRate">×2 / 60с</span>
+        <span class="sep">·</span>
+        <span id="heroDps">0.005 цифр/с</span>
+      </div>
+    </div>
+    <div class="hero-res" id="heroRes"></div>
+    <button class="icon-btn" id="btn-settings" title="Настройки">⚙</button>
+  </header>
+
+  <!-- ============ ОСНОВНОЙ ЭКРАН ============ -->
+  <main id="main">
+    <nav id="docks" aria-label="Доски механик"></nav>
+    <section id="board" aria-live="polite"></section>
+  </main>
+
+  <!-- ============ ТОСТЫ ============ -->
+  <div id="toasts" aria-live="polite"></div>
+
+  <!-- ============ МОДАЛКА НАСТРОЕК ============ -->
+  <div id="modal-root"></div>
+
+</div>
+
+<!-- ================= core ================= -->
+<script src="src/core/eventbus.js"></script>
+<script src="src/core/bignum.js"></script>
+<script src="src/core/digits.js"></script>
+<script src="src/core/formula.js"></script>
+<script src="src/core/format.js"></script>
+<script src="src/core/dom.js"></script>
+<script src="src/core/registry.js"></script>
+
+<!-- ================= systems ================= -->
+<script src="src/systems/state.js"></script>
+<script src="src/systems/primes.js"></script>
+<script src="src/systems/sampling.js"></script>
+<script src="src/systems/upgrades.js"></script>
+<script src="src/systems/growth.js"></script>
+<script src="src/systems/save.js"></script>
+<script src="src/systems/cloud.js"></script>
+
+<!-- ================= content ================= -->
+<script src="src/content/tier1.js"></script>
+
+<!-- ================= mechanics (логика) ================= -->
+<script src="src/mechanics/digitsum/index.js"></script>
+<script src="src/mechanics/primefit/index.js"></script>
+<script src="src/mechanics/primeranks/index.js"></script>
+
+<!-- ================= ui ================= -->
+<script src="src/ui/components.js"></script>
+<script src="src/ui/toasts.js"></script>
+
+<!-- ================= mechanics (доски) ================= -->
+<script src="src/mechanics/digitsum/board.js"></script>
+<script src="src/mechanics/primefit/board.js"></script>
+<script src="src/mechanics/primeranks/board.js"></script>
+
+<script src="src/ui/main-number.js"></script>
+<script src="src/ui/docks.js"></script>
+<script src="src/ui/settings.js"></script>
+<script src="src/ui/app.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
