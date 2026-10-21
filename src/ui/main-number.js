@@ -41,20 +41,24 @@
     document.body.classList.toggle('no-anim', !s.animations);
   }
 
+  let lastSteps = 0;
+
   function update(state, opts) {
     const mode = state.settings.numberFormat;
-    const txt = G.fmt.bn(state.N, mode);
+    const txt = G.fmt.bn(G.growth.displayN(state), mode);
     if (txt !== lastDrawn) {
       refs.n.textContent = txt;
       lastDrawn = txt;
+      const steps = state.stats.steps || 0;
       const now = performance.now();
-      if (state.settings.animations && G.dom.pulse && now - lastPulse > 220) {
+      if (state.settings.animations && G.dom.pulse && steps !== lastSteps && now - lastPulse > 220) {
         lastPulse = now;
         G.dom.pulse(refs.n);
       }
+      lastSteps = steps;
     }
 
-    const D = G.growth.D(state);
+    const D = G.growth.displayD(state);
     refs.digits.textContent = G.fmt.digitsLabel(D);
 
     const M = G.growth.M(state);
@@ -74,7 +78,7 @@
     }
 
     /* индикация барьера */
-    const bf = G.growth.barrierFactor(state);
+    const bf = G.growth.wallFactor(state);
     refs.hero.classList.toggle('near-barrier', bf < 0.95);
     if (opts && opts.unlocked !== undefined) refs.hero.dataset.unlocked = opts.unlocked;
   }

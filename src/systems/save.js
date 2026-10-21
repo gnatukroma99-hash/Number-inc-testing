@@ -112,8 +112,18 @@
       const gainD = Math.max(0, Math.log10(M)) * steps;
 
       const before = G.BN.log10(state.N);
-      const after = Math.min(before + gainD, 308);   // первый барьер
+      /* невидимый софткап применяем к оффлайну тоже — шагами по 10 цифр */
+      let d = before;
+      let left = gainD;
+      for (let i = 0; i < 40 && left > 1e-9; i++) {
+        const f = G.growth.hiddenFactor(state, d);
+        const step = Math.min(left, 10);
+        d += step * f;
+        left -= step;
+      }
+      const after = Math.min(d, 308);   // первый барьер
       state.N = G.BN.fromLog10(after);
+      state.disp = null;
 
       const energy = G.growth.energyRate(state) * elapsed * OFFLINE_EFF;
       state.res.energy = (state.res.energy || 0) + energy;

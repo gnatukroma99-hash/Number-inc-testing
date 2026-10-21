@@ -85,6 +85,16 @@
           costEl.textContent = 'макс';
           btn.disabled = true;
           btn.className = 'upg-buy maxed';
+        } else if (u.costD) {
+          /* цена в цифрах: платим частью самого числа */
+          const price = G.upgrades.digitsCost(s, u);
+          const can = G.upgrades.canBuy(s, u);
+          const need = price + (u.minD !== undefined ? u.minD : 2);
+          costEl.textContent = (!can && G.growth.D(s) < need)
+            ? 'D ≥ ' + need.toFixed(1)
+            : '−' + price.toFixed(2) + ' цифр';
+          btn.disabled = !can;
+          btn.className = 'upg-buy' + (can ? ' can shop' : ' cant');
         } else {
           const price = G.upgrades.currentCost(s, u);
           costEl.textContent = G.fmt.num(price, s.settings.numberFormat) + ' ' + C.resIcon(u.res);

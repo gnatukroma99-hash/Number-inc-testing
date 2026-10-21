@@ -1,4 +1,7 @@
-/* systems/upgrades.js — покупка и расчёт эффектов. Формулы — только из данных. */
+/* systems/upgrades.js — покупка и расчёт эффектов. Формулы — только из данных.
+   Два типа цены:
+     base/growth/costFormula — обычная цена в ресурсе u.res (⚡, ❖, ...)
+     costD — цена в ЦИФРАХ (D): платим частью главного числа N. */
 (function (G) {
   'use strict';
 
@@ -13,18 +16,34 @@
     return isFinite(c) ? c : Number.MAX_VALUE;
   }
 
+  /* цена в цифрах (для магазина «за само число») */
+  function costDigits(state, u) {
+    const d = G.formula(u.costD, { lvl: G.lvl(state, u.id), D: G.growth.D(state) });
+    return isFinite(d) && d >= 0 ? d : Number.MAX_VALUE;
+  }
+
   const U = {
     level(state, id) { return G.lvl(state, id); },
 
     cost(u, lvl) { return costOf(u, lvl); },
 
-    /* текущая цена (для UI) */
+    /* текущая цена в ресурсе (для UI) */
     currentCost(state, u) { return costOf(u, G.lvl(state, u.id)); },
+
+    /* текущая цена в цифрах (для магазина) */
+    digitsCost(state, u) { return u.costD ? costDigits(state, u) : 0; },
 
     isMaxed(state, u) { return G.lvl(state, u.id) >= u.max; },
 
     canBuy(state, u) {
       if (U.isMaxed(state, u)) return false;
+
+      if (u.costD) {
+        const price = costDigits(state, u);
+        /* нельзя опустить число ниже minD цифр — движок не должен уйти в 0 */
+        return isFinite(price) && (G.growth.D(state) - price) >= (u.minD !== undefined ? u.minD : 2);
+      }
+
       const price = costOf(u, G.lvl(state, u.id));
       return (state.res[u.res] || 0) >= price;
     },
@@ -34,8 +53,19 @@
       let bought = 0;
       for (let i = 0; i < times; i++) {
         if (!U.canBuy(state, u)) break;
-        const price = costOf(u, G.lvl(state, u.id));
-        state.res[u.res] -= price;
+
+        if (u.costD) {
+          const price = costDigits(state, u);
+          const d = Math.max(0, G.growth.D(state) - price);
+          state.N = G.BN.fromLog10(d);
+          state.D = d;
+          /* число уменьшилось — показываем новое значение сразу */
+          state.disp = null;
+        } else {
+          const price = costOf(u, G.lvl(state, u.id));
+          state.res[u.res] -= price;
+        }
+
         state.upg[u.id] = G.lvl(state, u.id) + 1;
         bought++;
       }

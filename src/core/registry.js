@@ -23,7 +23,9 @@
     addUpgrade(u) {
       if (!u || !u.id) throw new Error('upgrade без id');
       upgrades.set(u.id, Object.assign({ scope: 'run', max: Infinity, res: 'energy' }, u));
-      if (u.formula) G.formula.precompile(u.formula);
+      for (const f of ['formula', 'costFormula', 'costD', 'addM', 'powM', 'dtMult', 'energyMult']) {
+        if (u[f]) G.formula.precompile(u[f]);
+      }
       return u;
     },
     addUpgrades(list) { (list || []).forEach((u) => this.addUpgrade(u)); },

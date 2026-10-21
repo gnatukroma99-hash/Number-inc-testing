@@ -54,7 +54,8 @@ src/
 │   ├── _template/          копируй папку -> новая механика
 │   ├── digitsum/{index.js,board.js}      ✅
 │   ├── primefit/{index.js,board.js}      ✅
-│   └── primeranks/{index.js,board.js}    ✅
+│   ├── primeranks/{index.js,board.js}    ✅
+│   └── shop/{index.js,board.js}          ✅ (цена в цифрах, за само число)
 └── ui/
     ├── components.js       переиспользуемые куски (tile, bar, digitRow, upgradeRow)
     ├── toasts.js
@@ -114,7 +115,16 @@ G.registry.addUpgrade({
   formula: '1 + 0.005 * S * lvl',  // ЭФФЕКТ (number), vars: lvl, D, S, q, z, d1, rho, prime, t
   fmt: 'x',                        // 'x' | 'pct' | 'num' — как показывать
   note: 'M ×= 1 + 0.005·S·lvl',    // настоящая формула мелким шрифтом
-  scope: 'run'
+  scope: 'run',
+
+  /* необязательные машинные эффекты (v0.2.0) */
+  addM: '500 * lvl',        // прибавка к M_base
+  powM: '1.05 ** lvl',      // степень бонуса механик (≤ 1.5)
+  dtMult: '0.95 ** lvl',    // множитель ΔT
+  energyMult: '2',          // множитель энергии
+
+  /* альтернативная цена — В ЦИФРАХ (магазин «за число») */
+  costD: '0.80 * 1.8 ** lvl', minD: 18
 });
 ```
 
@@ -177,7 +187,7 @@ meta — Δ/Ψ/Ω, auto3, ачивки, разблокировки, настро
 
 ## 7. План контента
 
-### Ярус 1 — 20 механик (✅ сделано 3)
+### Ярус 1 — 20 механик (✅ сделано 3 + магазин `shop` вне списка)
 
 | # | id | Название | Формула ядра | Статус |
 |---|---|---|---|---|

@@ -20,9 +20,7 @@
     const tRate = C().tile('Скорость роста', 'accent');
     const tBest = C().tile('Рекорд цифр');
 
-    const upg = ['mult1', 'speed1', 'energy1']
-      .map((id) => G.registry.upgrade(id))
-      .filter(Boolean)
+    const upg = G.registry.upgradesOf('core')
       .map((u) => C().upgradeRow(state, u));
 
     const el = G.h('div', { class: 'board-body' }, [
@@ -66,6 +64,7 @@
     if (d.id === 'primefit') return 'нужно 1 цифра (N ≥ 10)';
     if (d.id === 'primeranks') return 'нужно 2 цифры (N ≥ 100)';
     if (d.id === 'digitsum') return 'нужно 0.5 цифры (N ≥ 3)';
+    if (d.id === 'shop') return 'нужно 2 цифры (N ≥ 100)';
     return 'заблокировано';
   }
 

@@ -673,3 +673,13 @@ body.hide-formulas .formula-card { display: none; }
   .upg { flex-wrap: wrap; }
   .upg-buy { width: 100%; }
 }
+
+/* ---------- магазин «за число» ---------- */
+
+.upg-buy.can.shop {
+  border-color: var(--prime);
+  background: linear-gradient(180deg, #ffb8ef, var(--prime));
+  color: #2a0c24;
+  box-shadow: 0 4px 18px rgba(255, 157, 226, .22);
+}
+.shop-rules code { color: var(--prime); }

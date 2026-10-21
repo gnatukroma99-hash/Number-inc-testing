@@ -89,7 +89,7 @@
     G.debug = {
       state: () => G.state,
       give(n) { G.state.res.energy += n; },
-      setD(d) { G.state.N = G.BN.fromLog10(d); G.state.D = d; },
+      setD(d) { G.state.N = G.BN.fromLog10(d); G.state.D = d; G.state.disp = null; },
       summary: () => G.registry.summary()
     };
   }

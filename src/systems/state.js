@@ -29,6 +29,7 @@
       N: G.BN.one(),
       tickAcc: 0,              // накопитель до следующего умножения
       D: 0,                    // кэш log10(N)
+      disp: null,              // плавное отображение {from,to,t0,dur}
 
       /* ресурсы (значения по умолчанию берутся из реестра) */
       res: {},
@@ -96,6 +97,7 @@
     state.D = 0;
     state.tickAcc = 0;
     state.sample = null;
+    state.disp = null;
 
     G.bus.emit('state:reset', { scopes: scopes });
   };

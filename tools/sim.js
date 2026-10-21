@@ -1,9 +1,12 @@
 /* tools/sim.js — офлайн-симулятор баланса. Запуск:  node tools/sim.js [минут]
    Повторяет формулы из src/ без DOM, чтобы проверить кривую D(t).
+   Учитывает: линейную энергию, одноразовые ×2, магазин за цифры,
+   невидимый софткап и барьер 1e308.
    Если node нет — файл просто лежит, игра от него не зависит. */
 'use strict';
 
 const MINUTES = Number(process.argv[2] || 120);
+const REPORT = Number(process.argv[3] || 300);
 
 /* ---------- простые ---------- */
 const primes = (() => {
@@ -15,10 +18,14 @@ const primes = (() => {
   }
   return out;
 })();
-const countPrimesUpTo = (x) => primes.filter((p) => p <= Math.floor(x)).length;
+const countPrimesUpTo = (x) => {
+  let n = 0;
+  for (const p of primes) { if (p <= Math.floor(x)) n++; else break; }
+  return n;
+};
 
 /* ---------- детерминированный рандом ---------- */
-let seed = 12345;
+let seed = Number(process.env.SEED || 12345);
 function rnd() {
   seed = (seed * 1103515245 + 12345) & 0x7fffffff;
   return seed / 0x7fffffff;
@@ -27,41 +34,59 @@ function rnd() {
 /* ---------- состояние ---------- */
 const S = {
   D: 0,
+  N: 1,
   energy: 0,
   prime: 0,
   primeEarned: 0,
   primeIdx: 0,
-  lvl: {
-    mult1: 0, speed1: 0, energy1: 0,
-    sd: 0, sd_stab: 0,
-    pq: 0, pq_jack: 0,
-    pm_base: 0, pm_speed: 0
-  },
-  // сэмпл
+  lvl: {},
   Ssum: 67,
   q: 6,
-  sampleLeft: 4
+  sampleLeft: 4,
+  nextShop: 0,
+  nextReport: 0
 };
 
 const UPG = {
   mult1:    { res: 'energy', base: 8,     growth: 1.55, max: Infinity },
   speed1:   { res: 'energy', base: 5,     growth: 1.65, max: Infinity },
   energy1:  { res: 'energy', base: 40,    growth: 1.8,  max: Infinity },
+  energy_x2_1: { res: 'energy', base: 150, growth: 1, max: 1, energyMult: 2 },
+  energy_x2_2: { res: 'energy', base: 900, growth: 1, max: 1, energyMult: 2 },
+  energy_x2_3: { res: 'energy', base: 5e3, growth: 1, max: 1, energyMult: 2 },
+  energy_x2_4: { res: 'energy', base: 3e4, growth: 1, max: 1, energyMult: 2 },
+  energy_x2_5: { res: 'energy', base: 2e5, growth: 1, max: 1, energyMult: 2 },
+  energy_x2_6: { res: 'energy', base: 1.5e6, growth: 1, max: 1, energyMult: 2 },
+  energy_x2_7: { res: 'energy', base: 1e7, growth: 1, max: 1, energyMult: 2 },
+  energy_x2_8: { res: 'energy', base: 8e7, growth: 1, max: 1, energyMult: 2 },
   sd:       { res: 'energy', base: 60,    growth: 1.9,  max: 20 },
   sd_stab:  { res: 'energy', base: 300,   growth: 2.5,  max: 10 },
   pq:       { res: 'energy', base: 500,   growth: 2.0,  max: 15 },
   pq_jack:  { res: 'energy', base: 5000,  growth: 3.2,  max: 5 },
   pm_base:  { res: 'prime',  base: 1,     growth: 2.0,  max: 25 },
-  pm_speed: { res: 'prime',  base: 2,     growth: 2.4,  max: 15 }
+  pm_speed: { res: 'prime',  base: 2,     growth: 2.4,  max: 15 },
+  /* магазин: цена в цифрах */
+  shop_battery: { res: 'number', costD: 0.30, growthD: 1.8, minD: 8,  max: 6, kind: 'energy', val: 1.5 },
+  shop_plus:    { res: 'number', costD: 0.80, growthD: 1.8, minD: 18, max: 6, kind: 'addM',   val: 500 },
+  shop_tempo:   { res: 'number', costD: 1.00, growthD: 1.9, minD: 30, max: 8, kind: 'dt',     val: 0.95 },
+  shop_pow:     { res: 'number', costD: 1.00, growthD: 1.6, minD: 60, max: 6, kind: 'pow',    val: 1.05 }
 };
 
+const HIDDEN = {
+  knee: Number(process.env.HK || 5),
+  span: Number(process.env.HS || 18.2),
+  power: Number(process.env.HP || 1.5)
+};
+
+const lvl = (id) => S.lvl[id] || 0;
 const cost = (id) => {
   const u = UPG[id];
-  return u.base * Math.pow(u.growth, S.lvl[id]);
+  return u.base * Math.pow(u.growth, lvl(id));
 };
+const costD = (id) => UPG[id].costD * Math.pow(UPG[id].growthD, lvl(id));
 
 /* ---------- формулы ---------- */
-const period = () => 4 + 2 * S.lvl.sd_stab;
+const period = () => 4 + 2 * lvl('sd_stab');
 
 function resample() {
   let sum = 0, q = 0;
@@ -74,45 +99,115 @@ function resample() {
   S.q = q;
 }
 
+function shopProduct(kind) {
+  let p = 1;
+  for (const id in UPG) {
+    if (UPG[id].kind !== kind) continue;
+    const l = lvl(id);
+    if (!l) continue;
+    const u = UPG[id];
+    if (kind === 'energy' || kind === 'pow' || kind === 'dt') p *= Math.pow(u.val, l);
+  }
+  return p;
+}
+
+function baseM() {
+  let b = 2 + lvl('mult1');
+  b += 500 * lvl('shop_plus');
+  return b;
+}
+
 function M() {
-  const base = 2 + S.lvl.mult1;
-  const mSd = 1 + 0.005 * S.Ssum * S.lvl.sd;
-  let mPq = 1 + 0.12 * S.q * S.lvl.pq;
-  if (S.q === 15 && S.lvl.pq_jack) mPq *= 1 + 2 * S.lvl.pq_jack;
-  const pbase = 1.25 + 0.03 * S.lvl.pm_base;
+  const sSd = 1 + 0.005 * S.Ssum * lvl('sd');
+  let mPq = 1 + 0.12 * S.q * lvl('pq');
+  if (S.q >= 15 && lvl('pq_jack')) mPq *= 1 + 2 * lvl('pq_jack');
+  const pbase = 1.25 + 0.03 * lvl('pm_base');
   const mPr = Math.pow(pbase, S.primeEarned);
-  return base * (mSd || 1) * (mPq || 1) * (mPr || 1);
+  const mech = sSd * mPq * mPr;
+  let exp = shopProduct('pow');
+  if (!isFinite(exp) || exp < 1) exp = 1;
+  exp = Math.min(exp, 1.5);
+  return baseM() * Math.pow(mech, exp);
 }
 
 function dt() {
-  const bonus = 0.1 * S.lvl.speed1;
-  const mult = Math.pow(0.95, S.lvl.pm_speed);
-  return Math.max(0.033, (60 / (1 + bonus)) * mult);
+  const bonus = 0.1 * lvl('speed1');
+  const mult = Math.pow(0.95, lvl('pm_speed')) * shopProduct('dt');
+  return Math.max(0.033, (60 / (1 + bonus)) * Math.max(0.02, mult));
+}
+
+function energyMult() {
+  let m = Math.pow(1.25, lvl('energy1'));
+  for (const id in UPG) if (UPG[id].energyMult && lvl(id)) m *= UPG[id].energyMult;
+  return m * shopProduct('energy');
 }
 
 function energyRate() {
-  const D = S.D;
-  const l = D < 15 ? Math.log10(Math.pow(10, D) + 10) : D;
-  return 0.4 * Math.pow(1 + l, 2) * Math.pow(1.25, S.lvl.energy1);
+  return 1 * (1 + S.D) * energyMult();
 }
 
-/* ---------- покупка: покупаем самое дешёвое доступное ---------- */
-const ORDER = ['speed1', 'mult1', 'sd', 'pq', 'pm_base', 'sd_stab', 'energy1', 'pq_jack', 'pm_speed'];
+function hiddenFactor(D) {
+  return 1 / (1 + Math.pow(Math.max(0, D - HIDDEN.knee) / HIDDEN.span, HIDDEN.power));
+}
 
-function buyAll() {
-  for (let guard = 0; guard < 200; guard++) {
+function wall308(D) {
+  return Math.max(0, Math.min(1, (308 + 10 - D) / 10));
+}
+
+function barrier(D) {
+  return hiddenFactor(D) * wall308(D);
+}
+
+/* ---------- покупки ---------- */
+function buyCore() {
+  for (let guard = 0; guard < 300; guard++) {
     let best = null, bestCost = Infinity;
-    for (const id of ORDER) {
+    for (const id in UPG) {
       const u = UPG[id];
-      if (S.lvl[id] >= u.max) continue;
+      if (u.res !== 'energy') continue;
+      if (lvl(id) >= u.max) continue;
       const c = cost(id);
-      const pool = u.res === 'energy' ? S.energy : S.prime;
-      if (c <= pool && c < bestCost) { best = id; bestCost = c; }
+      if (c <= S.energy && c < bestCost) { best = id; bestCost = c; }
     }
     if (!best) return;
-    const u = UPG[best];
-    if (u.res === 'energy') S.energy -= bestCost; else S.prime -= bestCost;
-    S.lvl[best]++;
+    S.energy -= bestCost;
+    S.lvl[best] = lvl(best) + 1;
+  }
+}
+
+function buyPrime() {
+  for (let guard = 0; guard < 100; guard++) {
+    let best = null, bestCost = Infinity;
+    for (const id in UPG) {
+      const u = UPG[id];
+      if (u.res !== 'prime') continue;
+      if (lvl(id) >= u.max) continue;
+      const c = cost(id);
+      if (c <= S.prime && c < bestCost) { best = id; bestCost = c; }
+    }
+    if (!best) return;
+    S.prime -= bestCost;
+    S.lvl[best] = lvl(best) + 1;
+  }
+}
+
+/* магазин: раз в 20 с берём самый дешёвый доступный товар */
+function buyShop(t) {
+  if (process.env.NOSHOP) return;
+  if (t < S.nextShop) return;
+  S.nextShop = t + 20;
+  let order = ['shop_battery', 'shop_tempo', 'shop_plus', 'shop_pow'];
+  if (process.env.SKIP) order = order.filter((id) => id !== process.env.SKIP);
+  for (const id of order) {
+    const u = UPG[id];
+    if (lvl(id) >= u.max) continue;
+    const p = costD(id);
+    if (S.D - p >= u.minD) {
+      S.D -= p;
+      S.N = Math.pow(10, S.D);
+      S.lvl[id] = lvl(id) + 1;
+      return;
+    }
   }
 }
 
@@ -120,9 +215,8 @@ function buyAll() {
 const STEP = 0.05;
 let t = 0;
 let tickAcc = 0;
-let nextReport = 0;
 
-console.log('мин   D      M            ΔT     E/с      ❖   апгрейды');
+console.log('мин   D      M            ΔT     E/с        ❖   апгрейды');
 console.log('---------------------------------------------------------------');
 
 while (t < MINUTES * 60) {
@@ -134,8 +228,16 @@ while (t < MINUTES * 60) {
 
   /* рост */
   tickAcc += STEP;
-  const dT = dt(), m = M();
-  while (tickAcc >= dT) { tickAcc -= dT; S.D += Math.log10(m); }
+  const dT = dt();
+  const m = M();
+  let steps = 0;
+  while (tickAcc >= dT) {
+    tickAcc -= dT;
+    const b = barrier(S.D);
+    if (b > 0) S.D += Math.log10(m) * b;
+    steps++;
+    if (steps > 2000) break;
+  }
 
   /* ❖ */
   const idx = countPrimesUpTo(S.D);
@@ -144,10 +246,17 @@ while (t < MINUTES * 60) {
   /* энергия */
   S.energy += energyRate() * STEP;
 
-  buyAll();
+  buyCore();
+  buyPrime();
+  buyShop(t);
 
-  if (t >= nextReport) {
-    nextReport += 300;
+  if (S.D >= 308) {
+    console.log('' + '1e308 достигнуто на ' + (t / 60).toFixed(1) + ' мин');
+    break;
+  }
+
+  if (t >= S.nextReport) {
+    S.nextReport += REPORT;
     console.log(
       String(Math.round(t / 60)).padStart(4) + '  ' +
       S.D.toFixed(1).padStart(5) + '  ' +
@@ -157,7 +266,10 @@ while (t < MINUTES * 60) {
       String(S.primeEarned).padStart(2) + '   ' +
       Object.entries(S.lvl).filter(([, v]) => v > 0).map(([k, v]) => k + ':' + v).join(' ')
     );
-    if (S.D >= 308) { console.log('\nБарьер 1e308 достигнут на ' + (t / 60).toFixed(1) + ' мин'); break; }
+    if (S.D >= 308) {
+      console.log('\n1e308 достигнуто на ' + (t / 60).toFixed(1) + ' мин');
+      break;
+    }
   }
 }
 

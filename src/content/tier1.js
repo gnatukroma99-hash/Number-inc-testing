@@ -25,9 +25,34 @@
       id: 'energy1', mech: 'core', name: 'Поток', res: 'energy',
       base: 40, growth: 1.8, max: Infinity,
       formula: '1.25 ** lvl', fmt: 'x',
-      note: 'E = 0.4·(1+log10 N)² · 1.25^lvl'
+      note: 'E = 1 · (1 + D) · 1.25^lvl'
     }
   ]);
+
+  /* ============ ОДНОРАЗОВОЕ УСИЛЕНИЕ ЭНЕРГИИ (×2 каждое) ============
+     Купил один раз — навсегда. Цены растут, поэтому брать их выгодно
+     на разных этапах. Компенсируют линейную (а не квадратичную) энергию. */
+  G.registry.addUpgrades([
+    { id: 'energy_x2_1', mech: 'core', name: 'Форсаж I', res: 'energy', base: 150, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
+    { id: 'energy_x2_2', mech: 'core', name: 'Форсаж II', res: 'energy', base: 900, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
+    { id: 'energy_x2_3', mech: 'core', name: 'Форсаж III', res: 'energy', base: 5e3, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
+    { id: 'energy_x2_4', mech: 'core', name: 'Форсаж IV', res: 'energy', base: 3e4, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
+    { id: 'energy_x2_5', mech: 'core', name: 'Форсаж V', res: 'energy', base: 2e5, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
+    { id: 'energy_x2_6', mech: 'core', name: 'Форсаж VI', res: 'energy', base: 1.5e6, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
+    { id: 'energy_x2_7', mech: 'core', name: 'Форсаж VII', res: 'energy', base: 1e7, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
+    { id: 'energy_x2_8', mech: 'core', name: 'Форсаж VIII', res: 'energy', base: 8e7, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' }
+  ]);
+
+  /* ============ ЭНЕРГИЯ (данные формулы) ============
+     E = base · (1 + perDigit · D) · growE^lvl(energy1) · Π(energyMult)
+     «Количество нулей» = D = floor(log10 N). Раньше было D² — скейлинг уменьшен. */
+  G.content = G.content || {};
+  G.content.energy = {
+    base: 1,
+    perDigit: 1,
+    growE: 1.25,
+    formula: 'base * (1 + perDigit * D) * pow(growE, lvl)'
+  };
 
   /* ============ ЯРУСЫ ============ */
   G.registry.addTier({
@@ -40,7 +65,6 @@
   });
 
   /* ============ БАРЬЕРЫ (софткапы) ============ */
-  G.content = G.content || {};
   G.content.barriers = [
     {
       id: 'wall_308',
@@ -59,4 +83,15 @@
       hint: 'Пробой показателя (в следующей версии)'
     }
   ];
+
+  /* ============ НЕВИДИМЫЙ СОФТКАП ============
+     Не показывается игроку. Мягко замедляет рост, начиная с knee цифр.
+     factor = 1 / (1 + (max(0, D − knee)/span)^power)
+     Балансируется так, чтобы 1e308 достигалось за ~85 минут со всеми механиками. */
+  G.content.hiddenSoftcap = {
+    knee: 5,
+    span: 18.2,
+    power: 1.5,
+    formula: '1 / (1 + pow(max(0, D - knee) / span, power))'
+  };
 })(window.G = window.G || {});
