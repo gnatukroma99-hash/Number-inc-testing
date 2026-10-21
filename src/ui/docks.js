@@ -83,13 +83,22 @@
   function build() {
     G.dom.clear(navEl);
     buttons = {};
+
+    /* шапка меню: название + версия */
+    navEl.appendChild(G.h('div', { class: 'docks-head' }, [
+      G.h('div', { class: 'docks-logo', text: 'ЧИСЛО' }),
+      G.h('div', { class: 'docks-ver', text: 'v' + (G.VERSION || '?') })
+    ]));
+
     for (const d of docks()) {
       const badge = G.h('span', { class: 'dock-badge' });
-      const btn = G.h('button', { class: 'dock', dataset: { id: d.id } }, [
+      const btn = G.h('button', { class: 'dock', dataset: { id: d.id }, title: d.name || '' }, [
+        G.h('span', { class: 'dock-bar' }),
         G.h('span', { class: 'dock-icon', text: d.icon || '•' }),
         G.h('span', { class: 'dock-text', text: d.short || d.name }),
         badge
       ]);
+      btn.style.setProperty('--mech', C().mechColor(d.id));
       btn.addEventListener('click', () => select(d.id));
       navEl.appendChild(btn);
       buttons[d.id] = { el: btn, badge: badge, def: d };

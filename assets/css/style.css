@@ -1983,3 +1983,435 @@ body::before {
 
 /* кнопки зума — сверху справа (внизу их перекрывают тосты) */
 .tree-zoom { top: 10px; right: 10px; bottom: auto; }
+
+/* ============================================================
+   v0.9.0 — РЕДИЗАЙН МЕНЮ (по мотивам Shark Inc / RCGI / PT / CC)
+   Дерево ◆ не трогаем: его стили в .tree-map … и остаются как есть.
+   ============================================================ */
+
+:root {
+  --panel3: #0c161f;
+  --mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
+}
+
+/* ---------- 1. Левое меню (доки) ---------- */
+
+.docks-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 10px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+  margin-bottom: 4px;
+}
+.docks-logo {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 2.5px;
+  background: linear-gradient(90deg, #6cf8dc, #2bb5ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.docks-ver { font-size: 10.5px; color: var(--dim2); font-family: var(--mono); }
+
+#docks { gap: 5px; }
+
+.dock {
+  position: relative;
+  overflow: hidden;
+  padding: 9px 10px 9px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, .075);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .012));
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #c3d6e4;
+  transition: border-color .15s, background .15s, transform .12s, color .15s;
+}
+.dock::before { display: none; }
+
+.dock-bar {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--mech, var(--accent));
+  opacity: 0;
+  transform: scaleY(.4);
+  transition: opacity .15s, transform .15s;
+}
+.dock:hover {
+  color: #eaf7ff;
+  border-color: var(--mech, var(--accent));
+  background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02));
+  transform: translateX(1px);
+}
+.dock.active {
+  color: #fff;
+  border-color: var(--mech, var(--accent));
+  background: linear-gradient(90deg, rgba(53, 226, 192, .18), rgba(255, 255, 255, .02));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .06), 0 6px 18px rgba(0, 0, 0, .35);
+}
+.dock.active .dock-bar { opacity: 1; transform: scaleY(1); }
+.dock-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--mech, var(--accent));
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .08);
+}
+.dock-badge {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .35);
+  border: 1px solid rgba(255, 255, 255, .07);
+  color: var(--dim);
+}
+.dock.active .dock-badge { color: #eafff9; border-color: rgba(255, 255, 255, .16); }
+.dock.locked { opacity: .38; }
+
+/* ---------- 2. Плитки-метрики ---------- */
+
+.tile-grid { gap: 12px; }
+
+.tile {
+  position: relative;
+  overflow: hidden;
+  padding: 13px 15px 14px;
+  border-radius: 13px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .012)), var(--panel3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+  transition: border-color .15s, transform .12s;
+}
+.tile::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .18), transparent);
+}
+.tile.accent::before { background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+.tile.good::before { background: linear-gradient(90deg, transparent, var(--good), transparent); }
+.tile:hover { transform: translateY(-1px); border-color: rgba(255, 255, 255, .16); }
+
+.tile-val {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+  font-family: var(--mono);
+  color: #eaf7ff;
+  text-shadow: 0 0 18px rgba(43, 181, 255, .22);
+}
+.tile.accent .tile-val { color: #7cf7dc; text-shadow: 0 0 18px rgba(53, 226, 192, .3); }
+.tile.good .tile-val { color: #a4f08a; text-shadow: 0 0 18px rgba(138, 218, 106, .28); }
+.tile-label {
+  margin-top: 5px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--dim2);
+}
+
+/* ---------- 3. Заголовки секций — цветные плашки ---------- */
+
+.section { display: flex; flex-direction: column; gap: 9px; }
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  margin: 2px 0;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-left: 3px solid var(--accent);
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, .028) 0 8px, transparent 8px 16px),
+    linear-gradient(90deg, rgba(53, 226, 192, .12), rgba(255, 255, 255, .015));
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #bfe9e0;
+}
+.section-title::after { display: none; }
+.section-count {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0;
+  color: var(--dim);
+  background: rgba(0, 0, 0, .3);
+  border: 1px solid rgba(255, 255, 255, .08);
+}
+
+/* ---------- 4. Карточки апгрейдов ---------- */
+
+.upg {
+  --mech: #35e2c0;
+  position: relative;
+  overflow: hidden;
+  padding: 11px 13px 11px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .075);
+  border-left: 3px solid rgba(53, 226, 192, .5);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .048), rgba(255, 255, 255, .012)), var(--panel3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+.upg:hover {
+  border-color: rgba(255, 255, 255, .16);
+  border-left-color: var(--mech);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .38), inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+
+.upg-ico {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 18px;
+  color: var(--mech);
+  background: radial-gradient(circle at 50% 25%, rgba(255, 255, 255, .12), transparent 72%), #0a1219;
+  border: 1px solid rgba(255, 255, 255, .1);
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, .6);
+}
+
+.upg-head { gap: 8px; }
+.upg-name { font-size: 14.5px; font-weight: 700; color: #eaf7ff; }
+.upg-lvl {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  color: #cfe9ff;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .1);
+}
+
+.upg-lvlbar {
+  height: 4px;
+  margin: 5px 0 3px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .45);
+  border: 1px solid rgba(255, 255, 255, .05);
+  overflow: hidden;
+}
+.upg-lvlbar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(53, 226, 192, .6), var(--mech));
+  box-shadow: 0 0 10px rgba(53, 226, 192, .35);
+  transition: width .25s;
+}
+.upg-lvlbar.full i {
+  background: linear-gradient(90deg, #ffe29a, #ffd166);
+  box-shadow: 0 0 10px rgba(255, 209, 102, .5);
+}
+
+.upg-eff { font-size: 12.5px; color: #8df0c8; font-family: var(--mono); }
+.upg-note { font-size: 10.5px; color: var(--dim2); font-family: var(--mono); }
+
+.upg-buy {
+  min-width: 112px;
+  padding: 10px 14px;
+  border-radius: 11px;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .2px;
+}
+.upg-buy.can {
+  background: linear-gradient(180deg, #7bfbe0, #2fd9b8);
+  border: 1px solid #9dffe9;
+  color: #04211c;
+  box-shadow: 0 0 0 1px rgba(53, 226, 192, .25), 0 6px 18px rgba(53, 226, 192, .28);
+}
+.upg-buy.can:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.upg-buy.can.shop {
+  background: linear-gradient(180deg, #ffd0f2, #ff9de2);
+  border-color: #ffd9f6;
+  color: #2a0c24;
+  box-shadow: 0 6px 18px rgba(255, 157, 226, .28);
+}
+.upg-buy.cant {
+  color: var(--dim2);
+  background: rgba(255, 255, 255, .03);
+  border: 1px dashed rgba(255, 255, 255, .1);
+}
+.upg-buy.maxed {
+  color: #ffd166;
+  background: repeating-linear-gradient(135deg, rgba(255, 209, 102, .12) 0 8px, transparent 8px 16px);
+  border: 1px solid rgba(255, 209, 102, .45);
+  letter-spacing: 1px;
+}
+
+/* ---------- 5. Панель покупок ---------- */
+
+.board-toolbar {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .015)), var(--panel3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+.buy-modes { background: rgba(0, 0, 0, .45); border-color: rgba(255, 255, 255, .08); }
+.buy-mode { font-family: var(--mono); }
+.buy-mode.active {
+  background: linear-gradient(180deg, #7bfbe0, #2fd9b8);
+  color: #04211c;
+  box-shadow: 0 0 0 1px rgba(53, 226, 192, .3), 0 4px 14px rgba(53, 226, 192, .25);
+}
+.toolbar-btn { font-family: var(--mono); }
+.tp-bar { background: rgba(0, 0, 0, .5); }
+
+/* ---------- 6. Настройки: карточки-секции ---------- */
+
+.modal-card {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  background: linear-gradient(180deg, #101c26, #0a1219);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .6);
+}
+.modal-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+  background: linear-gradient(90deg, rgba(53, 226, 192, .1), transparent);
+}
+.modal-head h2 { font-size: 16px; letter-spacing: 1px; text-transform: uppercase; }
+
+.modal-body .section-title {
+  margin-top: 14px;
+  border-left-color: var(--accent2);
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, .025) 0 8px, transparent 8px 16px),
+    linear-gradient(90deg, rgba(43, 181, 255, .12), rgba(255, 255, 255, .012));
+  color: #cfe6ff;
+}
+.modal-body .section-title.danger {
+  border-left-color: var(--danger);
+  background: linear-gradient(90deg, rgba(255, 95, 109, .14), transparent);
+  color: #ffc3c8;
+}
+
+.switch-row, .select-row, .radio {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, .07);
+  background: rgba(255, 255, 255, .025);
+  transition: border-color .15s, background .15s;
+}
+.switch-row:hover, .select-row:hover, .radio:hover {
+  border-color: rgba(53, 226, 192, .35);
+  background: rgba(255, 255, 255, .045);
+}
+.stats-box {
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, .07);
+  background: rgba(0, 0, 0, .25);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.preview { font-family: var(--mono); color: var(--accent); }
+
+/* ---------- 7. Перерождение и достижения ---------- */
+
+.prestige-card {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 209, 102, .28);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 209, 102, .14), transparent 60%),
+    var(--panel3);
+}
+.prestige-btn {
+  border-radius: 12px;
+  letter-spacing: 1.2px;
+  font-size: 15px;
+}
+
+.ach {
+  border-radius: 12px;
+  border-color: rgba(255, 255, 255, .08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .012)), var(--panel3);
+}
+.ach.unlocked {
+  border-color: rgba(255, 209, 102, .5);
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 209, 102, .07) 0 9px, transparent 9px 18px),
+    linear-gradient(180deg, rgba(255, 209, 102, .12), rgba(255, 209, 102, .02));
+}
+.ach-name { font-size: 13px; letter-spacing: .3px; }
+.ach-desc { font-size: 11px; }
+
+/* ---------- 8. Мелочи: цифры, полоски, формулы ---------- */
+
+.digit {
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-weight: 700;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .01)), #070d13;
+}
+.digits-block, .formula-card {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .075);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .008)), var(--panel3);
+}
+.formula-card code { font-family: var(--mono); font-size: 11.5px; color: #9fd8ff; }
+.block-label { color: var(--dim2); letter-spacing: 1.1px; }
+.bar { height: 8px; border-radius: 999px; background: rgba(0, 0, 0, .5); }
+.bar-label { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+
+.btn {
+  border-radius: 10px;
+  font-weight: 700;
+  border-color: rgba(255, 255, 255, .1);
+}
+.btn:hover { border-color: var(--accent); box-shadow: 0 0 16px rgba(53, 226, 192, .18); }
+
+@media (max-width: 720px) {
+  .dock { padding: 8px 9px 8px 12px; font-size: 12.5px; }
+  .tile-val { font-size: 18px; }
+  .upg-buy { min-width: 0; }
+}
+
+/* --- v0.9.0 правки: меню пошире, бейджи целиком --- */
+#docks { flex: 0 0 208px; }
+.dock-text { font-size: 13px; }
+.dock-badge { max-width: 84px; font-size: 10px; padding: 1px 5px; }
+#board { padding: 18px; }
+
+/* --- v0.9.0: карточки апгрейдов в сетке (как в RCGI / PT) --- */
+.section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+  gap: 9px;
+  align-items: start;
+}
+.section > .section-title { grid-column: 1 / -1; }
+
+@media (max-width: 1000px) {
+  .section { grid-template-columns: 1fr; }
+}
+
+/* --- v0.9.0: полоса уровней — тоньше и аккуратнее --- */
+.upg-lvlbar {
+  height: 3px;
+  margin: 6px 0 4px;
+  background: rgba(255, 255, 255, .07);
+  border: none;
+}
+.upg-lvlbar i { box-shadow: none; }
+
+/* --- v0.9.0: на телефоне шапку меню не показываем (доки = строка вкладок) --- */
+@media (max-width: 760px) {
+  .docks-head { display: none; }
+  #docks { flex: 0 0 auto; }
+  .dock { flex: 0 0 auto; }
+}

@@ -9,6 +9,13 @@
   const RES_NAME = { energy: 'энергии', prime: 'ПРАЙМ', cores: 'Ядер', delta: 'Осколков' };
 
   /* иконки-медальоны на карточках апгрейдов (можно переопределить полем u.icon) */
+  /* акцентный цвет механики — для рамок карточек и иконок (данные-оформление) */
+  const MECH_COLOR = {
+    core: '#35e2c0', digitsum: '#2bb5ff', primefit: '#a78bfa', primeranks: '#ff9de2',
+    analysis: '#38e0ff', shop: '#ffd166', sieve: '#7cf7b0', mirror: '#5eead4',
+    tree: '#ffd166', achievements: '#ffc75f'
+  };
+
   const MECH_ICON = {
     core: '×', digitsum: 'Σ', primefit: '⧉', primeranks: '❖', analysis: 'Δ',
     shop: '🛒', sieve: '⌗', mirror: '⧗', tree: '◆'
@@ -33,6 +40,7 @@
   const C = {
     RES_ICON: RES_ICON,
     MECH_ICON: MECH_ICON,
+    MECH_COLOR: MECH_COLOR,
 
     /* форматирование значения эффекта — общее для всех досок */
     fmtEffect: fmtEffect,
@@ -40,6 +48,7 @@
     resIcon(res) { return RES_ICON[res] || '•'; },
     resName(res) { return RES_NAME[res] || res; },
     mechIcon(mech) { return MECH_ICON[mech] || '•'; },
+    mechColor(mech) { return MECH_COLOR[mech] || 'var(--accent)'; },
     buyMode: buyMode,
 
     /**
@@ -153,6 +162,9 @@
       const btn = G.h('button', { class: 'upg-buy', type: 'button' }, [costEl, qtyEl]);
       const icoEl = G.h('div', { class: 'upg-ico', text: u.icon || C.mechIcon(u.mech) });
 
+      const lvlFill = G.h('i');
+      const lvlBar = G.h('div', { class: 'upg-lvlbar' }, [lvlFill]);
+
       const el = G.h('div', { class: 'upg', dataset: { upgrade: u.id, mech: u.mech || '' } }, [
         icoEl,
         G.h('div', { class: 'upg-main' }, [
@@ -160,11 +172,13 @@
             G.h('span', { class: 'upg-name', text: u.name }),
             lvlEl
           ]),
+          lvlBar,
           effEl,
           noteEl
         ]),
         btn
       ]);
+      el.style.setProperty('--mech', C.mechColor(u.mech));
 
       /* покупка: клик + зажатие (зажатие уважает выбранный режим) */
       let holdTimer = null;
@@ -199,6 +213,14 @@
         })();
 
         lvlEl.textContent = 'ур. ' + lvl + (isFinite(u.max) ? ' / ' + u.max : '');
+        /* полоса уровней — как в RCGI/PT: видно, сколько осталось до максимума */
+        if (isFinite(u.max) && u.max > 1) {
+          lvlBar.style.display = '';
+          lvlFill.style.width = (Math.min(1, lvl / u.max) * 100).toFixed(1) + '%';
+          lvlBar.classList.toggle('full', maxed);
+        } else {
+          lvlBar.style.display = 'none';
+        }
         effEl.textContent = maxed
           ? fmtEffect(u, cur)
           : fmtEffect(u, cur) + ' → ' + fmtEffect(u, next);
@@ -298,12 +320,17 @@
       return G.h('div', { class: 'tile-grid' }, tiles);
     },
 
-    /* секция с заголовком */
+    /* секция с полосатым заголовком (как «Common/Uncommon» в PT/RCGI) */
     section(title, children) {
-      return G.h('div', { class: 'section' }, [
-        title ? G.h('h3', { class: 'section-title', text: title }) : null,
-        ...([]).concat(children)
-      ]);
+      const kids = ([]).concat(children);
+      const count = kids.filter((k) => k && k.classList && k.classList.contains('upg')).length;
+      const head = title
+        ? G.h('h3', { class: 'section-title' }, [
+            G.h('span', { class: 'section-name', text: title }),
+            count ? G.h('span', { class: 'section-count', text: String(count) }) : null
+          ])
+        : null;
+      return G.h('div', { class: 'section' }, [head, ...kids]);
     }
   };
 

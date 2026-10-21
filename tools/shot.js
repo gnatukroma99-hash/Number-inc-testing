@@ -77,6 +77,10 @@ const PREP = `
       if (btn) btn.click();
       window.G.ui.app.render(window.G.state);
     }, id);
+    await page.evaluate(() => {
+      /* скриншоты без всплывающих тостов — чтобы видеть чистое меню */
+      document.querySelectorAll('#toasts .toast').forEach((t) => t.remove());
+    });
     await new Promise((r) => setTimeout(r, 260));
     const file = path.join(OUT, id + '.png');
     await page.screenshot({ path: file });
