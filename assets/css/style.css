@@ -2608,3 +2608,22 @@ body.no-anim .spark-float { animation: none; }
   font-family: var(--mono);
   font-size: 11px;
 }
+
+/* --- v0.12.1: курсор перетаскивания и «к центру» --- */
+.tree-board .tree-stage { user-select: none; -webkit-user-select: none; }
+.tree-board .tree-stage.pannable { cursor: grab; }
+.tree-board .tree-stage.grabbing { cursor: grabbing; }
+.tree-board .tree-stage .node-buy, .tree-board .tree-stage .tree-zoom-btn { cursor: pointer; }
+
+/* --- v0.12.1: дерево на телефоне — компактная шапка, больше места карте --- */
+@media (max-width: 760px) {
+  .tree-board .board-hint { display: none; }
+  .tree-board .tile { padding: 8px 10px 9px; }
+  .tree-board .tile-val { font-size: 15px; }
+  .tree-board .tile-label { font-size: 9px; }
+  .tree-legend { gap: 6px; margin: 0 0 6px; }
+  .tree-legend .tree-branch-head { padding: 3px 9px; gap: 5px; }
+  .tree-legend .branch-note { display: none; }
+  .tree-board .tree-stage { min-height: 300px; }
+  .tree-board .tree-info { margin-top: 6px; padding: 8px 10px; }
+}

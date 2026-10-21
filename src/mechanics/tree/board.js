@@ -229,7 +229,7 @@
 
       /* панель подробностей узла */
       const infoTitle = G.h('div', { class: 'info-title', text: 'Наведи на узел' });
-      const infoDesc = G.h('div', { class: 'info-desc', text: 'Шесть ветвей расходятся от центра; дальше от центра — глубже. Карту можно приближать.' });
+      const infoDesc = G.h('div', { class: 'info-desc', text: 'Семь ветвей расходятся от центра; дальше — глубже. Колесо/щипок — зум, перетаскивание — панорама, ⌖ — к центру.' });
       const infoEff = G.h('div', { class: 'info-eff' });
       const info = G.h('div', { class: 'tree-info' }, [infoTitle, infoDesc, infoEff]);
 
@@ -256,7 +256,8 @@
       const zoomIn = G.h('button', { class: 'tree-zoom-btn', type: 'button', title: 'Приблизить', text: '+' });
       const zoomOut = G.h('button', { class: 'tree-zoom-btn', type: 'button', title: 'Отдалить', text: '−' });
       const zoomFit = G.h('button', { class: 'tree-zoom-btn', type: 'button', title: 'Вписать', text: '⤢' });
-      const zoomBar = G.h('div', { class: 'tree-zoom' }, [zoomIn, zoomOut, zoomFit]);
+      const zoomCenter = G.h('button', { class: 'tree-zoom-btn', type: 'button', title: 'К центру дерева', text: '⌖' });
+      const zoomBar = G.h('div', { class: 'tree-zoom' }, [zoomIn, zoomOut, zoomFit, zoomCenter]);
 
       const stage = G.h('div', { class: 'tree-stage' }, [map, zoomBar]);
 
@@ -276,6 +277,20 @@
 
       function contentSize() { return { w: W * baseK * view.z, h: H * baseK * view.z }; }
 
+      /* можно ли тащить карту (она больше видимой области) */
+      function pannable() {
+        const c = contentSize();
+        return c.w > stage.clientWidth + 2 || c.h > stage.clientHeight + 2;
+      }
+
+      /* вернуть вид к центру дерева (хаб) */
+      function centerView() {
+        const c = contentSize();
+        view.tx = (stage.clientWidth - c.w) / 2;
+        view.ty = (stage.clientHeight - c.h) / 2;
+        applyView();
+      }
+
       /* держим карту в кадре: если она меньше области — центрируем, если больше — не даём утащить */
       function clampPan() {
         const cw = stage.clientWidth;
@@ -291,6 +306,7 @@
         map.style.transformOrigin = 'top left';
         map.style.transform = 'translate(' + view.tx.toFixed(1) + 'px,' + view.ty.toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
         stage.classList.toggle('zoomed', view.z > 1.01);
+        stage.classList.toggle('pannable', pannable());
         zoomOut.disabled = view.z <= ZMIN + 1e-6;
         zoomIn.disabled = view.z >= ZMAX - 1e-6;
       }
@@ -324,13 +340,19 @@
       }
 
       /* «Вписать»: базовый масштаб + зум = 1 (кнопка ⤢) */
+      let autoZoomed = false;
       function fit() {
         const h = stage.clientHeight;
         const w = stage.clientWidth;
         if (!h || !w) return;
         baseK = Math.max(0.12, Math.min(w / W, h / H));
         view.z = 1;
-        applyView();
+        /* на телефоне «вписанная» карта слишком мелкая — сразу приближаем к центру */
+        if (!autoZoomed && w < 760) {
+          autoZoomed = true;
+          view.z = 1.7;
+        }
+        centerView();
       }
 
       applyView();
@@ -341,6 +363,7 @@
       zoomIn.addEventListener('click', () => zoomAt(view.z * 1.35));
       zoomOut.addEventListener('click', () => zoomAt(view.z / 1.35));
       zoomFit.addEventListener('click', fit);
+      zoomCenter.addEventListener('click', centerView);
 
       /* ---------- колесо мыши / трекпад ---------- */
       stage.addEventListener('wheel', (e) => {
@@ -350,6 +373,32 @@
         const f = e.deltaY < 0 ? 1.12 : 1 / 1.12;
         zoomAt(view.z * f, e.clientX - r.left, e.clientY - r.top);
       }, { passive: false });
+
+      /* ---------- перетаскивание мышью / пером ---------- */
+      let pan = null;
+      stage.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'touch') return;           // тач — ниже, со щипком
+        if (e.button !== 0) return;
+        if (e.target.closest('button, .tree-zoom')) return;
+        pan = { x: e.clientX, y: e.clientY, tx: view.tx, ty: view.ty, id: e.pointerId };
+        stage.classList.add('grabbing');
+        try { stage.setPointerCapture(e.pointerId); } catch (err) { /* не критично */ }
+      });
+      stage.addEventListener('pointermove', (e) => {
+        if (!pan || e.pointerId !== pan.id) return;
+        e.preventDefault();
+        view.tx = pan.tx + (e.clientX - pan.x);
+        view.ty = pan.ty + (e.clientY - pan.y);
+        applyView();
+      });
+      const endPan = (e) => {
+        if (pan && (!e || e.pointerId === pan.id)) {
+          pan = null;
+          stage.classList.remove('grabbing');
+        }
+      };
+      stage.addEventListener('pointerup', endPan);
+      stage.addEventListener('pointercancel', endPan);
 
       /* ---------- тач: щипок = зум, один палец = панорама ---------- */
       let pinch = null;
@@ -385,7 +434,7 @@
           }
           lastTap = now;
           drag = { x: tt[0].clientX, y: tt[0].clientY, tx: view.tx, ty: view.ty };
-          if (view.z > 1.01) stage.classList.add('grabbing');
+          if (pannable()) stage.classList.add('grabbing');
         }
       }, { passive: true });
 
@@ -397,7 +446,7 @@
           const z = pinch.z * (dist(tt) / pinch.d);
           const m = mid(tt);
           zoomAt(z, m.x, m.y);
-        } else if (drag && tt.length === 1 && view.z > 1.01) {
+        } else if (drag && tt.length === 1 && pannable()) {
           e.preventDefault();
           view.tx = drag.tx + (tt[0].clientX - drag.x);
           view.ty = drag.ty + (tt[0].clientY - drag.y);

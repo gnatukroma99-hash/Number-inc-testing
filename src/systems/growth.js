@@ -8,6 +8,7 @@
   const MIN_DT = 0.033;     // 30 тиков/с — предел скорости
   const MAX_EXP = 1.5;      // предел степени бонуса (защита движка)
   const MIN_DT_MULT = 0.02; // предел множителя интервала
+  const MAX_SUBSTEPS = 400; // защита от фриза при огромном dt (×100 и т.п.)
 
   const W = {
     /* все переменные для строк-формул */
@@ -115,12 +116,17 @@
 
     /* Невидимый софткап: усиливается с ростом D, в интерфейсе не показывается.
        Данные — G.content.hiddenSoftcap (knee / span / power / formula). */
-    hiddenFactor(state, dOverride) {
+    hiddenFactor(state, dOverride, spanMultCache) {
       const hs = G.content && G.content.hiddenSoftcap;
       if (!hs) return 1;
-      /* spanMult — узлы дерева ◆ могут отодвигать knee-зону (данные) */
-      let spanMult = W.upgProduct(state, 'spanMult');
-      if (!isFinite(spanMult) || spanMult <= 0) spanMult = 1;
+      /* spanMult — узлы дерева ◆ могут отодвигать knee-зону (данные).
+         В горячем цикле (подшаги тика) значение передаётся кэшем, чтобы не
+         перебирать все апгрейды на каждом подшаге. */
+      let spanMult = spanMultCache;
+      if (!(isFinite(spanMult) && spanMult > 0)) {
+        spanMult = W.upgProduct(state, 'spanMult');
+        if (!isFinite(spanMult) || spanMult <= 0) spanMult = 1;
+      }
       const v = G.formula(hs.formula, {
         D: dOverride !== undefined ? dOverride : W.D(state),
         knee: hs.knee,
@@ -154,8 +160,8 @@
       return g;
     },
 
-    barrierFactor(state) {
-      return W.hiddenFactor(state) * W.wallFactor(state);
+    barrierFactor(state, dOverride, spanMultCache) {
+      return W.hiddenFactor(state, dOverride, spanMultCache) * W.wallFactor(state);
     },
 
     /* цифр в секунду (для отображения) */
@@ -206,17 +212,31 @@
 
       const dT = W.dt(state);
       const M = W.M(state);
+      const logM = Math.log10(M);
 
       const dBefore = W.D(state);
-      const b = W.barrierFactor(state);
       let dAfter = dBefore;
 
-      if (b > 0) {
-        /* барьер режет ПРИРАЩЕНИЕ ЦИФР, а не множитель: софткап должен
-           работать и при огромном M, иначе он незаметен */
-        dAfter = Math.max(0, dBefore + Math.log10(M) * (dt / dT) * b);
+      /* ВАЖНО: большой dt (режим разработчика ×100, лаг, долгий кадр) режем на
+         подшаги не длиннее SUB_STEP. Иначе число за один тик перелетает всю зону
+         софткапа и барьер считается по старому D → число «залипает».
+         M и ΔT считаем один раз (они не зависят от D), барьер — на каждом подшаге. */
+      const SUB_STEP = 0.1;
+      let spanMult = W.upgProduct(state, 'spanMult');
+      if (!isFinite(spanMult) || spanMult <= 0) spanMult = 1;
+
+      let left = dt;
+      let guard = 0;
+      while (left > 1e-9 && guard++ < MAX_SUBSTEPS) {
+        const step = Math.min(left, SUB_STEP);
+        left -= step;
+        const b = W.barrierFactor(state, dAfter, spanMult);
+        if (b <= 0) break;
+        dAfter = Math.max(0, dAfter + logM * (step / dT) * b);
+        /* N обновляем, чтобы следующий подшаг считал стену по новому D */
         state.N = G.BN.fromLog10(dAfter);
       }
+      if (guard > 1) state.stats.substeps = (state.stats.substeps || 0) + guard - 1;
 
       state.D = dAfter;
       if (state.D > (state.stats.bestD || 0)) state.stats.bestD = state.D;

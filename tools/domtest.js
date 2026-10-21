@@ -498,7 +498,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   Object.defineProperty(fakeStage, 'clientWidth', { value: 900, configurable: true });
   Object.defineProperty(fakeStage, 'clientHeight', { value: 520, configurable: true });
   G.ui.app.render(state);   // повторный fit() по новому размеру
-  check('кнопки зума есть (+ − ⤢)', zbtns.length === 3, zbtns.map((b) => textOf(b)).join(' '));
+  check('кнопки зума есть (+ − ⤢ ⌖)', zbtns.length === 4, zbtns.map((b) => textOf(b)).join(' '));
   const treeMap = doc.querySelector('#board .tree-map');
   const scaleOf = () => {
     const m = /scale\(([\d.]+)\)/.exec(treeMap.style.transform || '');
@@ -516,6 +516,24 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     treeMap.style.transform);
   click(zbtns[2]);                              // «вписать»
   check('кнопка ⤢ возвращает масштаб', Math.abs(scaleOf() - s0) < 1e-3, 'scale=' + scaleOf().toFixed(3));
+
+  /* приближаем и запоминаем «центрированный» вид */
+  click(zbtns[0]);
+  click(zbtns[3]);                                  // ⌖ к центру
+  const centeredTransform = treeMap.style.transform;
+
+  /* перетаскивание мышью (pointer) */
+  fakeStage.dispatchEvent(new win.PointerEvent('pointerdown', { pointerType: 'mouse', button: 0, clientX: 600, clientY: 400, pointerId: 1, bubbles: true }));
+  fakeStage.dispatchEvent(new win.PointerEvent('pointermove', { pointerType: 'mouse', clientX: 500, clientY: 350, pointerId: 1, bubbles: true }));
+  fakeStage.dispatchEvent(new win.PointerEvent('pointerup', { pointerType: 'mouse', clientX: 500, clientY: 350, pointerId: 1, bubbles: true }));
+  const draggedTransform = treeMap.style.transform;
+  check('карту можно тащить мышью', draggedTransform !== centeredTransform,
+    centeredTransform + ' → ' + draggedTransform);
+
+  click(zbtns[3]);                                  // ⌖ — вернуть к центру
+  check('кнопка ⌖ возвращает вид к центру', treeMap.style.transform === centeredTransform,
+    draggedTransform + ' → ' + treeMap.style.transform);
+  click(zbtns[2]);                                  // «вписать»
 
   /* колесо мыши */
   const stage = doc.querySelector('#board .tree-stage');
