@@ -135,7 +135,7 @@
       });
       boardEl.appendChild(activeToolbar.el);
     }
-    const content = G.h('div', { class: 'board-content' });
+    const content = G.h('div', { class: 'board-content' + (G.animationsOff && G.animationsOff() ? '' : ' anim-in') });
     boardEl.appendChild(content);
 
     if (mount) {

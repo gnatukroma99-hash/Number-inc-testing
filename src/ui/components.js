@@ -190,11 +190,21 @@
         if (!s) return 0;
         return G.upgrades.buyBulk(s, u, buyMode(s));
       };
+      let flashTimer = null;
+      const flash = (bought) => {
+        if (!bought || G.animationsOff()) return;
+        el.classList.remove('bought');
+        void el.offsetWidth;
+        el.classList.add('bought');
+        if (flashTimer) clearTimeout(flashTimer);
+        flashTimer = setTimeout(() => el.classList.remove('bought'), 420);
+      };
+
       btn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
-        buyNow();
+        flash(buyNow());
         stopHold();
-        holdTimer = setInterval(buyNow, 120);
+        holdTimer = setInterval(() => flash(buyNow()), 120);
       });
       btn.addEventListener('pointerup', stopHold);
       btn.addEventListener('pointerleave', stopHold);
@@ -268,7 +278,26 @@
         val,
         G.h('div', { class: 'tile-label', text: label })
       ]);
-      return { el: el, set(v) { val.textContent = v; }, setClass(c) { el.className = 'tile ' + c; } };
+      let last = null;
+      let bumpTimer = null;
+      return {
+        el: el,
+        set(v) {
+          const str = String(v);
+          if (str === last) return;
+          last = str;
+          val.textContent = str;
+          /* анимация «число изменилось» (как в инкременталках) */
+          if (!G.animationsOff()) {
+            val.classList.remove('bump');
+            void val.offsetWidth;
+            val.classList.add('bump');
+            if (bumpTimer) clearTimeout(bumpTimer);
+            bumpTimer = setTimeout(() => val.classList.remove('bump'), 320);
+          }
+        },
+        setClass(c) { el.className = 'tile ' + c; }
+      };
     },
 
     /* полоска прогресса */

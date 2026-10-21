@@ -13,6 +13,13 @@
       desc: 'Чем меньше первая цифра, тем больше бонус. Единица — джекпот.'
     },
     {
+      id: 'bfd2', icon: '📈', mech: 'analysis', name: 'Бенфорд II', res: 'energy',
+      base: 6e4, growth: 3.2, max: 8,
+      formula: '1 + 0.8 * lvl * log10(1 + 1 / d1) / log10(2)', fmt: 'x',
+      note: 'M ×= 1 + 0.8·lvl·log10(1+1/d1)/log10(2)',
+      desc: 'Двойной Бенфорд: первая цифра важна ещё сильнее.'
+    },
+    {
       id: 'rho_root', icon: '√', mech: 'analysis', name: 'Корень зла', res: 'energy',
       base: 1200, growth: 2.1, max: 15,
       formula: '1 + 0.06 * rho * lvl', fmt: 'x',

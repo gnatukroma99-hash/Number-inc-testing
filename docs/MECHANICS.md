@@ -172,12 +172,18 @@ knee = 5, span = 17.5, power = 1.5
 
 `M_total = M_base · Π(механики)^exp(магазин) · Mmult(дерево) · 1.5^◆`
 
-| Ветвь | Узлы по порядку (глубина 0 → N) |
+| Ветвь (lane) | Узлы по порядку (глубина 0 → N) |
 |---|---|
-| 🚀 Рывок | `tree_headstart` → `tree_headstart2` |
-| ⏩ Темп | `tree_tempo` → `tree_softcap` → `tree_pow` → `tree_span2` |
-| ◈ Множитель | `tree_base` → `tree_core` → `tree_core2` |
-| 🤖 Автоматизация | `tree_battery` → `tree_auto_all` → `tree_sieve` → `tree_mirror` |
+| 🚀 Рывок (−1) | `tree_headstart` → `tree_headstart2` → `tree_headstart3` |
+| ⏩ Темп (−1) | `tree_tempo` → `tree_softcap` → `tree_pow` → `tree_span2` → `tree_span3` → `tree_tempo2` |
+| ◈ Множитель (0) | `tree_base` → `tree_core` → `tree_core2` → `tree_core3` → `tree_core4` → `tree_base2` |
+| 🤖 Автоматизация (0) | `tree_battery` → `tree_auto_all` → `tree_sieve` → `tree_mirror` → `tree_autofast` |
+| ◆ Ядра (+1) | `tree_coregain` → `tree_coregain2` → `tree_coregain3` → `tree_coregain4` → `tree_coremin` |
+| ❖ Доход (+1) | `tree_shop` → `tree_shop2` → `tree_energy2` → `tree_prime2` → `tree_energy3` |
+
+Всего **30 узлов**. Новые поля эффектов: `coreGainMult`/`coreGainAdd` (◆ за перерождение),
+`autoStepMult` (частота автопокупок), `shopCostMult` (цена магазина), `primeGainMult` (❖).
+Ядра: `◆ = ((D−10)/4)^0.75 × (1 + 0.02·runs)` × `coreGainMult` + `coreGainAdd`.
 
 | Узел | Ярус | Цена (◆) | Уровни | Эффект |
 |---|---|---|---|---|

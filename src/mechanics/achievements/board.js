@@ -41,7 +41,14 @@
           tLeft.set(String(total - done));
 
           for (const c of cards) {
-            c.el.classList.toggle('unlocked', G.achievements.has(state, c.a.id));
+            const now = G.achievements.has(state, c.a.id);
+            const was = c.el.classList.contains('unlocked');
+            c.el.classList.toggle('unlocked', now);
+            if (now && !was && !(G.animationsOff && G.animationsOff())) {
+              c.el.classList.remove('justUnlocked');
+              void c.el.offsetWidth;
+              c.el.classList.add('justUnlocked');
+            }
           }
         }
       };

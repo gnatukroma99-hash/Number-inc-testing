@@ -13,6 +13,13 @@
       desc: 'Флэт-плюс к базовому множителю. Особенно жирно на старте.'
     },
     {
+      id: 'shop_mult', icon: '✦', mech: 'shop', name: 'Жирный множитель', res: 'number',
+      costD: '2.50 * 2.00 ** lvl', minD: 80, max: 4,
+      formula: '2 ** lvl', fmt: 'x', Mmult: '2 ** lvl',
+      note: 'M ×= 2^lvl (за цифры)',
+      desc: 'Плоский ×2 к M за каждые 2.5 цифры. Дорого, но всегда полезно.'
+    },
+    {
       id: 'shop_tempo', icon: '⏱', mech: 'shop', name: 'Хроно-скидка', res: 'number',
       costD: '1.00 * 1.90 ** lvl', minD: 30, max: 8,
       formula: '0.95 ** lvl', dtMult: '0.95 ** lvl', fmt: 'x',

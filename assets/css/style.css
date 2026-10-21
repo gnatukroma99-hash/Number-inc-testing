@@ -2415,3 +2415,97 @@ body::before {
   #docks { flex: 0 0 auto; }
   .dock { flex: 0 0 auto; }
 }
+
+/* --- v0.10.0: карта дерева шире (6 ветвей, глубокие цепочки) --- */
+.tree-map { width: 1560px; height: 780px; min-width: 1560px; }
+
+/* ============================================================
+   v0.10.0 — АНИМАЦИИ (отключаются настройкой «Анимации»)
+   ============================================================ */
+
+@keyframes boardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.board-content.anim-in .board-body { animation: boardIn .28s ease-out both; }
+
+@keyframes upgIn {
+  from { opacity: 0; transform: translateY(6px) scale(.995); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.board-content.anim-in .upg { animation: upgIn .26s ease-out both; }
+.board-content.anim-in .upg:nth-of-type(2) { animation-delay: .03s; }
+.board-content.anim-in .upg:nth-of-type(3) { animation-delay: .06s; }
+.board-content.anim-in .upg:nth-of-type(4) { animation-delay: .09s; }
+.board-content.anim-in .upg:nth-of-type(5) { animation-delay: .12s; }
+.board-content.anim-in .upg:nth-of-type(6) { animation-delay: .15s; }
+
+@keyframes upgBought {
+  0%   { box-shadow: 0 0 0 0 rgba(53, 226, 192, .55), inset 0 0 0 rgba(255, 255, 255, 0); }
+  35%  { box-shadow: 0 0 0 6px rgba(53, 226, 192, 0), inset 0 0 26px rgba(53, 226, 192, .18); border-color: rgba(53, 226, 192, .7); }
+  100% { box-shadow: 0 0 0 0 rgba(53, 226, 192, 0); }
+}
+.upg.bought { animation: upgBought .42s ease-out; }
+
+@keyframes boughtPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(.94); }
+  100% { transform: scale(1); }
+}
+.upg.bought .upg-buy { animation: boughtPop .3s ease-out; }
+
+@keyframes valueBump {
+  0%   { transform: scale(1); color: inherit; }
+  35%  { transform: scale(1.06); color: #ffffff; }
+  100% { transform: scale(1); }
+}
+.tile-val.bump { animation: valueBump .32s ease-out; }
+
+@keyframes orbBought {
+  0%   { box-shadow: 0 0 16px var(--branch); transform: scale(1); }
+  40%  { box-shadow: 0 0 34px var(--branch), 0 0 60px var(--branch); transform: scale(1.12); }
+  100% { box-shadow: 0 0 16px var(--branch); transform: scale(1); }
+}
+.tree-map .node.bought .node-orb { animation: orbBought .46s ease-out; }
+
+@keyframes achUnlock {
+  0%   { transform: scale(.96); box-shadow: 0 0 0 0 rgba(255, 209, 102, .7); }
+  45%  { transform: scale(1.03); box-shadow: 0 0 0 8px rgba(255, 209, 102, 0); }
+  100% { transform: scale(1); }
+}
+.ach.justUnlocked { animation: achUnlock .55s ease-out; }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.toast { animation: toastIn .22s ease-out both; }
+
+@keyframes prestigeGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 209, 102, .6); }
+  100% { box-shadow: 0 0 0 22px rgba(255, 209, 102, 0); }
+}
+.prestige-btn.can { animation: prestigeGlow 2.4s ease-out infinite; }
+
+/* настройка «Анимации» выключена — гасим всё */
+body.no-anim .board-content.anim-in .board-body,
+body.no-anim .board-content.anim-in .upg,
+body.no-anim .upg.bought,
+body.no-anim .upg.bought .upg-buy,
+body.no-anim .tile-val.bump,
+body.no-anim .tree-map .node.bought .node-orb,
+body.no-anim .ach.justUnlocked,
+body.no-anim .toast,
+body.no-anim .prestige-btn.can { animation: none !important; }
+
+/* --- v0.10.0: компактная карта из 6 ветвей --- */
+.tree-map { width: 1400px; height: 760px; min-width: 1400px; }
+.tree-map .node-name { font-size: 9.5px; }
+.tree-map .node-eff { font-size: 9px; }
+.tree-map .node-lvl { font-size: 8.5px; }
+
+/* --- v0.10.0: читаемая карта 1360×440 (подписи крупнее) --- */
+.tree-map { width: 1360px; height: 440px; min-width: 0; }
+.tree-map .node-name { font-size: 11.5px; }
+.tree-map .node-eff { font-size: 10.5px; }
+.tree-map .node-lvl { font-size: 9.5px; }

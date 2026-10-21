@@ -96,7 +96,9 @@
       d.idx += gained;
 
       const per = yieldPer(state);
-      state.res.prime = (state.res.prime || 0) + gained * per;
+      let pgm = G.growth.upgProduct(state, 'primeGainMult');
+      if (!isFinite(pgm) || pgm <= 0) pgm = 1;
+      state.res.prime = (state.res.prime || 0) + Math.round(gained * per * pgm);
       state.stats.sieveFound = (state.stats.sieveFound || 0) + gained;
 
       G.bus.emit('sieve:found', { gained: gained, total: d.found });

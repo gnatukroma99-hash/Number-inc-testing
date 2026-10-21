@@ -9,15 +9,16 @@
     name: 'Перерождение P1',
     minD: 10,
     /* сколько ◆ даёт текущий D: floor(((D − minD) / 4)^0.75) */
-    gainFormula: 'floor(pow(max(0, D - minD) / 4, 0.75))',
+    /* ◆ = ((D − minD) / 4)^0.75, ×(1 + 0.02·перерождений) — забеги тоже копят опыт */
+    gainFormula: 'floor(pow(max(0, D - minD) / 4, 0.75) * (1 + 0.02 * runs))',
     /* постоянный множитель к M от ядер */
     coreMultFormula: '1.5 ** cores',
     resetScopes: ['run'],
     /* стартовые цифры после перерождения — узлы дерева ◆ (данные).
        vars: имя переменной -> id узла; formula считает цифры старта. */
     start: {
-      vars: { lvl: 'tree_headstart', lvl2: 'tree_headstart2' },
-      formula: '2 * lvl + 10 * lvl2'
+      vars: { lvl: 'tree_headstart', lvl2: 'tree_headstart2', lvl3: 'tree_headstart3' },
+      formula: '2 * lvl + 10 * lvl2 + 40 * lvl3'
     },
     keepHint: 'Остаются: ◆ Ядра, ❖ ПРАЙМ, авто-апгрейды (scope meta), дерево ◆, рекорды.',
     resetHint: 'Сбрасываются: N, ⚡, все раундовые апгрейды, магазин и данные механик.'

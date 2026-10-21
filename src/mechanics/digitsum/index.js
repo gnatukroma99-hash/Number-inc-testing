@@ -12,6 +12,13 @@
       desc: 'Множитель от суммы значащих цифр'
     },
     {
+      id: 'sd2', icon: 'Σ', mech: 'digitsum', name: 'Сумма цифр II', res: 'energy',
+      base: 5e3, growth: 2.6, max: 12,
+      formula: '1 + 0.02 * S * lvl', fmt: 'x',
+      note: 'M ×= 1 + 0.02·S·lvl',
+      desc: 'Второй слой: работает на той же сумме цифр, но дешевле за уровень.'
+    },
+    {
       id: 'sd_stab', icon: '🧊', mech: 'digitsum', name: 'Стабилизатор', res: 'energy',
       base: 300, growth: 2.5, max: 10,
       formula: '4 + 2 * lvl', fmt: 'num',

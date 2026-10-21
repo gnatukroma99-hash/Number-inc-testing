@@ -16,10 +16,13 @@
     return isFinite(c) ? c : Number.MAX_VALUE;
   }
 
-  /* цена в цифрах (для магазина «за само число») */
+  /* цена в цифрах (для магазина «за само число»); дерево ◆ может её снижать (shopCostMult) */
   function costDigits(state, u) {
     const d = G.formula(u.costD, { lvl: G.lvl(state, u.id), D: G.growth.D(state) });
-    return isFinite(d) && d >= 0 ? d : Number.MAX_VALUE;
+    if (!isFinite(d) || d < 0) return Number.MAX_VALUE;
+    let mult = G.growth.upgProduct(state, 'shopCostMult');
+    if (!isFinite(mult) || mult <= 0) mult = 1;
+    return Math.max(0, d * mult);
   }
 
   const U = {

@@ -11,6 +11,13 @@
       desc: 'Множитель от количества простых цифр в мантиссе'
     },
     {
+      id: 'pq2', icon: '⧉', mech: 'primefit', name: 'Прайм-стак II', res: 'energy',
+      base: 4e4, growth: 3.0, max: 10,
+      formula: '1 + 0.4 * q * lvl', fmt: 'x',
+      note: 'M ×= 1 + 0.4·q·lvl',
+      desc: 'Тяжёлая версия прайм-стайла для позднего забега.'
+    },
+    {
       id: 'pq_jack', icon: '🎰', mech: 'primefit', name: 'Джекпот-стайл', res: 'energy',
       base: 5000, growth: 3.2, max: 5,
       formula: '1 + 2 * lvl', fmt: 'x',

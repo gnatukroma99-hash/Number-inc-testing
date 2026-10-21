@@ -63,10 +63,17 @@
       }
     },
 
+    /* шаг автопокупок может ускоряться узлами дерева (данные: autoStepMult) */
+    step(state) {
+      let m = G.growth.upgProduct(state, 'autoStepMult');
+      if (!isFinite(m) || m <= 0) m = 1;
+      return Math.max(0.05, STEP / m);
+    },
+
     update(state, dt) {
       acc += dt;
       shopAcc += dt;
-      if (acc < STEP) return;
+      if (acc < A.step(state)) return;
       acc = 0;
       A.run(state);
     }

@@ -6,15 +6,22 @@
   const P = {
     cfg() { return (G.content && G.content.prestige) || {}; },
 
-    /* сколько ◆ дадут за текущее состояние */
+    /* сколько ◆ дадут за текущее состояние (с бонусами дерева ◆) */
     gain(state) {
       const c = P.cfg();
       const v = G.formula(c.gainFormula || 'floor(max(0, D - minD) / 4)', {
         D: G.growth.D(state),
         minD: c.minD !== undefined ? c.minD : 10,
-        cores: state.res.cores || 0
+        cores: state.res.cores || 0,
+        runs: state.meta.totalRuns || 0
       });
-      return isFinite(v) && v > 0 ? Math.floor(v) : 0;
+      const base = isFinite(v) ? Math.floor(v) : 0;
+      if (base <= 0) return 0;
+      let mult = G.growth.upgProduct(state, 'coreGainMult');
+      if (!isFinite(mult) || mult <= 0) mult = 1;
+      const add = G.growth.upgSum(state, 'coreGainAdd');
+      const total = Math.floor(base * mult + (isFinite(add) ? add : 0));
+      return total > 0 ? total : 0;
     },
 
     /* постоянный множитель к M от ◆ */

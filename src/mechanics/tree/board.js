@@ -11,11 +11,11 @@
 
   /* геометрия карты: ветви расходятся ВЛЕВО и ВПРАВО от центрального хаба,
      глубина — шаг по горизонтали, ветви разнесены по двум «полосам» + лёгкий зигзаг */
-  const W = 1200;
+  const W = 1360;
   const H = 440;
-  const X_STEP = 128;
-  const LANE = 104;
-  const ZIG = 34;
+  const X_STEP = 112;
+  const LANE = 120;
+  const ZIG = 14;
 
   const TIER_LABEL = { t1: 'I', t2: 'II', t3: 'III' };
 
@@ -76,11 +76,20 @@
     /* покупка: клик + зажатие */
     let hold = null;
     const stop = () => { if (hold) { clearInterval(hold); hold = null; } };
+    let flashTimer = null;
+    const flash = (bought) => {
+      if (!bought || (G.animationsOff && G.animationsOff())) return;
+      real.classList.remove('bought');
+      void real.offsetWidth;
+      real.classList.add('bought');
+      if (flashTimer) clearTimeout(flashTimer);
+      flashTimer = setTimeout(() => real.classList.remove('bought'), 460);
+    };
     orb.addEventListener('pointerdown', (e) => {
       e.preventDefault();
-      G.upgrades.buy(G.state, u);
+      flash(G.upgrades.buy(G.state, u));
       stop();
-      hold = setInterval(() => G.upgrades.buy(G.state, u), 140);
+      hold = setInterval(() => flash(G.upgrades.buy(G.state, u)), 140);
     });
     orb.addEventListener('pointerup', stop);
     orb.addEventListener('pointerleave', stop);
@@ -151,7 +160,7 @@
 
       branches.forEach((b, i) => {
         const dir = b.dir === 'left' ? -1 : 1;                 /* в какую сторону растёт ветвь */
-        const lane = b.lane === 'down' ? 1 : -1;               /* верхняя или нижняя полоса */
+        const lane = (b.lane === 'down' ? 1 : b.lane === 'up' ? -1 : Number(b.lane) || 0);  /* полоса */
         const list = all.filter((u) => u.branch === b.id)
           .sort((x, y) => (x.depth || 0) - (y.depth || 0));
 
@@ -160,7 +169,7 @@
         list.forEach((u, idx) => {
           const d = u.depth || 0;
           const x = W / 2 + dir * X_STEP * (d + 1);
-          const y = H / 2 + lane * LANE + Math.sin(d * 1.25 + i * 1.7) * ZIG;
+          const y = H / 2 + lane * LANE + Math.sin(d * 1.1 + i * 1.7) * ZIG;
 
           /* линия от предыдущего узла ветви */
           const ln = svgEl('line', {
@@ -220,7 +229,7 @@
 
       /* панель подробностей узла */
       const infoTitle = G.h('div', { class: 'info-title', text: 'Наведи на узел' });
-      const infoDesc = G.h('div', { class: 'info-desc', text: 'Ветви расходятся влево и вправо от центра, дальше от центра — глубже.' });
+      const infoDesc = G.h('div', { class: 'info-desc', text: 'Шесть ветвей расходятся от центра; дальше от центра — глубже. Карту можно приближать.' });
       const infoEff = G.h('div', { class: 'info-eff' });
       const info = G.h('div', { class: 'tree-info' }, [infoTitle, infoDesc, infoEff]);
 

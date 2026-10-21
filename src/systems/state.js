@@ -7,7 +7,7 @@
   'use strict';
 
   G.SAVE_VERSION = 2;
-  G.VERSION = '0.9.0';
+  G.VERSION = '0.10.0';
 
   const DEFAULT_SETTINGS = {
     numberFormat: 'short',     // short | sci | full
@@ -108,6 +108,13 @@
     state.disp = null;
 
     G.bus.emit('state:reset', { scopes: scopes });
+  };
+
+  /* анимации включены? (настройка + быстрый доступ для компонентов) */
+  G.animationsOff = function () {
+    const s = (G.state && G.state.settings) || {};
+    return s.animations === false || (typeof document !== 'undefined' &&
+      document.body && document.body.classList.contains('no-anim'));
   };
 
   /* безопасный геттер уровня */

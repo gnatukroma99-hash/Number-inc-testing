@@ -19,6 +19,13 @@
       desc: 'Усиливает вклад каждого простого разряда'
     },
     {
+      id: 'pm_base2', icon: '❖', mech: 'primeranks', name: 'Основание прайма II', res: 'prime',
+      base: 6, growth: 2.8, max: 10,
+      formula: '1.10 ** lvl', fmt: 'x', primeGainMult: '1.10 ** lvl',
+      note: '❖ за разряд ×= 1.10^lvl',
+      desc: 'Больше ❖ с каждого простого разряда.'
+    },
+    {
       id: 'pm_speed', icon: '⏩', mech: 'primeranks', name: 'Прайм-разгон', res: 'prime',
       base: 2, growth: 2.4, max: 15,
       formula: '0.95 ** lvl', fmt: 'x',
@@ -45,7 +52,9 @@
       const d = data(state);
       const idx = G.primes.countUpTo(Math.floor(G.growth.D(state)));
       if (idx > d.lastIdx) {
-        const gained = idx - d.lastIdx;
+        let pgm = G.growth.upgProduct(state, 'primeGainMult');
+        if (!isFinite(pgm) || pgm <= 0) pgm = 1;
+        const gained = Math.max(1, Math.round((idx - d.lastIdx) * pgm));
         d.lastIdx = idx;
         d.earned += gained;
         state.res.prime = (state.res.prime || 0) + gained;

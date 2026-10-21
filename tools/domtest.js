@@ -251,23 +251,56 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   state.settings.buyMode = '1';
   state.upg.mult1 = 0;
 
+  section('4c. Анимации (и их отключение)');
+  click(dockBtns().find((b) => b.dataset.id === 'core'));
+  G.ui.app.render(state);
+  check('доска помечена anim-in', !!doc.querySelector('#board .board-content.anim-in'));
+  const anyTile = doc.querySelector('#board .tile-val');
+  state.res.energy = 1e30;
+  anyTile.textContent = 'x';
+  G.ui.app.render(state);
+  check('плитка пульсирует при изменении значения', anyTile.classList.contains('bump'),
+    'class: ' + anyTile.className);
+  const upgCard = doc.querySelector('#board .upg');
+  const upgBtn = upgCard ? upgCard.querySelector('.upg-buy') : null;
+  if (upgBtn) click(upgBtn);
+  check('карточка вспыхивает при покупке', upgCard.classList.contains('bought'),
+    'class: ' + (upgCard ? upgCard.className : '-'));
+  check('G.animationsOff() учитывает настройку', (function () {
+    const before = G.animationsOff();
+    state.settings.animations = false;
+    const off = G.animationsOff();
+    state.settings.animations = true;
+    return before === false && off === true;
+  })());
+  state.settings.animations = false;
+  click(dockBtns().find((b) => b.dataset.id === 'digitsum'));
+  check('при выключенных анимациях нет anim-in',
+    !doc.querySelector('#board .board-content.anim-in'));
+  state.settings.animations = true;
+  click(dockBtns().find((b) => b.dataset.id === 'tree'));
+
   section('5. Дерево ◆ (узлы, предки, цена в ядрах)');
   const tree = G.registry.upgradesOf('tree');
-  check('узлов в дереве', tree.length === 13, tree.length + ' шт');
-  check('ветви дерева', (G.content.tree.branches || []).length === 4,
+  check('узлов в дереве', tree.length === 30, tree.length + ' шт');
+  check('ветви дерева', (G.content.tree.branches || []).length === 6,
     (G.content.tree.branches || []).map((t) => t.id).join(','));
   const deep = tree.filter((u) => u.tier === 't3');
   check('ярус III не дешевле 60 ◆', deep.length >= 4 &&
     deep.every((u) => u.base >= 60), deep.map((u) => u.id + ':' + u.base).join(' '));
   const soft = G.registry.upgrade('tree_softcap');
   const tempo = G.registry.upgrade('tree_tempo');
+  state.res.cores = 5000;     // чтобы проверять именно требования, а не нехватку ядер
   if (G.lvl(state, 'tree_tempo')) state.upg.tree_tempo = 0;
+  state.upg.tree_span2 = 0;   /* чтобы требования были честными */
   check('предок блокирует узел', G.upgrades.canBuy(state, soft) === false);
   state.upg.tree_tempo = 1;
   check('с предком узел доступен', G.upgrades.canBuy(state, soft) === true);
+  state.upg.tree_span2 = 0;
   state.res.cores = 500;
   state.upg.tree_headstart = 0;
   state.upg.tree_headstart2 = 0;
+  state.upg.tree_headstart3 = 0;
   state.N = G.BN.fromLog10(15); state.D = 15;
   const coresBefore = state.res.cores;
   G.prestige.perform(state);
@@ -282,7 +315,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.prestige.perform(state);
   check('рывок II ур.2 → +20 цифр (итого 26)', Math.abs(G.growth.D(state) - 26) < 0.01,
     'D=' + G.growth.D(state).toFixed(2));
-  state.upg.tree_headstart2 = 0;
+  state.upg.tree_headstart3 = 0;
   check('ядра не сбрасываются', state.res.cores >= coresBefore, 'cores=' + state.res.cores);
   /* ---- визуал дерева: ветви-колонки, скрытые узлы, связки ---- */
   for (const u of tree) state.upg[u.id] = 0;
@@ -293,10 +326,10 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const map = doc.querySelector('#board .tree-map');
   check('карта дерева отрисована', !!map);
   const heads = doc.querySelectorAll('#board .tree-branch-head');
-  check('4 колонки-ветви', heads.length === 4, heads.length + ' шт');
+  check('6 полос-ветвей', heads.length === 6, heads.length + ' шт');
   const cells = Array.from(doc.querySelectorAll('#board .tree-cell'));
   check('клеток по числу узлов', cells.length === tree.length, cells.length + ' / ' + tree.length);
-  check('связки-линии (::before не проверить, но классы есть)', cells.filter((c) => c.classList.contains('root')).length === 4,
+  check('связки-линии (::before не проверить, но классы есть)', cells.filter((c) => c.classList.contains('root')).length === 6,
     'корней: ' + cells.filter((c) => c.classList.contains('root')).length);
 
   const unknownShown = () => Array.from(doc.querySelectorAll('#board .node.unknown'))
@@ -308,13 +341,13 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     return card && card.style.display !== 'none';
   };
 
-  check('на старте видно только 4 корня ветвей', unknownShown() === tree.length - 4,
+  check('на старте видно только 6 корней ветвей', unknownShown() === tree.length - 6,
     'скрыто: ' + unknownShown() + ' из ' + tree.length);
   check('2-й узел ветви скрыт', realShown('Слом софткапа') === false);
   check('корень ветви виден', realShown('Вечный разгон') === true);
   const hiddenBtn = Array.from(doc.querySelectorAll('#board .node.unknown .node-buy'))
     .filter((b) => b.parentElement.style.display !== 'none');
-  check('у скрытого узла нет имени/цены', hiddenBtn.length === tree.length - 4 &&
+  check('у скрытого узла нет имени/цены', hiddenBtn.length === tree.length - 6 &&
     !/[0-9]/.test(textOf(hiddenBtn[0])),
     'кнопок: ' + hiddenBtn.length + ' из ' + (tree.length - 4) + ', текст: «' + textOf(hiddenBtn[0]) + '»');
 
@@ -327,7 +360,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.ui.app.render(state);
   check('после покупки корня 2-й узел проявился', realShown('Слом софткапа') === true,
     'ур. Вечный разгон = ' + G.lvl(state, 'tree_tempo'));
-  check('скрытых стало меньше', unknownShown() === tree.length - 5, 'скрыто: ' + unknownShown());
+  check('скрытых стало меньше', unknownShown() === tree.length - 7, 'скрыто: ' + unknownShown());
   check('цена узла — в ядрах', /\u25c6/.test(textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy'))),
     textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy')));
 
