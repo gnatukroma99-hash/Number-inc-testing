@@ -282,8 +282,8 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
 
   section('5. Дерево ◆ (узлы, предки, цена в ядрах)');
   const tree = G.registry.upgradesOf('tree');
-  check('узлов в дереве', tree.length === 32, tree.length + ' шт');
-  check('ветви дерева', (G.content.tree.branches || []).length === 6,
+  check('узлов в дереве', tree.length === 36, tree.length + ' шт');
+  check('ветви дерева', (G.content.tree.branches || []).length === 7,
     (G.content.tree.branches || []).map((t) => t.id).join(','));
   const deep = tree.filter((u) => u.tier === 't3');
   check('ярус III не дешевле 60 ◆', deep.length >= 4 &&
@@ -326,10 +326,10 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const map = doc.querySelector('#board .tree-map');
   check('карта дерева отрисована', !!map);
   const heads = doc.querySelectorAll('#board .tree-branch-head');
-  check('6 полос-ветвей', heads.length === 6, heads.length + ' шт');
+  check('7 полос-ветвей', heads.length === 7, heads.length + ' шт');
   const cells = Array.from(doc.querySelectorAll('#board .tree-cell'));
   check('клеток по числу узлов', cells.length === tree.length, cells.length + ' / ' + tree.length);
-  check('связки-линии (::before не проверить, но классы есть)', cells.filter((c) => c.classList.contains('root')).length === 6,
+  check('связки-линии (::before не проверить, но классы есть)', cells.filter((c) => c.classList.contains('root')).length === 7,
     'корней: ' + cells.filter((c) => c.classList.contains('root')).length);
 
   const unknownShown = () => Array.from(doc.querySelectorAll('#board .node.unknown'))
@@ -341,13 +341,16 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     return card && card.style.display !== 'none';
   };
 
-  check('на старте видно только 6 корней ветвей', unknownShown() === tree.length - 6,
+  /* чистое дерево: ни одного купленного узла */
+  for (const u of tree) state.upg[u.id] = 0;
+  G.ui.app.render(state);
+  check('на старте видно только 7 корней ветвей', unknownShown() === tree.length - 7,
     'скрыто: ' + unknownShown() + ' из ' + tree.length);
   check('2-й узел ветви скрыт', realShown('Слом софткапа') === false);
   check('корень ветви виден', realShown('Вечный разгон') === true);
   const hiddenBtn = Array.from(doc.querySelectorAll('#board .node.unknown .node-buy'))
     .filter((b) => b.parentElement.style.display !== 'none');
-  check('у скрытого узла нет имени/цены', hiddenBtn.length === tree.length - 6 &&
+  check('у скрытого узла нет имени/цены', hiddenBtn.length === tree.length - 7 &&
     !/[0-9]/.test(textOf(hiddenBtn[0])),
     'кнопок: ' + hiddenBtn.length + ' из ' + (tree.length - 4) + ', текст: «' + textOf(hiddenBtn[0]) + '»');
 
@@ -360,7 +363,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.ui.app.render(state);
   check('после покупки корня 2-й узел проявился', realShown('Слом софткапа') === true,
     'ур. Вечный разгон = ' + G.lvl(state, 'tree_tempo'));
-  check('скрытых стало меньше', unknownShown() === tree.length - 7, 'скрыто: ' + unknownShown());
+  check('скрытых стало меньше', unknownShown() === tree.length - 8, 'скрыто: ' + unknownShown());
   check('цена узла — в ядрах', /\u25c6/.test(textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy'))),
     textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy')));
 
@@ -386,6 +389,43 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   state.mech.spark.buffs.forEach((b) => (b.left = 0.01));
   G.spark.tick(state, 1);
   check('буффы истекают', G.spark.active(state).length === 0 && Math.abs(G.growth.M(state) - beforeMult) < Math.abs(beforeMult) * 0.9 + 1);
+  /* «Искровой раж»: каждая 5-я поимка → серия искр */
+  state.mech.spark = { nextIn: 0.1, left: 0, type: null, caught: 4, buffs: [], rush: { left: 0, streak: 0, spawned: 0 } };
+  G.spark.tick(state, 0.2);
+  G.spark.catchSpark(state);
+  check('5-я поимка запускает «раж»', G.spark.rush(state).active,
+    'раунд: ' + Math.ceil(G.spark.rush(state).left) + ' с');
+  const coresBeforeRush = state.res.cores || 0;
+  /* ловим серию внутри ража */
+  for (let i = 0; i < 4; i++) {
+    state.mech.spark.type = G.spark.types()[0].id;
+    state.mech.spark.left = 5;
+    G.spark.catchSpark(state);
+  }
+  check('серия растёт', G.spark.rush(state).streak >= 4, 'streak: ' + G.spark.rush(state).streak);
+  state.mech.spark.rush.left = 0;
+  const rushRes = G.spark.finishRush(state);
+  check('раж даёт ядра и буфф', rushRes.cores > 0 && rushRes.mult > 1,
+    '◆+' + rushRes.cores + ', M×' + rushRes.mult.toFixed(1));
+  check('ядра ража начислены', (state.res.cores || 0) >= coresBeforeRush + rushRes.cores);
+
+  /* узлы дерева под искру */
+  state.upg.tree_sparklife = 2;
+  state.upg.tree_sparkrate = 2;
+  state.upg.tree_sparkpower = 2;
+  state.upg.tree_sparkdouble = 1;
+  check('дерево удлиняет искру', G.spark.lifetime(state) >= 15 + 8,
+    'жизнь: ' + G.spark.lifetime(state).toFixed(0) + ' с');
+  check('дерево учащает искры', G.spark.gapFor(state).min < 70,
+    'пауза от ' + G.spark.gapFor(state).min.toFixed(0) + ' с');
+  check('дерево усиливает искру', G.spark.bonus(state).power > 1,
+    'сила ×' + G.spark.bonus(state).power.toFixed(2));
+  check('дерево включает двойную искру', G.spark.bonus(state).double === true);
+  state.upg.tree_sparklife = 0;
+  state.upg.tree_sparkrate = 0;
+  state.upg.tree_sparkpower = 0;
+  state.upg.tree_sparkdouble = 0;
+
   check('искра сбрасывается перерождением', (function () {
     state.N = G.BN.fromLog10(20); state.D = 20;
     G.prestige.perform(state);

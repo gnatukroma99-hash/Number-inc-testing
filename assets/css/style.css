@@ -2588,3 +2588,23 @@ body.no-anim .prestige-btn.can { animation: none !important; }
 }
 .spark-catch { align-self: flex-start; }
 body.no-anim .spark-float { animation: none; }
+
+/* --- v0.12.0: 7 ветвей (4 полосы) + «искровой раж» --- */
+.tree-map { height: 460px; }
+.spark-float.rush {
+  border-color: #ff7ad9;
+  box-shadow: 0 0 26px #ff7ad9, 0 10px 26px rgba(0, 0, 0, .5);
+  animation: sparkFloat 0.8s ease-in-out infinite;
+}
+.spark-rush {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 122, 217, .16);
+  border: 1px solid rgba(255, 122, 217, .5);
+  color: #ffd6f3;
+  font-family: var(--mono);
+  font-size: 11px;
+}

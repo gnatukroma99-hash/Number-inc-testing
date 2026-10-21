@@ -52,15 +52,19 @@
         return;
       }
       ensure();
+      const rush = G.spark.rush(state);
+      el.classList.toggle('rush', rush.active);
       const id = now.id + ':' + Math.ceil(G.spark.data(state).left);
       if (shownId !== now.id || !el.classList.contains('visible')) {
-        el.style.setProperty('--spark', now.color || '#ffd166');
+        el.style.setProperty('--spark', rush.active ? '#ff7ad9' : (now.color || '#ffd166'));
         el.querySelector('.spark-float-icon').textContent = now.icon || '✦';
-        label.textContent = now.name + ' — жми!';
         place(Math.floor((state.stats.playtime || 0) * 7) + now.id.length * 13);
         shownId = now.id;
         el.classList.add('visible');
       }
+      label.textContent = rush.active
+        ? 'РАЖ ' + rush.streak + '/' + rush.need + ' — жми!'
+        : now.name + ' — жми!';
     }
   };
 

@@ -18,15 +18,16 @@
   G.content = G.content || {};
   G.content.tree = {
     res: 'cores',
-    hint: '◆ Ядра тратятся только здесь. Шесть ветвей: каждая — своя цепочка. ' +
+    hint: '◆ Ядра тратятся только здесь. Семь ветвей: каждая — своя цепочка. ' +
           'Следующий узел ветви виден только после покупки предыдущего.',
     branches: [
-      { id: 'start', name: 'Рывок', icon: '🚀', color: '#8ada6a', note: 'старт забега сильнее', dir: 'left', lane: -1 },
-      { id: 'tempo', name: 'Темп', icon: '⏩', color: '#2bb5ff', note: 'скорость и софткап', dir: 'right', lane: -1 },
-      { id: 'mult', name: 'Множитель', icon: '◈', color: '#ffd166', note: 'плоские × к M', dir: 'left', lane: 0 },
-      { id: 'auto', name: 'Автоматизация', icon: '🤖', color: '#ff9de2', note: 'авто и механики', dir: 'right', lane: 0 },
-      { id: 'cores', name: 'Ядра', icon: '◆', color: '#ffb14d', note: 'больше ◆ за перерождение', dir: 'left', lane: 1 },
-      { id: 'income', name: 'Доход', icon: '❖', color: '#6ee7f9', note: 'энергия, ❖, цены', dir: 'right', lane: 1 }
+      { id: 'start', name: 'Рывок', icon: '🚀', color: '#8ada6a', note: 'старт забега сильнее', dir: 'left', lane: -1.5 },
+      { id: 'tempo', name: 'Темп', icon: '⏩', color: '#2bb5ff', note: 'скорость и софткап', dir: 'right', lane: -1.5 },
+      { id: 'mult', name: 'Множитель', icon: '◈', color: '#ffd166', note: 'плоские × к M', dir: 'left', lane: -0.5 },
+      { id: 'auto', name: 'Автоматизация', icon: '🤖', color: '#ff9de2', note: 'авто и механики', dir: 'right', lane: -0.5 },
+      { id: 'cores', name: 'Ядра', icon: '◆', color: '#ffb14d', note: 'больше ◆ за перерождение', dir: 'left', lane: 0.5 },
+      { id: 'income', name: 'Доход', icon: '❖', color: '#6ee7f9', note: 'энергия, ❖, цены', dir: 'right', lane: 0.5 },
+      { id: 'spark', name: 'Искра', icon: '✦', color: '#ffd166', note: 'ловить искры выгоднее', dir: 'left', lane: 1.5 }
     ],
     tiers: [
       { id: 't1', name: 'I' },
@@ -282,6 +283,43 @@
       requires: ['tree_coregain4'],
       note: '◆ += 2·lvl за перерождение',
       desc: 'Флэт-бонус: даже короткий забег приносит ядра.'
+    },
+
+    /* ================= ✦ ветвь «Искра» ================= */
+    {
+      id: 'tree_sparklife', mech: 'tree', branch: 'spark', depth: 0, lane: 1.5, tier: 't1',
+      scope: 'meta', res: 'cores', icon: '✦',
+      name: 'Долгая искра', base: 5, growth: 1.70, max: 6,
+      formula: '4 * lvl', fmt: 'num', sparkLife: '4 * lvl',
+      note: 'искра висит +4·lvl секунд',
+      desc: 'Больше времени, чтобы успеть нажать.'
+    },
+    {
+      id: 'tree_sparkrate', mech: 'tree', branch: 'spark', depth: 1, lane: 1.5, tier: 't2',
+      scope: 'meta', res: 'cores', icon: '✦',
+      name: 'Частая искра', base: 35, growth: 1.90, max: 6,
+      formula: '0.90 ** lvl', fmt: 'x', sparkGap: '0.90 ** lvl',
+      requires: ['tree_sparklife'],
+      note: 'пауза между искрами ×= 0.90^lvl',
+      desc: 'Искры появляются заметно чаще.'
+    },
+    {
+      id: 'tree_sparkpower', mech: 'tree', branch: 'spark', depth: 2, lane: 1.5, tier: 't2',
+      scope: 'meta', res: 'cores', icon: '✦',
+      name: 'Сильная искра', base: 140, growth: 2.00, max: 6,
+      formula: '1.35 ** lvl', fmt: 'x', sparkPower: '1.35 ** lvl',
+      requires: ['tree_sparkrate'],
+      note: 'сила эффектов искры ×= 1.35^lvl',
+      desc: 'Буффы, ⚡, ◆ и ❖ с искры становятся мощнее.'
+    },
+    {
+      id: 'tree_sparkdouble', mech: 'tree', branch: 'spark', depth: 3, lane: 1.5, tier: 't3',
+      scope: 'meta', res: 'cores', icon: '✦✦',
+      name: 'Двойная искра', base: 450, growth: 1, max: 1,
+      formula: 'lvl', fmt: 'pct', sparkDouble: 'lvl',
+      requires: ['tree_sparkpower'],
+      note: 'каждая поимка даёт ДВА эффекта',
+      desc: 'Ловишь искру — срабатывают два случайных эффекта вместо одного.'
     },
 
     /* ================= ❖ ветвь «Доход» ================= */

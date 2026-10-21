@@ -25,7 +25,8 @@
       upgrades.set(u.id, Object.assign({ scope: 'run', max: Infinity, res: 'energy', autoBuy: true }, u));
       for (const f of ['formula', 'costFormula', 'costD', 'addM', 'powM', 'dtMult', 'energyMult',
         'Mmult', 'spanMult', 'taperMult', 'coreGainMult', 'coreGainAdd', 'coreGainPerNode',
-        'autoStepMult', 'shopCostMult', 'primeGainMult']) {
+        'autoStepMult', 'shopCostMult', 'primeGainMult',
+        'sparkLife', 'sparkGap', 'sparkPower', 'sparkDouble']) {
         if (u[f]) G.formula.precompile(u[f]);
       }
       return u;

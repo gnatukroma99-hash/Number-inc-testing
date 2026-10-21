@@ -25,6 +25,7 @@
         ]);
       });
 
+      const rushEl = G.h('div', { class: 'spark-rush' });
       const buffsEl = G.h('div', { class: 'spark-buffs' });
       const catchBtn = G.h('button', { class: 'btn spark-catch', type: 'button', text: '✦ Поймать' });
       catchBtn.addEventListener('click', () => {
@@ -35,6 +36,7 @@
       const el = G.h('div', { class: 'board-body' }, [
         G.h('p', { class: 'board-hint', text: mech.hint }),
         C.grid([tNext.el, tCaught.el, tNow.el]),
+        rushEl,
         G.h('div', { class: 'section' }, [
           G.h('h3', { class: 'section-title' }, [G.h('span', { class: 'section-name', text: 'Что можно поймать' })]),
           G.h('div', { class: 'spark-grid' }, cards)
@@ -57,6 +59,13 @@
           tNow.set(now ? now.icon + ' ' + now.name : '—');
           catchBtn.disabled = !now;
           catchBtn.textContent = now ? now.icon + ' Поймать: ' + now.name : '✦ Подожди искру';
+
+          const rush = G.spark.rush(state);
+          rushEl.textContent = rush.active
+            ? '⚡ ИСКРОВОЙ РАЖ · осталось ' + Math.ceil(rush.left) + ' с · серия ' +
+              rush.streak + '/' + rush.need + ' · каждая N-я поимка запускает раж заново'
+            : 'Искровой раж запускается каждой ' + rush.cfg.every + '-й поимкой: ' +
+              rush.need + ' искр подряд → ◆ и мощный буфф';
 
           const active = G.spark.active(state);
           buffsEl.textContent = active.length
