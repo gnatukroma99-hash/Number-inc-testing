@@ -1933,3 +1933,53 @@ body::before {
   color: #ffe6a8;
   box-shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 0 22px rgba(255, 209, 102, .18);
 }
+
+/* ============================================================
+   v0.8.2 — зум и панорама дерева (колесо, щипок, кнопки)
+   ============================================================ */
+
+.tree-board .tree-stage {
+  position: relative;
+  overflow: hidden;
+  touch-action: none;          /* жесты отрабатываем сами: щипок = зум, палец = панорама */
+  cursor: default;
+}
+.tree-board .tree-stage.zoomed { cursor: grab; }
+.tree-board .tree-stage.grabbing { cursor: grabbing; }
+
+.tree-zoom {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 5;
+}
+.tree-zoom-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(8, 14, 20, .82);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: .15s;
+}
+.tree-zoom-btn:hover:not(:disabled) {
+  border-color: rgba(53, 226, 192, .6);
+  color: var(--accent);
+  box-shadow: 0 0 14px rgba(53, 226, 192, .25);
+}
+.tree-zoom-btn:disabled { opacity: .35; cursor: default; }
+
+@media (max-width: 720px) {
+  .tree-zoom-btn { width: 42px; height: 42px; font-size: 19px; }
+}
+
+/* кнопки зума — сверху справа (внизу их перекрывают тосты) */
+.tree-zoom { top: 10px; right: 10px; bottom: auto; }

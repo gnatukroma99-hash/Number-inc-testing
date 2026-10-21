@@ -238,7 +238,18 @@
             '   ·   цена: ' + G.fmt.num(G.upgrades.currentCost(s, u)) + ' ◆';
       }
 
-      const stage = G.h('div', { class: 'tree-stage' }, [map]);
+      /* ---- управление видом: приближение/отдаление (колесо, щипок, кнопки) ---- */
+      const view = { z: 1, tx: 0, ty: 0 };
+      const ZMIN = 1;
+      const ZMAX = 6;
+      let baseK = 1;
+
+      const zoomIn = G.h('button', { class: 'tree-zoom-btn', type: 'button', title: 'Приблизить', text: '+' });
+      const zoomOut = G.h('button', { class: 'tree-zoom-btn', type: 'button', title: 'Отдалить', text: '−' });
+      const zoomFit = G.h('button', { class: 'tree-zoom-btn', type: 'button', title: 'Вписать', text: '⤢' });
+      const zoomBar = G.h('div', { class: 'tree-zoom' }, [zoomIn, zoomOut, zoomFit]);
+
+      const stage = G.h('div', { class: 'tree-stage' }, [map, zoomBar]);
 
       const el = G.h('div', { class: 'board-body tree-board' }, [
         G.h('p', { class: 'board-hint', text: mech.hint }),
@@ -249,28 +260,165 @@
       ]);
       root.appendChild(el);
 
-      /* карта всегда целиком в кадре: масштабируем под размер области */
+      /* ---------- масштаб и панорама ----------
+         baseK — «вписать карту в область», view.z — пользовательский зум (1…6).
+         Итоговый масштаб = baseK * z, сдвиг = view.tx/ty, всё в CSS transform. */
+      function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+      function contentSize() { return { w: W * baseK * view.z, h: H * baseK * view.z }; }
+
+      /* держим карту в кадре: если она меньше области — центрируем, если больше — не даём утащить */
+      function clampPan() {
+        const cw = stage.clientWidth;
+        const ch = stage.clientHeight;
+        const c = contentSize();
+        view.tx = (c.w <= cw) ? (cw - c.w) / 2 : clamp(view.tx, cw - c.w, 0);
+        view.ty = (c.h <= ch) ? (ch - c.h) / 2 : clamp(view.ty, ch - c.h, 0);
+      }
+
+      function applyView() {
+        clampPan();
+        const k = baseK * view.z;
+        map.style.transformOrigin = 'top left';
+        map.style.transform = 'translate(' + view.tx.toFixed(1) + 'px,' + view.ty.toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
+        stage.classList.toggle('zoomed', view.z > 1.01);
+        zoomOut.disabled = view.z <= ZMIN + 1e-6;
+        zoomIn.disabled = view.z >= ZMAX - 1e-6;
+      }
+
+      /* масштабирование относительно точки (px от левого верхнего края области) */
+      function zoomAt(z, px, py) {
+        const oldK = baseK * view.z;
+        const newZ = clamp(z, ZMIN, ZMAX);
+        if (Math.abs(newZ - view.z) < 1e-6) return;
+        const newK = baseK * newZ;
+        const cx = stage.clientWidth / 2;
+        const cy = stage.clientHeight / 2;
+        const ax = (px === undefined ? cx : px);
+        const ay = (py === undefined ? cy : py);
+        /* сохраняем точку под курсором/пальцем */
+        const lx = (ax - view.tx) / oldK;
+        const ly = (ay - view.ty) / oldK;
+        view.z = newZ;
+        view.tx = ax - lx * newK;
+        view.ty = ay - ly * newK;
+        applyView();
+      }
+
+      /* пересчёт базового масштаба под текущий размер области — БЕЗ сброса зума */
+      function refit() {
+        const h = stage.clientHeight;
+        const w = stage.clientWidth;
+        if (!h || !w) return;
+        baseK = Math.max(0.12, Math.min(w / W, h / H));
+        applyView();
+      }
+
+      /* «Вписать»: базовый масштаб + зум = 1 (кнопка ⤢) */
       function fit() {
         const h = stage.clientHeight;
         const w = stage.clientWidth;
         if (!h || !w) return;
-        let k = Math.min(1, Math.min(w / W, h / H));
-        /* на узких экранах не мельчим: карту можно пролистать пальцем */
-        const minK = w < 700 ? 0.62 : 0.42;
-        k = Math.max(minK, k);
-        stage.style.overflowX = (W * k > w + 2) ? 'auto' : 'hidden';
-        map.style.transformOrigin = 'top left';
-        map.style.transform = 'scale(' + k.toFixed(4) + ')';
-        map.style.marginLeft = Math.max(0, (w - W * k) / 2).toFixed(1) + 'px';
-        map.style.marginTop = (W * k > w + 2) ? '0px' : Math.max(0, (h - H * k) / 2).toFixed(1) + 'px';
+        baseK = Math.max(0.12, Math.min(w / W, h / H));
+        view.z = 1;
+        applyView();
       }
-      fit();
-      window.addEventListener('resize', fit);
-      setTimeout(fit, 60);
+
+      applyView();
+      window.addEventListener('resize', refit);
+      setTimeout(refit, 60);
+
+      /* ---------- кнопки ---------- */
+      zoomIn.addEventListener('click', () => zoomAt(view.z * 1.35));
+      zoomOut.addEventListener('click', () => zoomAt(view.z / 1.35));
+      zoomFit.addEventListener('click', fit);
+
+      /* ---------- колесо мыши / трекпад ---------- */
+      stage.addEventListener('wheel', (e) => {
+        if (!e.deltaY) return;
+        e.preventDefault();
+        const r = stage.getBoundingClientRect();
+        const f = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+        zoomAt(view.z * f, e.clientX - r.left, e.clientY - r.top);
+      }, { passive: false });
+
+      /* ---------- тач: щипок = зум, один палец = панорама ---------- */
+      let pinch = null;
+      let drag = null;
+      let lastTap = 0;
+
+      const dist = (t) => {
+        const dx = t[0].clientX - t[1].clientX;
+        const dy = t[0].clientY - t[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy) || 1;
+      };
+      const mid = (t) => {
+        const r = stage.getBoundingClientRect();
+        return {
+          x: (t[0].clientX + t[1].clientX) / 2 - r.left,
+          y: (t[0].clientY + t[1].clientY) / 2 - r.top
+        };
+      };
+
+      stage.addEventListener('touchstart', (e) => {
+        const tt = e.touches;
+        if (!tt || !tt.length) return;
+        if (tt.length === 2) {
+          pinch = { d: dist(e.touches), z: view.z };
+          drag = null;
+          stage.classList.add('grabbing');
+        } else if (tt.length === 1) {
+          const now = Date.now();
+          if (now - lastTap < 300) {           /* двойной тап — приблизить/сбросить */
+            lastTap = 0;
+            if (view.z > 1.01) fit(); else zoomAt(2, tt[0].clientX - stage.getBoundingClientRect().left, tt[0].clientY - stage.getBoundingClientRect().top);
+            return;
+          }
+          lastTap = now;
+          drag = { x: tt[0].clientX, y: tt[0].clientY, tx: view.tx, ty: view.ty };
+          if (view.z > 1.01) stage.classList.add('grabbing');
+        }
+      }, { passive: true });
+
+      stage.addEventListener('touchmove', (e) => {
+        const tt = e.touches;
+        if (!tt || !tt.length) return;
+        if (tt.length === 2 && pinch) {
+          e.preventDefault();
+          const z = pinch.z * (dist(tt) / pinch.d);
+          const m = mid(tt);
+          zoomAt(z, m.x, m.y);
+        } else if (drag && tt.length === 1 && view.z > 1.01) {
+          e.preventDefault();
+          view.tx = drag.tx + (tt[0].clientX - drag.x);
+          view.ty = drag.ty + (tt[0].clientY - drag.y);
+          applyView();
+        }
+      }, { passive: false });
+
+      const endTouch = () => {
+        pinch = null;
+        drag = null;
+        stage.classList.remove('grabbing');
+      };
+      stage.addEventListener('touchend', endTouch);
+      stage.addEventListener('touchcancel', endTouch);
+
+      let lastSize = { w: 0, h: 0 };
+      const onResize = () => {
+        const w = stage.clientWidth;
+        const h = stage.clientHeight;
+        if (!w || !h) return;
+        if (w !== lastSize.w || h !== lastSize.h) {
+          lastSize = { w: w, h: h };
+          refit();          /* размер изменился — пересчитываем базу, зум сохраняем */
+        }
+      };
+      setTimeout(onResize, 80);
 
       return {
         update(state) {
-          fit();
+          onResize();
           tCores.set(G.fmt.num(state.res.cores || 0));
           tNodes.set(mech.bought(state) + ' / ' + mech.total());
           tGain.set('+' + G.prestige.gain(state) + ' ◆');

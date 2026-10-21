@@ -83,6 +83,17 @@ const PREP = `
     console.log('  снято:', path.relative(ROOT, file));
   }
 
+  /* дерево в приближении (проверка зума) */
+  await page.evaluate(() => {
+    const btn = Array.from(document.querySelectorAll('#docks .dock')).find((b) => b.dataset.id === 'tree');
+    if (btn) btn.click();
+    const zin = document.querySelector('#board .tree-zoom-btn');
+    if (zin) { zin.click(); zin.click(); zin.click(); }
+  });
+  await new Promise((r) => setTimeout(r, 260));
+  await page.screenshot({ path: path.join(OUT, 'tree-zoom.png') });
+  console.log('  снято: tools/shots/tree-zoom.png');
+
   /* мобильный вид */
   await page.setViewport({ width: 420, height: 860, deviceScaleFactor: 1 });
   await page.evaluate(() => {

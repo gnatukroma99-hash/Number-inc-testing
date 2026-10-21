@@ -356,6 +356,60 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('появляется попап-тост', /ТестДостижение/.test(allToasts),
     'тостов в ленте: ' + doc.querySelectorAll('#toasts .toast').length);
 
+  section('5a1b. Зум и панорама дерева (телефон + мышь)');
+  /* нужна смонтированная доска дерева */
+  state.res.cores = 1e6;
+  G.upgrades.buy(state, G.registry.upgrade('tree_tempo'));
+  click(dockBtns().find((b) => b.dataset.id === 'tree'));
+  G.ui.app.render(state);
+  const zbtns = Array.from(doc.querySelectorAll('#board .tree-zoom-btn'));
+  /* jsdom не считает layout — задаём размер области руками, чтобы fit() работал */
+  const fakeStage = doc.querySelector('#board .tree-stage');
+  Object.defineProperty(fakeStage, 'clientWidth', { value: 900, configurable: true });
+  Object.defineProperty(fakeStage, 'clientHeight', { value: 520, configurable: true });
+  G.ui.app.render(state);   // повторный fit() по новому размеру
+  check('кнопки зума есть (+ − ⤢)', zbtns.length === 3, zbtns.map((b) => textOf(b)).join(' '));
+  const treeMap = doc.querySelector('#board .tree-map');
+  const scaleOf = () => {
+    const m = /scale\(([\d.]+)\)/.exec(treeMap.style.transform || '');
+    return m ? Number(m[1]) : 0;
+  };
+  const s0 = scaleOf();
+  check('карта вписана в область', s0 > 0 && s0 < 1.2, 'scale=' + s0.toFixed(3));
+  click(zbtns[0]);                              // «+»
+  const s1 = scaleOf();
+  check('кнопка + приближает', s1 > s0, s0.toFixed(3) + ' → ' + s1.toFixed(3));
+  click(zbtns[1]);                              // «−»
+  check('кнопка − отдаляет', scaleOf() < s1, 'scale=' + scaleOf().toFixed(3));
+  click(zbtns[0]); click(zbtns[0]);
+  check('есть сдвиг панорамы', /translate\(/.test(treeMap.style.transform || ''),
+    treeMap.style.transform);
+  click(zbtns[2]);                              // «вписать»
+  check('кнопка ⤢ возвращает масштаб', Math.abs(scaleOf() - s0) < 1e-3, 'scale=' + scaleOf().toFixed(3));
+
+  /* колесо мыши */
+  const stage = doc.querySelector('#board .tree-stage');
+  const wheelBefore = scaleOf();
+  stage.dispatchEvent(new win.WheelEvent('wheel', { deltaY: -120, clientX: 400, clientY: 300, bubbles: true, cancelable: true }));
+  check('колесо мыши приближает', scaleOf() > wheelBefore, wheelBefore.toFixed(3) + ' → ' + scaleOf().toFixed(3));
+  stage.dispatchEvent(new win.WheelEvent('wheel', { deltaY: 120, clientX: 400, clientY: 300, bubbles: true, cancelable: true }));
+
+  /* щипок двумя пальцами (как на телефоне) */
+  const touch = (x1, y1, x2, y2) => ([
+    { clientX: x1, clientY: y1, identifier: 1 },
+    { clientX: x2, clientY: y2, identifier: 2 }
+  ]);
+  const pinchBefore = scaleOf();
+  const evStart = new win.Event('touchstart', { bubbles: true });
+  evStart.touches = touch(320, 300, 380, 300);
+  stage.dispatchEvent(evStart);
+  const evMove = new win.Event('touchmove', { bubbles: true, cancelable: true });
+  evMove.touches = touch(260, 300, 440, 300);   // пальцы разъехались → приблизить
+  stage.dispatchEvent(evMove);
+  check('щипок двумя пальцами приближает', scaleOf() > pinchBefore, pinchBefore.toFixed(3) + ' → ' + scaleOf().toFixed(3));
+  stage.dispatchEvent(new win.Event('touchend', { bubbles: true }));
+  click(zbtns[2]);
+
   section('5a2. Эффекты дерева: частицы у купленных узлов и поток света');
   /* возвращаемся на доску дерева и покупаем корень — иначе нечего подсвечивать */
   state.res.cores = 1e6;
