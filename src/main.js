@@ -60,6 +60,8 @@
         }
       }
 
+      try { G.automation.update(s, dt); } catch (e) { console.error('[auto]', e); }
+
       s.lastSeen = Date.now();
 
       if (s.settings.autosave) {

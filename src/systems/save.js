@@ -49,8 +49,10 @@
 
     /* миграции между версиями сейва */
     migrate(state, from) {
-      if (from < G.SAVE_VERSION) {
-        /* заготовка: сюда добавляются шаги миграции */
+      if (from < 2) {
+        /* v2: ◆ Ядра и перерождение — новые поля, старые сейвы получают дефолты */
+        if (typeof state.meta.totalRuns !== 'number') state.meta.totalRuns = 0;
+        if (typeof state.meta.bestD !== 'number') state.meta.bestD = 0;
       }
       state.version = G.SAVE_VERSION;
       return state;

@@ -6,7 +6,7 @@
 (function (G) {
   'use strict';
 
-  G.SAVE_VERSION = 1;
+  G.SAVE_VERSION = 2;
 
   const DEFAULT_SETTINGS = {
     numberFormat: 'short',     // short | sci | full
@@ -58,7 +58,8 @@
         achievements: [],
         unlockedMechanics: [],
         autoOptimizers: {},
-        totalRuns: 0
+        totalRuns: 0,
+        bestD: 0
       }
     };
   };

@@ -6,6 +6,7 @@
   /* ============ РЕСУРСЫ ============ */
   G.registry.addResource({ id: 'energy', name: '⚡ Энергия', scope: 'run', value: 0 });
   G.registry.addResource({ id: 'prime', name: '❖ ПРАЙМ', scope: 'tier', value: 0 });
+  G.registry.addResource({ id: 'cores', name: '◆ Ядра', scope: 'meta', value: 0 });
 
   /* ============ БАЗОВЫЕ АПГРЕЙДЫ РОСТА ============ */
   G.registry.addUpgrades([
@@ -90,7 +91,7 @@
      Балансируется так, чтобы 1e308 достигалось за ~85 минут со всеми механиками. */
   G.content.hiddenSoftcap = {
     knee: 5,
-    span: 18.2,
+    span: 17.5,
     power: 1.5,
     formula: '1 / (1 + pow(max(0, D - knee) / span, power))'
   };

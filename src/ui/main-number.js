@@ -6,7 +6,6 @@
 
   const refs = {};
   let lastDrawn = '';
-  let lastPulse = 0;
 
   function init() {
     refs.n = document.getElementById('heroN');
@@ -24,7 +23,7 @@
     for (const r of G.registry.allResources()) {
       const icon = G.ui.components.resIcon(r.id);
       const val = G.h('span', { class: 'res-val' });
-      const box = G.h('div', { class: 'res' + (r.id === 'prime' ? ' prime' : ''), title: r.name }, [
+      const box = G.h('div', { class: 'res' + (r.id === 'prime' ? ' prime' : '') + (r.id === 'cores' ? ' cores' : ''), title: r.name }, [
         G.h('span', { class: 'res-icon', text: icon }),
         val
       ]);
@@ -41,21 +40,12 @@
     document.body.classList.toggle('no-anim', !s.animations);
   }
 
-  let lastSteps = 0;
-
   function update(state, opts) {
     const mode = state.settings.numberFormat;
     const txt = G.fmt.bn(G.growth.displayN(state), mode);
     if (txt !== lastDrawn) {
       refs.n.textContent = txt;
       lastDrawn = txt;
-      const steps = state.stats.steps || 0;
-      const now = performance.now();
-      if (state.settings.animations && G.dom.pulse && steps !== lastSteps && now - lastPulse > 220) {
-        lastPulse = now;
-        G.dom.pulse(refs.n);
-      }
-      lastSteps = steps;
     }
 
     const D = G.growth.displayD(state);

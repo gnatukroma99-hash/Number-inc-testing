@@ -191,7 +191,10 @@
       return G.BN.fromLog10(Math.max(0, W.displayD(state)));
     },
 
-    /* --- один шаг симуляции --- */
+    /* --- один шаг симуляции ---
+       Рост НЕПРЕРЫВНЫЙ, как в референсе «Watch Numbers Grow»:
+       за dt число умножается на M^(dt/ΔT), а не скачком раз в ΔT.
+       Средний темп тот же, но число и его цифры меняются каждый кадр. */
     tick(state, dt) {
       const t0 = state.stats.playtime || 0;
       state.stats.playtime = t0 + dt;
@@ -200,34 +203,23 @@
       const M = W.M(state);
 
       const dBefore = W.D(state);
+      const b = W.barrierFactor(state);
+      let dAfter = dBefore;
 
-      state.tickAcc += dt;
-      let guard = 0;
-      let steps = 0;
-      while (state.tickAcc >= dT && guard < 500) {
-        state.tickAcc -= dT;
-        /* барьер плавно «сжимает» множитель к 1, а не режет его в ноль */
-        const b = W.barrierFactor(state);
+      if (b > 0) {
         /* барьер режет ПРИРАЩЕНИЕ ЦИФР, а не множитель: софткап должен
            работать и при огромном M, иначе он незаметен */
-        if (b > 0) {
-          const dNow = W.D(state);
-          state.N = G.BN.fromLog10(Math.max(0, dNow + Math.log10(M) * b));
-        }
-        steps++;
-        guard++;
+        dAfter = Math.max(0, dBefore + Math.log10(M) * (dt / dT) * b);
+        state.N = G.BN.fromLog10(dAfter);
       }
 
-      const dAfter = W.D(state);
       state.D = dAfter;
       if (state.D > (state.stats.bestD || 0)) state.stats.bestD = state.D;
 
-      /* плавный показ: растягиваем скачок на интервал между умножениями */
-      if (steps > 0) {
-        state.stats.steps = (state.stats.steps || 0) + steps;
-        const span = steps === 1 && dT > dt ? dT : Math.max(dt, steps * dT);
-        state.disp = { from: dBefore, to: dAfter, t0: t0, dur: Math.max(0.03, span) };
-      }
+      if (dAfter > dBefore) state.stats.steps = (state.stats.steps || 0) + 1;
+
+      /* между тиками логики (20 Гц) дорисовываем плавно на 30 Гц */
+      state.disp = { from: dBefore, to: dAfter, t0: t0, dur: Math.max(0.03, dt) };
 
       /* энергия всегда капает — старт не должен быть мёртвым */
       state.res.energy = (state.res.energy || 0) + W.energyRate(state) * dt;

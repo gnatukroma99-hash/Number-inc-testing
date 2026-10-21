@@ -42,6 +42,9 @@ const S = {
   lvl: {},
   Ssum: 67,
   q: 6,
+  d1: 1,
+  rho: 1,
+  z: 0,
   sampleLeft: 4,
   nextShop: 0,
   nextReport: 0
@@ -60,6 +63,9 @@ const UPG = {
   energy_x2_7: { res: 'energy', base: 1e7, growth: 1, max: 1, energyMult: 2 },
   energy_x2_8: { res: 'energy', base: 8e7, growth: 1, max: 1, energyMult: 2 },
   sd:       { res: 'energy', base: 60,    growth: 1.9,  max: 20 },
+  bfd:      { res: 'energy', base: 800,   growth: 2.0,  max: 15 },
+  rho_root: { res: 'energy', base: 1200,  growth: 2.1,  max: 15 },
+  zero_leak:{ res: 'energy', base: 2500,  growth: 2.2,  max: 10 },
   sd_stab:  { res: 'energy', base: 300,   growth: 2.5,  max: 10 },
   pq:       { res: 'energy', base: 500,   growth: 2.0,  max: 15 },
   pq_jack:  { res: 'energy', base: 5000,  growth: 3.2,  max: 5 },
@@ -74,7 +80,7 @@ const UPG = {
 
 const HIDDEN = {
   knee: Number(process.env.HK || 5),
-  span: Number(process.env.HS || 18.2),
+  span: Number(process.env.HS || 17.5),
   power: Number(process.env.HP || 1.5)
 };
 
@@ -89,14 +95,20 @@ const costD = (id) => UPG[id].costD * Math.pow(UPG[id].growthD, lvl(id));
 const period = () => 4 + 2 * lvl('sd_stab');
 
 function resample() {
-  let sum = 0, q = 0;
+  let sum = 0, q = 0, z = 0;
+  let d1 = 1;
   for (let i = 0; i < 15; i++) {
     const d = Math.floor(rnd() * 10);
+    if (i === 0) d1 = d || 1;
     sum += d;
+    if (d === 0) z++;
     if (d === 2 || d === 3 || d === 5 || d === 7) q++;
   }
   S.Ssum = sum;
   S.q = q;
+  S.d1 = d1;
+  S.z = z;
+  S.rho = 1 + ((sum - 1 + 900) % 9);
 }
 
 function shopProduct(kind) {
@@ -123,7 +135,11 @@ function M() {
   if (S.q >= 15 && lvl('pq_jack')) mPq *= 1 + 2 * lvl('pq_jack');
   const pbase = 1.25 + 0.03 * lvl('pm_base');
   const mPr = Math.pow(pbase, S.primeEarned);
-  const mech = sSd * mPq * mPr;
+  let mBf = 1, mRho = 1, mZ = 1;
+  if (lvl('bfd')) mBf = 1 + 0.5 * lvl('bfd') * Math.log10(1 + 1 / S.d1) / Math.log10(2);
+  if (lvl('rho_root')) mRho = 1 + 0.06 * S.rho * lvl('rho_root');
+  if (lvl('zero_leak')) mZ = 1 + 0.03 * S.z * lvl('zero_leak');
+  const mech = sSd * mPq * mPr * mBf * mRho * mZ;
   let exp = shopProduct('pow');
   if (!isFinite(exp) || exp < 1) exp = 1;
   exp = Math.min(exp, 1.5);

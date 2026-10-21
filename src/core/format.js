@@ -36,8 +36,13 @@
         return sciStr(a.m, a.e);
       }
 
-      /* short (по умолчанию) */
-      if (l < 3) return String(Math.round(G.BN.toNumber(a)));
+      /* short (по умолчанию): малые числа с дробной частью — иначе рост «скачет» 1→2 */
+      if (l < 3) {
+        const v = G.BN.toNumber(a);
+        if (v < 10) return v.toFixed(2);
+        if (v < 100) return v.toFixed(1);
+        return String(Math.round(v));
+      }
       const tier = Math.floor(l / 3);
       if (tier < SHORT.length && l < 100) {
         const v = G.BN.toNumber(a) / Math.pow(10, tier * 3);

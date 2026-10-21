@@ -20,8 +20,10 @@
     const tRate = C().tile('Скорость роста', 'accent');
     const tBest = C().tile('Рекорд цифр');
 
-    const upg = G.registry.upgradesOf('core')
-      .map((u) => C().upgradeRow(state, u));
+    const all = G.registry.upgradesOf('core');
+    const baseUpg = all.filter((u) => !u.autoMech && !u.energyMult).map((u) => C().upgradeRow(state, u));
+    const x2Upg = all.filter((u) => u.energyMult && !u.autoMech).map((u) => C().upgradeRow(state, u));
+    const autoUpg = all.filter((u) => u.autoMech).map((u) => C().upgradeRow(state, u));
 
     const el = G.h('div', { class: 'board-body' }, [
       G.h('p', { class: 'board-hint', text: 'Базовый рост числа. Всё остальное — надстройки над ним.' }),
@@ -32,9 +34,13 @@
         G.h('code', { text: 'ΔT = 60 / (1 + speedBonus) · dtMult' }),
         G.h('code', { text: 'E = 0.4 · (1 + log10 N)² · 1.25^lvl' })
       ]),
-      C().section('Апгрейды', upg.map((u) => u.el))
+      C().section('Рост', baseUpg.map((u) => u.el)),
+      C().section('Одноразовые ×2 ⚡', x2Upg.map((u) => u.el)),
+      C().section('Автоматизация (навсегда)', autoUpg.map((u) => u.el))
     ]);
     root.appendChild(el);
+
+    const upg = baseUpg.concat(x2Upg, autoUpg);
 
     return {
       update(s) {
@@ -65,6 +71,8 @@
     if (d.id === 'primeranks') return 'нужно 2 цифры (N ≥ 100)';
     if (d.id === 'digitsum') return 'нужно 0.5 цифры (N ≥ 3)';
     if (d.id === 'shop') return 'нужно 2 цифры (N ≥ 100)';
+    if (d.id === 'analysis') return 'нужно 3 цифры (N ≥ 1000)';
+    if (d.id === 'prestige') return 'нужно 8 цифр';
     return 'заблокировано';
   }
 

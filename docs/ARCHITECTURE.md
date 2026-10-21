@@ -42,6 +42,8 @@ src/
 │   ├── sampling.js         G.sampling — «сэмпл» статистик (окно 4 с)
 │   ├── upgrades.js         G.upgrades — покупка/цены/эффекты
 │   ├── growth.js           G.growth — множитель, ΔT, тик, энергия, барьеры
+│   ├── prestige.js         G.prestige — P1, ◆ Ядра, сброс run
+│   ├── automation.js       G.automation — автопокупки по флагу autoMech
 │   ├── save.js             G.save — serialize/migrate/offline/export
 │   ├── prestige.js         (план) P1 / БУМ / ПРОБОЙ
 │   ├── automation.js       (план) автоуровни auto1..auto3
@@ -55,7 +57,9 @@ src/
 │   ├── digitsum/{index.js,board.js}      ✅
 │   ├── primefit/{index.js,board.js}      ✅
 │   ├── primeranks/{index.js,board.js}    ✅
-│   └── shop/{index.js,board.js}          ✅ (цена в цифрах, за само число)
+│   ├── shop/{index.js,board.js}          ✅ (цена в цифрах, за само число)
+│   ├── analysis/{index.js,board.js}      ✅ (Бенфорд + корень + нули, одна доска)
+│   └── prestige/{index.js,board.js}      ✅ (P1, ◆)
 └── ui/
     ├── components.js       переиспользуемые куски (tile, bar, digitRow, upgradeRow)
     ├── toasts.js
@@ -124,7 +128,10 @@ G.registry.addUpgrade({
   energyMult: '2',          // множитель энергии
 
   /* альтернативная цена — В ЦИФРАХ (магазин «за число») */
-  costD: '0.80 * 1.8 ** lvl', minD: 18
+  costD: '0.80 * 1.8 ** lvl', minD: 18,
+
+  /* автоматизация: если куплен — доска сама покупает свои апгрейды */
+  autoMech: 'digitsum', scope: 'meta'
 });
 ```
 
@@ -187,7 +194,7 @@ meta — Δ/Ψ/Ω, auto3, ачивки, разблокировки, настро
 
 ## 7. План контента
 
-### Ярус 1 — 20 механик (✅ сделано 3 + магазин `shop` вне списка)
+### Ярус 1 — 20 механик (✅ сделано 3 + `analysis`, `shop`, `prestige`, авто — вне списка)
 
 | # | id | Название | Формула ядра | Статус |
 |---|---|---|---|---|
