@@ -809,3 +809,61 @@ body.hide-formulas .formula-card { display: none; }
   cursor: default;
 }
 .tree-rules code { color: #ffd166; }
+
+/* ---------- режим разработчика: ускорение игры (v0.4.1) ---------- */
+
+.dev-on #heroRate { color: var(--warn); }
+
+.dev-speed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--text);
+}
+.dev-speed.off { opacity: .4; pointer-events: none; }
+.dev-speed-label { flex: 0 0 auto; color: var(--dim); }
+.dev-speed input[type="range"] {
+  flex: 1 1 auto;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  outline: none;
+  cursor: pointer;
+}
+.dev-speed input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #eafff9;
+  border: 2px solid var(--accent);
+  box-shadow: 0 2px 8px rgba(53, 226, 192, .4);
+}
+.dev-speed input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #eafff9;
+  border: 2px solid var(--accent);
+}
+.dev-speed-val {
+  flex: 0 0 auto;
+  min-width: 46px;
+  text-align: right;
+  font-weight: 800;
+  color: var(--warn);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- зеркало ⧗ (v0.6.0) ---------- */
+
+.digit.mirror-ok {
+  color: #0b1a1a;
+  background: linear-gradient(180deg, #b8ffe9, var(--accent));
+  border-color: var(--accent);
+  font-weight: 800;
+}

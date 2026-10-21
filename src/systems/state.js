@@ -7,7 +7,7 @@
   'use strict';
 
   G.SAVE_VERSION = 2;
-  G.VERSION = '0.4.0';
+  G.VERSION = '0.6.0';
 
   const DEFAULT_SETTINGS = {
     numberFormat: 'short',     // short | sci | full
@@ -16,6 +16,8 @@
     autosave: true,
     autosaveInterval: 10,      // сек
     scientificHints: true,
+    devMode: false,            // режим разработчика: ускорение всей игры
+    devSpeed: 1,               // 1..100 (см. systems/timescale.js)
     cloudAuto: false,           // автосинхронизация с GitHub Gist
     cloudInterval: 120          // сек
   };

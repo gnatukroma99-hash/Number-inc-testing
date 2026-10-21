@@ -148,6 +148,25 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('доски в навигации', doc.querySelectorAll('#docks .dock').length >= 1,
     doc.querySelectorAll('#docks .dock').length + ' шт');
 
+  section('2b. Режим разработчика (ускорение игры до ×100)');
+  check('clamp 1..100', G.timescale.clamp(0) === 1 && G.timescale.clamp(101) === 100 &&
+    G.timescale.clamp(37) === 37 && G.timescale.clamp('abc') === 1,
+    '0->1, 101->100, 37->37, abc->1');
+  check('без режима — ×1', G.timescale.scale(state) === 1);
+  const baseD = G.growth.D(state);
+  await sleep(700);
+  const slowDelta = G.growth.D(state) - baseD;
+  state.settings.devMode = true;
+  state.settings.devSpeed = 100;
+  check('применить ×100 к dt', Math.abs(G.timescale.apply(state, 0.05) - 5) < 1e-9);
+  const fastD = G.growth.D(state);
+  await sleep(700);
+  const fastDelta = G.growth.D(state) - fastD;
+  check('×100 реально ускоряет рост', fastDelta > slowDelta * 10,
+    '1×: +' + slowDelta.toExponential(2) + '  ·  100×: +' + fastDelta.toExponential(2));
+  state.settings.devMode = false;
+  state.settings.devSpeed = 1;
+
   section('3. Все доски: клик по вкладке + render');
   /* даём ресурсов и цифр, чтобы открылись все доски */
   G.debug.give(1e30);
@@ -157,8 +176,13 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   await sleep(120);
 
   const dockBtns = () => Array.from(doc.querySelectorAll('#docks .dock'));
+  /* «Решето» открывается только узлом дерева ◆ — покупаем узел, чтобы доска была доступна */
+  state.res.cores = 1e4;
+  G.upgrades.buy(state, G.registry.upgrade('tree_auto_all'));   // предок узла «Решето»
+  G.upgrades.buy(state, G.registry.upgrade('tree_sieve'));
+  check('узел «Решето» открыл механику', G.registry.mechanic('sieve').isUnlocked(state));
   const ids = dockBtns().map((b) => b.dataset.id);
-  check('открыты все 8 досок', ids.length === 8, ids.join(','));
+  check('досок на навигации', ids.length === 10, ids.join(','));
 
   for (const id of ids) {
     const btn = dockBtns().find((b) => b.dataset.id === id);
@@ -169,7 +193,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   }
 
   section('4. Покупки кликами (все кнопки всех досок)');
-  const groups = ['core', 'digitsum', 'primefit', 'primeranks', 'analysis', 'shop', 'tree'];
+  const groups = ['core', 'digitsum', 'primefit', 'primeranks', 'analysis', 'shop', 'tree', 'sieve'];
   const before = {};
   for (const g of groups) {
     before[g] = 0;
@@ -199,7 +223,12 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
 
   section('5. Дерево ◆ (узлы, предки, цена в ядрах)');
   const tree = G.registry.upgradesOf('tree');
-  check('узлов в дереве', tree.length === 8, tree.length + ' шт');
+  check('узлов в дереве', tree.length === 13, tree.length + ' шт');
+  check('ярусов дерева', (G.content.tree.tiers || []).length === 3,
+    (G.content.tree.tiers || []).map((t) => t.id).join(','));
+  const deep = tree.filter((u) => u.tier === 't3');
+  check('ярус III не дешевле 60 ◆', deep.length >= 4 &&
+    deep.every((u) => u.base >= 60), deep.map((u) => u.id + ':' + u.base).join(' '));
   const soft = G.registry.upgrade('tree_softcap');
   const tempo = G.registry.upgrade('tree_tempo');
   if (G.lvl(state, 'tree_tempo')) state.upg.tree_tempo = 0;
@@ -207,8 +236,8 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   state.upg.tree_tempo = 1;
   check('с предком узел доступен', G.upgrades.canBuy(state, soft) === true);
   state.res.cores = 500;
-  const paid = G.lvl(state, 'tree_headstart');
   state.upg.tree_headstart = 0;
+  state.upg.tree_headstart2 = 0;
   state.N = G.BN.fromLog10(15); state.D = 15;
   const coresBefore = state.res.cores;
   G.prestige.perform(state);
@@ -218,6 +247,12 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const g2 = G.prestige.perform(state);
   check('стартовый рывок ур.3 → старт D=6', Math.abs(G.growth.D(state) - 6) < 0.01,
     'D=' + G.growth.D(state).toFixed(2) + ', ядер +' + g2);
+  state.upg.tree_headstart2 = 2;
+  state.N = G.BN.fromLog10(15); state.D = 15;
+  G.prestige.perform(state);
+  check('рывок II ур.2 → +20 цифр (итого 26)', Math.abs(G.growth.D(state) - 26) < 0.01,
+    'D=' + G.growth.D(state).toFixed(2));
+  state.upg.tree_headstart2 = 0;
   check('ядра не сбрасываются', state.res.cores >= coresBefore, 'cores=' + state.res.cores);
   /* заблокированный узел нельзя купить кликом */
   state.upg.tree_softcap = 0;
@@ -232,6 +267,63 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('клик по закрытому узлу ничего не купил', G.lvl(state, 'tree_softcap') === 0);
   check('цена узла — в ядрах', /\u25c6/.test(textOf(doc.querySelector('#board .tree-grid .node-buy'))),
     textOf(doc.querySelector('#board .tree-grid .node-buy')));
+
+  section('5b. Решето (новая механика из дерева)');
+  const sv = G.registry.mechanic('sieve');
+  const fresh = G.newState();
+  G.initResources(fresh);
+  check('без узла доска закрыта', sv.isUnlocked(fresh) === false);
+  check('после узла доска открыта', sv.isUnlocked(state) === true);
+  state.mech.sieve = { idx: 0, found: 0, acc: 0 };
+  const primeBefore = state.res.prime || 0;
+  for (let i = 0; i < 60; i++) { if (sv.isUnlocked(state)) sv.tick(state, 1); }
+  const sFound = state.mech.sieve.found;
+  check('решето находит простые', sFound > 0, sFound + ' шт за 60 с');
+  check('решето приносит ❖', (state.res.prime || 0) > primeBefore,
+    primeBefore + ' → ' + state.res.prime);
+  check('урожай ❖ за уровень', sv.yieldPer(state) >= 1, '×' + sv.yieldPer(state));
+  state.res.energy = 1e30;
+  G.upgrades.buy(state, G.registry.upgrade('sv_power'));
+  check('«Плотность» даёт множитель к M', sv.mult(state) > 1, '×' + sv.mult(state).toFixed(2));
+  const svRate = sv.rate(state);
+  check('скорость решета > 0', svRate > 0, svRate.toFixed(2) + ' простых/с');
+  check('сброс решета при перерождении', (function () {
+    state.N = G.BN.fromLog10(15); state.D = 15;
+    G.prestige.perform(state);
+    return (state.mech.sieve ? state.mech.sieve.found : 0) === 0;
+  })());
+
+  section('5c. Зеркало (вторая механика из дерева)');
+  const mr = G.registry.mechanic('mirror');
+  check('без узла зеркало закрыто', mr.isUnlocked(G.newState()) === false);
+  check('после узла зеркало открыто', mr.isUnlocked(state) === true);
+  const setSample = (digits) => {
+    state.stats.samples = (state.stats.samples || 0) + 1;
+    state.sample = { S: 0, q: 0, z: 0, d1: digits[0], rho: 1, digits: digits, duration: 4, remaining: 4 };
+    mr.tick(state);
+  };
+  state.mech.mirror = { sym: 0, grain: 0, bestSym: 0, pairs: 0, lastSample: -1 };
+  state.upg.mr_deep = 0;
+  setSample([1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1]);
+  check('окно по умолчанию = 2 пары', state.mech.mirror.pairs === 2, 'пар: ' + state.mech.mirror.pairs);
+  check('симметрия считается', state.mech.mirror.sym === 2, 'sym=' + state.mech.mirror.sym);
+  state.upg.mr_deep = 5;
+  setSample([1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1]);
+  check('палиндром при окне 7 → 7 пар', state.mech.mirror.sym === 7 && state.mech.mirror.pairs === 7,
+    'sym=' + state.mech.mirror.sym + ', пар=' + state.mech.mirror.pairs);
+  check('накоплено растёт', state.mech.mirror.grain >= 7, 'grain=' + state.mech.mirror.grain);
+  setSample([1, 9, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6]);
+  check('несимметричная мантисса → sym 0', state.mech.mirror.sym === 0, 'sym=' + state.mech.mirror.sym);
+  state.res.energy = 1e30;
+  G.upgrades.buy(state, G.registry.upgrade('mr_power'));
+  G.upgrades.buy(state, G.registry.upgrade('mr_echo'));
+  setSample([1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1]);
+  check('множитель зеркала > 1', mr.mult(state) > 1, '×' + mr.mult(state).toFixed(2));
+  check('зеркало сбрасывается перерождением', (function () {
+    state.N = G.BN.fromLog10(15); state.D = 15;
+    G.prestige.perform(state);
+    return (state.mech.mirror ? state.mech.mirror.grain : 0) === 0;
+  })());
 
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
@@ -257,6 +349,25 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     if (r.tagName === 'INPUT' || r.getAttribute('data-fmt') || r.getAttribute('data-pos')) click(r);
   }
   check('модалка не падает при переключениях', errors.length === 0, errors.join(' | '));
+
+  /* ползунок ускорения в настройках */
+  const range = doc.querySelector('#modal-root input[type="range"]');
+  check('ползунок ускорения есть', !!range, range ? 'min=' + range.min + ' max=' + range.max : '');
+  if (range) {
+    range.value = '50';
+    range.dispatchEvent(new win.Event('input', { bubbles: true }));
+  }
+  check('ползунок меняет devSpeed', state.settings.devSpeed === 50,
+    'devSpeed=' + state.settings.devSpeed);
+  const devToggle = Array.from(doc.querySelectorAll('#modal-root input[type="checkbox"]'))
+    .find((i) => /Ускорение/.test(i.closest('label') ? i.closest('label').textContent : ''));
+  check('есть переключатель ускорения', !!devToggle);
+  if (devToggle) { devToggle.checked = true; devToggle.dispatchEvent(new win.Event('change', { bubbles: true })); }
+  check('ускорение включается из UI', state.settings.devMode === true);
+  check('в шапке виден ×50', /\u00d750/.test(textOf(doc.getElementById('heroRate'))),
+    textOf(doc.getElementById('heroRate')));
+  if (devToggle) { devToggle.checked = false; devToggle.dispatchEvent(new win.Event('change', { bubbles: true })); }
+  state.settings.devSpeed = 1;
   win.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape' }));
   check('Esc закрывает настройки', !doc.querySelector('#modal-root .modal'));
 

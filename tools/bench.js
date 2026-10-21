@@ -23,7 +23,7 @@ const FILES = [
   'src/mechanics/digitsum/index.js', 'src/mechanics/primefit/index.js',
   'src/mechanics/primeranks/index.js', 'src/mechanics/analysis/index.js',
   'src/mechanics/shop/index.js', 'src/mechanics/prestige/index.js',
-  'src/mechanics/tree/index.js'
+  'src/mechanics/tree/index.js', 'src/mechanics/sieve/index.js', 'src/mechanics/mirror/index.js'
 ];
 
 const sandbox = {
@@ -39,7 +39,7 @@ for (const f of FILES) {
 }
 const G = sandbox.window.G;
 
-const GROUPS = ['core', 'digitsum', 'primefit', 'primeranks', 'analysis', 'shop', 'tree'];
+const GROUPS = ['core', 'digitsum', 'primefit', 'primeranks', 'analysis', 'shop', 'tree', 'sieve', 'mirror'];
 
 function buyAll(state) {
   for (const g of GROUPS) {

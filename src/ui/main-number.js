@@ -38,6 +38,7 @@
     document.body.classList.remove('pos-top', 'pos-bottom', 'pos-minimal');
     document.body.classList.add('pos-' + (s.numberPosition || 'top'));
     document.body.classList.toggle('no-anim', !s.animations);
+    document.body.classList.toggle('dev-on', !!(s.devMode && G.timescale.scale(state) > 1));
   }
 
   function update(state, opts) {
@@ -53,7 +54,9 @@
 
     const M = G.growth.M(state);
     const dT = G.growth.dt(state);
-    refs.rate.textContent = '×' + G.fmt.num(M, mode) + ' / ' + (dT < 1 ? dT.toFixed(3) : dT.toFixed(2)) + ' с';
+    const spd = G.timescale.scale(state);
+    refs.rate.textContent = '×' + G.fmt.num(M, mode) + ' / ' + (dT < 1 ? dT.toFixed(3) : dT.toFixed(2)) + ' с' +
+      (spd > 1 ? '  ⏩×' + spd : '');
 
     const r = G.growth.rate(state);
     refs.dps.textContent = G.fmt.num(r, mode) + ' цифр/с';

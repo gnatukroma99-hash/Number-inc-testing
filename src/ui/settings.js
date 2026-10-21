@@ -45,6 +45,7 @@
   function build(state) {
     const s = state.settings;
     refs.preview = G.h('div', { class: 'preview' });
+    refs.devWrap = null;
     refs.export = G.h('textarea', { class: 'save-area', rows: 3, spellcheck: 'false' });
 
     /* ---------- облако: строки ввода ---------- */
@@ -148,6 +149,37 @@
             state.settings.scientificHints = v;
             document.body.classList.toggle('hide-formulas', !v);
           }),
+
+          G.h('h3', { class: 'section-title', text: 'Режим разработчика' }),
+          toggle('Ускорение игры (для тестов)', s.devMode, (v) => {
+            state.settings.devMode = v;
+            if (refs.devWrap) refs.devWrap.className = 'dev-speed' + (v ? '' : ' off');
+            G.ui.mainNumber.applySettings(state);
+            G.ui.mainNumber.update(state);
+            G.ui.toast(v ? 'Скорость игры ×' + G.timescale.scale(state) : 'Ускорение выключено', 'accent', 1600);
+          }),
+          (function () {
+            const out = G.h('span', { class: 'dev-speed-val', text: '×' + G.timescale.clamp(s.devSpeed) });
+            const range = G.h('input', {
+              type: 'range', min: 1, max: 100, step: 1,
+              value: G.timescale.clamp(s.devSpeed)
+            });
+            range.addEventListener('input', () => {
+              const v = G.timescale.clamp(range.value);
+              state.settings.devSpeed = v;
+              out.textContent = '×' + v;
+              G.ui.mainNumber.update(state);
+            });
+            refs.devWrap = G.h('label', { class: 'dev-speed' + (s.devMode ? '' : ' off') }, [
+              G.h('span', { class: 'dev-speed-label', text: 'Скорость игры' }),
+              range,
+              out
+            ]);
+            return refs.devWrap;
+          })(),
+          G.h('p', { class: 'settings-hint', text:
+            'Ускоряет рост числа, энергию, сэмплы, механику и авто-покупки (до 100×). ' +
+            'Балансовые цифры и рекорды при этом становятся «нечестными» — это режим для тестов.' }),
 
           G.h('h3', { class: 'section-title', text: 'Сохранение' }),
           toggle('Автосохранение', s.autosave, (v) => { state.settings.autosave = v; }),

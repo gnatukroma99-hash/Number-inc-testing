@@ -50,6 +50,11 @@
 
       const s = G.state;
 
+      /* режим разработчика: ускоряем ВСЁ, кроме таймеров сейва —
+         иначе автосейв на ×100 писал бы в localStorage 10 раз в секунду */
+      const realDt = dt;
+      dt = G.timescale.apply(s, dt);
+
       G.sampling.update(s, dt);
       G.growth.tick(s, dt);
 
@@ -65,7 +70,7 @@
       s.lastSeen = Date.now();
 
       if (s.settings.autosave) {
-        saveAcc += dt;
+        saveAcc += realDt;
         if (saveAcc >= s.settings.autosaveInterval) {
           saveAcc = 0;
           G.save.saveLocal(s);
@@ -73,7 +78,7 @@
       }
 
       /* автосинхронизация с облаком (если включена) */
-      try { G.cloud.maybeAuto(s, dt); } catch (e) { console.error('[cloud]', e); }
+      try { G.cloud.maybeAuto(s, realDt); } catch (e) { console.error('[cloud]', e); }
     }, TICK_MS);
 
     /* ---------- отрисовка ---------- */

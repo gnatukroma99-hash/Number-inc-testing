@@ -20,7 +20,8 @@
           'по порядку — сначала дешёвые «Разгон», потом «Мощь».',
     tiers: [
       { id: 't1', name: 'I · Разгон', note: 'Дешёвые узлы, заметные сразу' },
-      { id: 't2', name: 'II · Мощь', note: 'Дорого и навсегда' }
+      { id: 't2', name: 'II · Мощь', note: 'Дорого и навсегда' },
+      { id: 't3', name: 'III · Глубина', note: '60–150 ◆: копить несколько перерождений' }
     ]
   };
 
@@ -95,6 +96,53 @@
       requires: ['tree_softcap'],
       note: 'бонус механик ^ (1.03^lvl), степень ≤ 1.5',
       desc: 'Степень над бонусом механик. Дальний узел — для тех, кто копит.'
+    },
+
+    /* ---------- ярус III: глубина (60–150 ◆) ---------- */
+    {
+      id: 'tree_sieve', mech: 'tree', tier: 't3', scope: 'meta', res: 'cores',
+      name: 'Решето', icon: '⌗',
+      base: 80, growth: 1, max: 1,
+      formula: 'lvl', fmt: 'pct',
+      requires: ['tree_auto_all'],
+      note: 'открывает новую доску «Решето»',
+      desc: 'Новая механика: решето само находит простые, каждое даёт ❖ и усиливает M. '
+    },
+    {
+      id: 'tree_headstart2', mech: 'tree', tier: 't3', scope: 'meta', res: 'cores',
+      name: 'Рывок II', icon: '🚀',
+      base: 90, growth: 2.20, max: 4,
+      formula: '10 * lvl', fmt: 'num',
+      requires: ['tree_headstart'],
+      note: '+10 стартовых цифр за уровень',
+      desc: 'Старт забега сразу в глубоком диапазоне — важен совместно с рывком I.'
+    },
+    {
+      id: 'tree_span2', mech: 'tree', tier: 't3', scope: 'meta', res: 'cores',
+      name: 'Слом софткапа II', icon: '🪓',
+      base: 60, growth: 2.00, max: 5,
+      formula: '1.15 ** lvl', fmt: 'x', spanMult: '1.15 ** lvl',
+      requires: ['tree_pow'],
+      note: 'span ×= 1.15^lvl (складывается с первым сломом)',
+      desc: 'Второй слой тормоза отодвигается. Самый прямой бафф темпа.'
+    },
+    {
+      id: 'tree_mirror', mech: 'tree', tier: 't3', scope: 'meta', res: 'cores',
+      name: 'Зеркало', icon: '⧗',
+      base: 150, growth: 1, max: 1,
+      formula: 'lvl', fmt: 'pct',
+      requires: ['tree_sieve'],
+      note: 'открывает новую доску «Зеркало»',
+      desc: 'Вторая механика из дерева: симметрия мантиссы — множитель и накопитель.'
+    },
+    {
+      id: 'tree_core2', mech: 'tree', tier: 't3', scope: 'meta', res: 'cores',
+      name: 'Сверхплотное ядро', icon: '◈',
+      base: 120, growth: 2.10, max: 6,
+      formula: '2.5 ** lvl', fmt: 'x', Mmult: '2.5 ** lvl',
+      requires: ['tree_core'],
+      note: 'M ×= 2.5^lvl',
+      desc: 'Большой плоский множитель. Самая дорогая ветка дерева.'
     }
   ]);
 })(window.G = window.G || {});

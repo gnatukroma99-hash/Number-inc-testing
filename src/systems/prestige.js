@@ -27,13 +27,20 @@
 
     can(state) { return P.gain(state) > 0; },
 
-    /* стартовые цифры после перерождения — данные: content.prestige.start */
+    /* стартовые цифры после перерождения — данные: content.prestige.start
+       { node, formula } или { vars: {lvl: 'id', lvl2: 'id'}, formula } */
     applyStart(state) {
       const st = P.cfg().start;
-      if (!st || !st.node) return 0;
-      const lvl = G.lvl(state, st.node);
-      if (lvl <= 0) return 0;
-      const d = G.formula(st.formula || '0', { lvl: lvl });
+      if (!st) return 0;
+      const vars = {};
+      if (st.vars) {
+        for (const k in st.vars) vars[k] = G.lvl(state, st.vars[k]);
+      } else if (st.node) {
+        vars.lvl = G.lvl(state, st.node);
+      } else {
+        return 0;
+      }
+      const d = G.formula(st.formula || '0', vars);
       if (!isFinite(d) || d <= 0) return 0;
       state.N = G.BN.fromLog10(d);
       state.D = d;
