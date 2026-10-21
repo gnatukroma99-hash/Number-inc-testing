@@ -6,21 +6,21 @@
 
   G.registry.addUpgrades([
     {
-      id: 'bfd', mech: 'analysis', name: 'Бенфорд не одобряет', res: 'energy',
+      id: 'bfd', icon: '📊', mech: 'analysis', name: 'Бенфорд не одобряет', res: 'energy',
       base: 800, growth: 2.0, max: 15,
       formula: '1 + 0.5 * lvl * log10(1 + 1 / d1) / log10(2)', fmt: 'x',
       note: 'M ×= 1 + 0.5·lvl·log10(1+1/d1)/log10(2)',
       desc: 'Чем меньше первая цифра, тем больше бонус. Единица — джекпот.'
     },
     {
-      id: 'rho_root', mech: 'analysis', name: 'Корень зла', res: 'energy',
+      id: 'rho_root', icon: '√', mech: 'analysis', name: 'Корень зла', res: 'energy',
       base: 1200, growth: 2.1, max: 15,
       formula: '1 + 0.06 * rho * lvl', fmt: 'x',
       note: 'M ×= 1 + 0.06·rho·lvl',
       desc: 'Цифровой корень мантиссы 1…9 усиливает множитель.'
     },
     {
-      id: 'zero_leak', mech: 'analysis', name: 'Ноль-утечка', res: 'energy',
+      id: 'zero_leak', icon: '0', mech: 'analysis', name: 'Ноль-утечка', res: 'energy',
       base: 2500, growth: 2.2, max: 10,
       formula: '1 + 0.03 * z * lvl', fmt: 'x',
       note: 'M ×= 1 + 0.03·z·lvl',

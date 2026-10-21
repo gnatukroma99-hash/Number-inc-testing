@@ -183,7 +183,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.upgrades.buy(state, G.registry.upgrade('tree_sieve'));
   check('узел «Решето» открыл механику', G.registry.mechanic('sieve').isUnlocked(state));
   const ids = dockBtns().map((b) => b.dataset.id);
-  check('досок на навигации', ids.length === 10, ids.join(','));
+  check('досок на навигации', ids.length === 11, ids.join(','));
 
   for (const id of ids) {
     const btn = dockBtns().find((b) => b.dataset.id === id);
@@ -221,6 +221,35 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     return G.lvl(s2, 'auto_digitsum') === 0 && G.lvl(s2, 'auto_analysis') === 0 &&
       G.lvl(s2, 'mult1') > 0;
   })(), 'auto_core растёт, авто других досок — нет');
+
+  section('4b. Массовая покупка (×1 / ×10 / ×100 / MAX)');
+  click(dockBtns().find((b) => b.dataset.id === 'core'));
+  const modes = Array.from(doc.querySelectorAll('#board .buy-mode'));
+  check('панель режимов покупки есть', modes.length === 4,
+    modes.map((m) => textOf(m)).join(' '));
+  state.res.energy = 1e30;
+  const mult1 = G.registry.upgrade('mult1');
+  state.upg.mult1 = 0;
+  check('affordable() считает уровни', G.upgrades.affordable(state, mult1) > 10,
+    'доступно: ' + G.upgrades.affordable(state, mult1));
+  const plan10 = G.upgrades.plan(state, mult1, '10');
+  check('plan(×10) = 10 уровней', plan10.count === 10, 'count=' + plan10.count + ', цена=' + G.fmt.num(plan10.cost));
+  const bought10 = G.upgrades.buyBulk(state, mult1, '10');
+  check('buyBulk(×10) купил 10', bought10 === 10 && G.lvl(state, 'mult1') === 10,
+    'куплено: ' + bought10 + ', ур. ' + G.lvl(state, 'mult1'));
+  const planMax = G.upgrades.plan(state, mult1, 'max');
+  check('plan(MAX) ограничен деньгами/максом', planMax.count > 0 && planMax.count <= 1000,
+    'count=' + planMax.count);
+  /* переключение режима кликом по панели */
+  const m100 = modes.find((m) => textOf(m) === '×100');
+  click(m100);
+  check('клик по режиму меняет настройку', state.settings.buyMode === '100', 'buyMode=' + state.settings.buyMode);
+  click(dockBtns().find((b) => b.dataset.id === 'core'));
+  G.ui.app.render(state);
+  check('кнопка показывает количество', /×\d+/.test(textOf(doc.querySelector('#board .upg-qty'))),
+    'qty: «' + textOf(doc.querySelector('#board .upg-qty')) + '»');
+  state.settings.buyMode = '1';
+  state.upg.mult1 = 0;
 
   section('5. Дерево ◆ (узлы, предки, цена в ядрах)');
   const tree = G.registry.upgradesOf('tree');
@@ -302,7 +331,37 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('цена узла — в ядрах', /\u25c6/.test(textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy'))),
     textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy')));
 
+  section('5a1. Достижения и попапы');
+  check('система достижений есть', !!G.achievements);
+  check('список достижений не пуст', G.achievements.total() >= 15,
+    'всего: ' + G.achievements.total());
+  G.achievements.reset(state);
+  check('на чистом сейве открыто 0', G.achievements.count(state) === 0);
+  state.N = G.BN.fromLog10(120); state.D = 120;
+  const freshAch = G.achievements.check(state);
+  check('условия открывают достижения', freshAch.length > 0,
+    'открылось: ' + freshAch.map((a) => a.name).join(', '));
+  check('«Двузначно» в списке открытых', G.achievements.has(state, 'a_first'));
+  check('бонус к M растёт с коллекцией', G.achievements.mult(state) > 1,
+    '×' + G.achievements.mult(state).toFixed(3));
+  check('достижения не сбрасываются перерождением', (function () {
+    const before = G.achievements.count(state);
+    state.res.cores = 1;
+    G.prestige.perform(state);
+    return G.achievements.count(state) === before;
+  })());
+  /* тост-попап на открытие */
+  G.bus.emit('achievement:unlocked', { id: 'x', name: 'ТестДостижение', desc: 'проверка' });
+  const allToasts = Array.from(doc.querySelectorAll('#toasts .toast')).map(textOf).join(' | ');
+  check('появляется попап-тост', /ТестДостижение/.test(allToasts),
+    'тостов в ленте: ' + doc.querySelectorAll('#toasts .toast').length);
+
   section('5a2. Эффекты дерева: частицы у купленных узлов и поток света');
+  /* возвращаемся на доску дерева и покупаем корень — иначе нечего подсвечивать */
+  state.res.cores = 1e6;
+  G.upgrades.buy(state, G.registry.upgrade('tree_tempo'));
+  click(dockBtns().find((b) => b.dataset.id === 'tree'));
+  G.ui.app.render(state);
   check('у каждого узла есть слой частиц', doc.querySelectorAll('#board .orb-orbit').length === tree.length,
     doc.querySelectorAll('#board .orb-orbit').length + ' / ' + tree.length);
   check('частицы есть у купленного узла',
@@ -411,6 +470,9 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   click(doc.getElementById('btn-settings'));
   const modal = doc.querySelector('#modal-root .modal, #modal-root .settings');
   check('модалка настроек открылась', !!modal);
+  check('у карточек апгрейдов есть иконка-медальон',
+    doc.querySelectorAll('#board .upg-ico').length >= 0,
+    'иконок в DOM: ' + doc.querySelectorAll('#board .upg-ico').length);
   const radios = Array.from(doc.querySelectorAll('#modal-root input, #modal-root button'));
   for (const r of radios.slice(0, 20)) {
     if (r.tagName === 'INPUT' || r.getAttribute('data-fmt') || r.getAttribute('data-pos')) click(r);

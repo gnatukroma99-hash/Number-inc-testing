@@ -48,21 +48,21 @@
   /* ---------- апгрейды (⚡) ---------- */
   G.registry.addUpgrades([
     {
-      id: 'mr_deep', mech: 'mirror', name: 'Глубина зеркала', res: 'energy',
+      id: 'mr_deep', icon: '🔍', mech: 'mirror', name: 'Глубина зеркала', res: 'energy',
       base: 8e5, growth: 2.7, max: 5,
       formula: '2 + lvl', fmt: 'num',
       note: 'пар = 2 + lvl (максимум 7)',
       desc: 'Проверяем больше пар цифр — симметрия попадается чаще.'
     },
     {
-      id: 'mr_power', mech: 'mirror', name: 'Яркость отражения', res: 'energy',
+      id: 'mr_power', icon: '✨', mech: 'mirror', name: 'Яркость отражения', res: 'energy',
       base: 3e6, growth: 3.1, max: 12,
       effect(state) { return power(state); }, fmt: 'x',
       note: 'M ×= (1 + 0.25·lvl)^симметрия',
       desc: 'Каждая совпавшая пара усиливает множитель.'
     },
     {
-      id: 'mr_echo', mech: 'mirror', name: 'Эхо зеркала', res: 'energy',
+      id: 'mr_echo', icon: '🔔', mech: 'mirror', name: 'Эхо зеркала', res: 'energy',
       base: 6e6, growth: 3.4, max: 8,
       effect(state) { return grainMult(state); }, fmt: 'x',
       note: 'M ×= 1 + 0.01·накоплено·lvl',

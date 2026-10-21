@@ -6,28 +6,28 @@
 
   G.registry.addUpgrades([
     {
-      id: 'shop_plus', mech: 'shop', name: 'Жирный плюс', res: 'number',
+      id: 'shop_plus', icon: '➕', mech: 'shop', name: 'Жирный плюс', res: 'number',
       costD: '0.80 * 1.80 ** lvl', minD: 18, max: 6,
       formula: '500 * lvl', addM: '500 * lvl', fmt: 'num',
       note: 'M_base += 500·lvl',
       desc: 'Флэт-плюс к базовому множителю. Особенно жирно на старте.'
     },
     {
-      id: 'shop_tempo', mech: 'shop', name: 'Хроно-скидка', res: 'number',
+      id: 'shop_tempo', icon: '⏱', mech: 'shop', name: 'Хроно-скидка', res: 'number',
       costD: '1.00 * 1.90 ** lvl', minD: 30, max: 8,
       formula: '0.95 ** lvl', dtMult: '0.95 ** lvl', fmt: 'x',
       note: 'ΔT ×= 0.95^lvl',
       desc: 'Каждый уровень ускоряет рост на 5%.'
     },
     {
-      id: 'shop_pow', mech: 'shop', name: 'Показатель', res: 'number',
+      id: 'shop_pow', icon: '^', mech: 'shop', name: 'Показатель', res: 'number',
       costD: '1.00 * 1.60 ** lvl', minD: 60, max: 6,
       formula: '1.05 ** lvl', powM: '1.05 ** lvl', fmt: 'x',
       note: 'бонус механик ^ (1.05^lvl), степень ≤ 1.5',
       desc: 'Бонусы всех механик возводятся в степень. Дорого, но масштабируется.'
     },
     {
-      id: 'shop_battery', mech: 'shop', name: 'Батарейка', res: 'number',
+      id: 'shop_battery', icon: '🔋', mech: 'shop', name: 'Батарейка', res: 'number',
       costD: '0.30 * 1.80 ** lvl', minD: 8, max: 6,
       formula: '1.5 ** lvl', energyMult: '1.5 ** lvl', fmt: 'x',
       note: '⚡ ×= 1.5^lvl',
@@ -42,6 +42,7 @@
     short: 'Магазин',
     icon: '🛒',
     scope: 'run',
+    noBulk: true,          // цены в цифрах — покупка строго по одной
     hint: 'Единственное место, где тратится само число: цена указана в цифрах (D). ' +
           'Покупка уменьшает N, но даёт постоянный бафф до максимума.',
 

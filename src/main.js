@@ -66,6 +66,7 @@
       }
 
       try { G.automation.update(s, dt); } catch (e) { console.error('[auto]', e); }
+      try { G.achievements.update(s, dt); } catch (e) { console.error('[ach]', e); }
 
       s.lastSeen = Date.now();
 

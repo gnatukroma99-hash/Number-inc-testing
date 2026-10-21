@@ -18,12 +18,13 @@ const FILES = [
   'src/core/format.js', 'src/core/dom.js', 'src/core/registry.js',
   'src/systems/state.js', 'src/systems/primes.js', 'src/systems/sampling.js',
   'src/systems/upgrades.js', 'src/systems/growth.js', 'src/systems/prestige.js',
-  'src/systems/automation.js', 'src/systems/save.js',
-  'src/content/tier1.js', 'src/content/prestige.js', 'src/content/automation.js', 'src/content/tree.js',
+  'src/systems/automation.js', 'src/systems/achievements.js', 'src/systems/save.js',
+  'src/content/tier1.js', 'src/content/prestige.js', 'src/content/automation.js', 'src/content/tree.js', 'src/content/achievements.js',
   'src/mechanics/digitsum/index.js', 'src/mechanics/primefit/index.js',
   'src/mechanics/primeranks/index.js', 'src/mechanics/analysis/index.js',
   'src/mechanics/shop/index.js', 'src/mechanics/prestige/index.js',
-  'src/mechanics/tree/index.js', 'src/mechanics/sieve/index.js', 'src/mechanics/mirror/index.js'
+  'src/mechanics/tree/index.js', 'src/mechanics/sieve/index.js', 'src/mechanics/mirror/index.js',
+  'src/mechanics/achievements/index.js'
 ];
 
 const sandbox = {
@@ -57,6 +58,7 @@ function step(state, dt) {
     if (m.tick) m.tick(state, dt);
   }
   G.automation.update(state, dt);
+  if (G.achievements) G.achievements.update(state, dt);
   buyAll(state);
 }
 

@@ -7,7 +7,7 @@
   'use strict';
 
   G.SAVE_VERSION = 2;
-  G.VERSION = '0.7.1';
+  G.VERSION = '0.8.1';
 
   const DEFAULT_SETTINGS = {
     numberFormat: 'short',     // short | sci | full
@@ -16,6 +16,9 @@
     autosave: true,
     autosaveInterval: 10,      // сек
     scientificHints: true,
+    buyMode: '1',
+    buyFilter: false,          // показывать только доступные апгрейды
+    buySort: 'price',          // 'price' | 'level' | 'name'              // '1' | '10' | '100' | 'max' — сколько покупать за клик
     sound: true,               // звук покупок/перерождения (WebAudio, без файлов)
     devMode: false,            // режим разработчика: ускорение всей игры
     devSpeed: 1,               // 1..100 (см. systems/timescale.js)

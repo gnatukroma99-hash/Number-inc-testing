@@ -16,14 +16,16 @@
       setTimeout(() => el.remove(), 300);
     }, ms || 3200);
     /* не даём тостам разрастаться */
-    while (r.children.length > 6) r.removeChild(r.firstChild);
+    while (r.children.length > 4) r.removeChild(r.firstChild);
   }
 
   G.ui.toast = toast;
 
   /* подписки на игровые события */
-  G.bus.on('prime:gained', (e) => {
-    toast('Простые разряды: +' + e.gained + ' ❖ (всего ' + e.total + ')', 'good');
+  /* Достижения — попап-награда (как в инкременталках). Обычные тики ❖ не спамим:
+     прогресс виден на доске ПРАЙМ. */
+  G.bus.on('achievement:unlocked', (a) => {
+    toast('🏆 ' + a.name + ' · ' + (a.desc || '') + ' · +1% к M', 'ach', 4200);
   });
 
   G.bus.on('mechanic:unlocked', (e) => {

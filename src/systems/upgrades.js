@@ -83,6 +83,75 @@
       return bought;
     },
 
+    /* ---------- массовая покупка (×1 / ×10 / ×100 / MAX) ---------- */
+    /* сколько уровней реально можно купить подряд прямо сейчас */
+    affordable(state, u) {
+      if (u.costD) return U.canBuy(state, u) ? 1 : 0;   // «за цифры» — строго по одному
+      const res = state.res[u.res] || 0;
+      const base = G.lvl(state, u.id);
+      let spent = 0;
+      let n = 0;
+      while (n < 1000) {
+        if (base + n >= u.max) break;
+        const c = costOf(u, base + n);
+        if (!isFinite(c) || spent + c > res) break;
+        spent += c;
+        n++;
+      }
+      return n;
+    },
+
+    /* суммарная цена n уровней подряд */
+    bulkCost(state, u, n) {
+      const base = G.lvl(state, u.id);
+      let spent = 0;
+      for (let i = 0; i < n; i++) spent += costOf(u, base + i);
+      return spent;
+    },
+
+    /* сколько купим и за сколько по выбранному режиму */
+    plan(state, u, mode) {
+      const can = U.affordable(state, u);
+      if (u.costD) {
+        return { count: can, cost: can ? U.digitsCost(state, u) : 0, digits: true };
+      }
+      const want = mode === 'max' ? can : Math.min(Number(mode) || 1, can);
+      return { count: want, cost: want ? U.bulkCost(state, u, want) : 0, digits: false };
+    },
+
+    buyBulk(state, u, mode) {
+      const p = U.plan(state, u, mode);
+      if (!p.count) return 0;
+      return U.buy(state, u, p.count);
+    },
+
+    /* купить ВСЁ доступное на доске (кнопка «Купить всё») */
+    buyAllAvailable(state, mechId) {
+      let batches = 0;
+      for (let pass = 0; pass < 40; pass++) {
+        let any = false;
+        for (const u of G.registry.upgradesOf(mechId)) {
+          if (U.buyBulk(state, u, 'max') > 0) any = true;
+        }
+        if (!any) break;
+        batches++;
+      }
+      return batches;
+    },
+
+    /* самый дешёвый доступный к покупке апгрейд доски (для прогресс-бара) */
+    nextTarget(state, mechId) {
+      let best = null;
+      for (const u of G.registry.upgradesOf(mechId)) {
+        if (U.isMaxed(state, u)) continue;
+        if (!U.requirementsMet(state, u)) continue;
+        const plan = U.plan(state, u, '1');
+        const price = u.costD ? (U.digitsCost(state, u) || 0) : U.currentCost(state, u);
+        if (!best || price < best.price) best = { u: u, price: price, plan: plan };
+      }
+      return best;
+    },
+
     /* значение эффекта апгрейда по его формуле: vars = { lvl, D, S, q, prime, ... } */
     value(state, u) {
       if (typeof u.effect === 'function') return u.effect(state);

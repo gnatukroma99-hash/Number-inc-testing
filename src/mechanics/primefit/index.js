@@ -4,14 +4,14 @@
 
   G.registry.addUpgrades([
     {
-      id: 'pq', mech: 'primefit', name: 'Прайм-стайл', res: 'energy',
+      id: 'pq', icon: '⧉', mech: 'primefit', name: 'Прайм-стайл', res: 'energy',
       base: 500, growth: 2.0, max: 15,
       formula: '1 + 0.12 * q * lvl', fmt: 'x',
       note: 'M ×= 1 + 0.12·q·lvl,  q = цифр из {2,3,5,7}',
       desc: 'Множитель от количества простых цифр в мантиссе'
     },
     {
-      id: 'pq_jack', mech: 'primefit', name: 'Джекпот-стайл', res: 'energy',
+      id: 'pq_jack', icon: '🎰', mech: 'primefit', name: 'Джекпот-стайл', res: 'energy',
       base: 5000, growth: 3.2, max: 5,
       formula: '1 + 2 * lvl', fmt: 'x',
       note: 'при q = 15: M ×= 1 + 2·lvl',

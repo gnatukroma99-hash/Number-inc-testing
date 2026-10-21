@@ -10,6 +10,9 @@
   let boardEl = null;
   let activeId = null;
   let activeBoard = null;
+  let activeToolbar = null;
+  let stateMech = null;      // id механики активной доски (для «купить всё» и прогресса)
+  let lastSort = '';
   let buttons = {};       // id -> {el, badgeEl}
   let unlockedSnapshot = '';
 
@@ -101,20 +104,83 @@
       return;
     }
     activeId = id;
+    stateMech = id;
     G.dom.clear(boardEl);
 
     let mount = null;
     if (id === 'core') mount = mountCore;
     else if (d.board && typeof d.board.mount === 'function') mount = d.board.mount;
 
+    /* панель покупок (доски с ценами в цифрах её не показывают) */
+    activeToolbar = null;
+    if (!d.noBulk) {
+      activeToolbar = C().boardToolbar(state, {
+        onBuyAll() {
+          const s = G.state;
+          if (!s || !stateMech) return;
+          const n = G.upgrades.buyAllAvailable(s, stateMech);
+          G.ui.toast(n ? 'Куплено всё доступное' : 'Покупать нечего', n ? 'good' : 'warn', 1400);
+          orderRows();
+        },
+        onOrderChange() { orderRows(); }
+      });
+      boardEl.appendChild(activeToolbar.el);
+    }
+    const content = G.h('div', { class: 'board-content' });
+    boardEl.appendChild(content);
+
     if (mount) {
-      activeBoard = mount(boardEl);
+      activeBoard = mount(content);
     } else {
       activeBoard = null;
-      boardEl.appendChild(G.h('div', { class: 'empty', text: 'У этой механики пока нет доски' }));
+      content.appendChild(G.h('div', { class: 'empty', text: 'У этой механики пока нет доски' }));
     }
     for (const k in buttons) buttons[k].el.classList.toggle('active', k === id);
+    if (activeToolbar) activeToolbar.update(state);
     if (activeBoard && activeBoard.update) activeBoard.update(state);
+  }
+
+  /* ---------- сортировка и фильтр строк апгрейдов (без пересборки DOM) ---------- */
+  const COMPARE = {
+    price(a, b) { return (a.price || 0) - (b.price || 0); },
+    level(a, b) { return (a.lvl || 0) - (b.lvl || 0); },
+    name(a, b) { return String(a.name).localeCompare(String(b.name)); }
+  };
+
+  function orderRows(s) {
+    const st = s || state;
+    if (!st || !G.state) return;
+    const mode = st.settings.buySort || 'price';
+    const onlyAvail = !!st.settings.buyFilter;
+    lastSort = mode;
+
+    for (const sec of boardEl.querySelectorAll('.section')) {
+      const rows = Array.prototype.slice.call(sec.querySelectorAll(':scope > .upg'));
+      if (rows.length < 2 && !onlyAvail) continue;
+
+      const meta = rows.map((row) => {
+        const u = G.registry.upgrade(row.dataset.upgrade);
+        return {
+          row: row,
+          price: u ? (u.costD ? G.upgrades.digitsCost(st, u) : G.upgrades.currentCost(st, u)) : 0,
+          lvl: u ? G.lvl(st, u.id) : 0,
+          name: u ? u.name : ''
+        };
+      });
+
+      if (onlyAvail) {
+        for (const m of meta) {
+          const u = G.registry.upgrade(m.row.dataset.upgrade);
+          const can = u ? G.upgrades.plan(st, u, '1').count > 0 : true;
+          m.row.classList.toggle('upg-off', !can);
+        }
+      } else {
+        for (const m of meta) m.row.classList.remove('upg-off');
+      }
+
+      meta.sort(COMPARE[mode] || COMPARE.price);
+      for (const m of meta) sec.appendChild(m.row);
+    }
   }
 
   /* ---------- публичный API ---------- */
@@ -157,7 +223,9 @@
         else b.badge.textContent = '';
       }
 
+      if (activeToolbar) activeToolbar.update(s, stateMech);
       if (activeBoard && activeBoard.update) activeBoard.update(s);
+      if ((s.settings.buySort || 'price') !== lastSort || s.settings.buyFilter) orderRows(s);
     },
 
     select,

@@ -12,14 +12,14 @@
 
   G.registry.addUpgrades([
     {
-      id: 'pm_base', mech: 'primeranks', name: 'Основание прайма', res: 'prime',
+      id: 'pm_base', icon: '❖', mech: 'primeranks', name: 'Основание прайма', res: 'prime',
       base: 1, growth: 2.0, max: 25,
       formula: '1.25 + 0.03 * lvl', fmt: 'x',
       note: 'M ×= (1.25 + 0.03·lvl)^❖',
       desc: 'Усиливает вклад каждого простого разряда'
     },
     {
-      id: 'pm_speed', mech: 'primeranks', name: 'Прайм-разгон', res: 'prime',
+      id: 'pm_speed', icon: '⏩', mech: 'primeranks', name: 'Прайм-разгон', res: 'prime',
       base: 2, growth: 2.4, max: 15,
       formula: '0.95 ** lvl', fmt: 'x',
       note: 'ΔT ×= 0.95^lvl',

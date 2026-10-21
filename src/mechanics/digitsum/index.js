@@ -5,14 +5,14 @@
 
   G.registry.addUpgrades([
     {
-      id: 'sd', mech: 'digitsum', name: 'Сумма цифр, брат', res: 'energy',
+      id: 'sd', icon: 'Σ', mech: 'digitsum', name: 'Сумма цифр, брат', res: 'energy',
       base: 60, growth: 1.9, max: 20,
       formula: '1 + 0.005 * S * lvl', fmt: 'x',
       note: 'M ×= 1 + 0.005·S·lvl',
       desc: 'Множитель от суммы значащих цифр'
     },
     {
-      id: 'sd_stab', mech: 'digitsum', name: 'Стабилизатор', res: 'energy',
+      id: 'sd_stab', icon: '🧊', mech: 'digitsum', name: 'Стабилизатор', res: 'energy',
       base: 300, growth: 2.5, max: 10,
       formula: '4 + 2 * lvl', fmt: 'num',
       note: 'Δt сэмпла = 4 + 2·lvl',
