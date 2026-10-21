@@ -54,6 +54,10 @@
         if (typeof state.meta.totalRuns !== 'number') state.meta.totalRuns = 0;
         if (typeof state.meta.bestD !== 'number') state.meta.bestD = 0;
       }
+      /* v0.10.1: рекорд ядер для узла «Ядра не сгорают» */
+      if (typeof state.meta.coresBest !== 'number' || !isFinite(state.meta.coresBest)) {
+        state.meta.coresBest = state.res.cores || 0;
+      }
       state.version = G.SAVE_VERSION;
       return state;
     },

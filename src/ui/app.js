@@ -24,6 +24,7 @@
       G.ui.mainNumber.init();
       G.ui.mainNumber.applySettings(state);
       G.ui.docks.init(state);
+      if (G.ui.spark) G.ui.spark.mount();
 
       document.getElementById('btn-settings').addEventListener('click', () => {
         if (G.ui.settings.isOpen()) G.ui.settings.close();
@@ -49,6 +50,7 @@
 
     render(state) {
       G.ui.mainNumber.update(state);
+      if (G.ui.spark) G.ui.spark.update(state);
       G.ui.docks.update(state);
       if (G.ui.settings.isOpen()) {
         /* лёгкое обновление превью формата */

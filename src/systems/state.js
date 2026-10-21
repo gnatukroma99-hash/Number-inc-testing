@@ -7,7 +7,7 @@
   'use strict';
 
   G.SAVE_VERSION = 2;
-  G.VERSION = '0.10.0';
+  G.VERSION = '0.11.0';
 
   const DEFAULT_SETTINGS = {
     numberFormat: 'short',     // short | sci | full
@@ -66,7 +66,8 @@
         unlockedMechanics: [],
         autoOptimizers: {},
         totalRuns: 0,
-        bestD: 0
+        bestD: 0,
+        coresBest: 0            // рекорд ядер (для узла «Ядра не сгорают»)
       }
     };
   };

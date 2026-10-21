@@ -11,6 +11,7 @@
       const tMult = C.tile('Бонус ядер', 'good');
       const tGain = C.tile('Дадут сейчас', 'good');
       const tRuns = C.tile('Перерождений');
+      const tBest = C.tile('Рекорд ◆', 'accent');
 
       const btn = G.h('button', { class: 'prestige-btn', type: 'button', text: 'ПЕРЕРОДИТЬСЯ' });
       btn.addEventListener('click', () => {
@@ -22,7 +23,7 @@
 
       const el = G.h('div', { class: 'board-body' }, [
         G.h('p', { class: 'board-hint', text: mech.hint }),
-        C.grid([tCores.el, tMult.el, tGain.el, tRuns.el]),
+        C.grid([tCores.el, tMult.el, tGain.el, tRuns.el, tBest.el]),
         G.h('div', { class: 'prestige-card' }, [
           btn,
           G.h('div', { class: 'prestige-hint', text: G.content.prestige.keepHint }),
@@ -43,6 +44,8 @@
           tMult.set('×' + G.fmt.num(G.prestige.mult(state)));
           tGain.set('+' + gain + ' ◆');
           tRuns.set(String(state.meta.totalRuns || 0));
+          const best = Math.max(state.meta.coresBest || 0, state.res.cores || 0);
+          tBest.set(G.fmt.num(best) + (G.prestige.keepCores(state) ? ' 🔒' : ''));
           btn.disabled = gain <= 0;
           btn.className = 'prestige-btn' + (gain > 0 ? ' can' : ' cant');
           btn.textContent = gain > 0 ? 'ПЕРЕРОДИТЬСЯ  +' + gain + ' ◆' : 'НУЖНО БОЛЬШЕ ЦИФР';

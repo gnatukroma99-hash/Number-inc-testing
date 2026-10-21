@@ -20,19 +20,35 @@
       let mult = G.growth.upgProduct(state, 'coreGainMult');
       if (!isFinite(mult) || mult <= 0) mult = 1;
       const add = G.growth.upgSum(state, 'coreGainAdd');
-      const total = Math.floor(base * mult + (isFinite(add) ? add : 0));
+      let total = Math.floor(base * mult + (isFinite(add) ? add : 0));
+      /* «Узловая награда»: +◆ за каждый купленный узел дерева */
+      const perNode = G.growth.upgSum(state, 'coreGainPerNode');
+      if (perNode > 0) total += Math.floor(P.treeNodes(state) * perNode);
       return total > 0 ? total : 0;
     },
 
-    /* постоянный множитель к M от ◆ */
+    /* сколько узлов дерева ◆ куплено (для узла «Узловая награда») */
+    treeNodes(state) {
+      let n = 0;
+      for (const u of G.registry.upgradesOf('tree')) if (G.lvl(state, u.id) > 0) n++;
+      return n;
+    },
+
+    /* постоянный множитель к M от ◆; узел «Ядра не сгорают» считает по рекорду */
     mult(state) {
-      const cores = state.res.cores || 0;
+      let cores = state.res.cores || 0;
+      if (P.keepCores(state)) cores = Math.max(cores, state.meta.coresBest || 0);
       if (!cores) return 1;
       const v = G.formula(P.cfg().coreMultFormula || '1.5 ** cores', { cores: cores });
       return isFinite(v) && v > 0 ? v : 1;
     },
 
     can(state) { return P.gain(state) > 0; },
+
+    /* куплен ли узел «Ядра не сгорают» */
+    keepCores(state) {
+      return G.lvl(state, 'tree_corekeep') > 0;
+    },
 
     /* стартовые цифры после перерождения — данные: content.prestige.start
        { node, formula } или { vars: {lvl: 'id', lvl2: 'id'}, formula } */
@@ -60,6 +76,7 @@
       if (gain <= 0) return 0;
 
       state.res.cores = (state.res.cores || 0) + gain;
+      state.meta.coresBest = Math.max(state.meta.coresBest || 0, state.res.cores);
       state.meta.totalRuns = (state.meta.totalRuns || 0) + 1;
       state.meta.bestD = Math.max(state.meta.bestD || 0, G.growth.D(state));
 

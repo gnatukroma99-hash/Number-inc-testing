@@ -45,6 +45,8 @@ const PREP = `
   s.res.cores = 118;
   s.mech.sieve = { idx: 34, found: 148, acc: 0.62 };
   s.mech.mirror = { sym: 3, grain: 41, bestSym: 4, pairs: 5, lastSample: -1 };
+  // искра на экране — чтобы было видно плавающую кнопку
+  s.mech.spark = { nextIn: 30, left: 15, type: 'burst', caught: 3, buffs: [{ type: 'tempo', left: 12, total: 20, dt: 0.45 }] };
   G.state.stats.bestD = 308;
   G.ui.app.render(s);
   return 'ok';

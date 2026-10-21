@@ -2509,3 +2509,82 @@ body.no-anim .prestige-btn.can { animation: none !important; }
 .tree-map .node-name { font-size: 11.5px; }
 .tree-map .node-eff { font-size: 10.5px; }
 .tree-map .node-lvl { font-size: 9.5px; }
+
+/* --- v0.10.1: дерево глубже (7 узлов в ветви «Ядра») --- */
+.tree-map { width: 1460px; height: 440px; }
+
+/* ============================================================
+   v0.11.0 — ЗОЛОТАЯ ИСКРА ✦ (активный контент)
+   ============================================================ */
+
+.spark-float {
+  position: fixed;
+  z-index: 60;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 2px solid var(--spark, #ffd166);
+  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, .22), transparent 60%), rgba(9, 14, 20, .92);
+  color: #fff8e6;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .3px;
+  cursor: pointer;
+  box-shadow: 0 0 22px var(--spark, #ffd166), 0 10px 26px rgba(0, 0, 0, .5);
+  animation: sparkFloat 1.6s ease-in-out infinite;
+}
+.spark-float.visible { display: inline-flex; }
+.spark-float-icon { font-size: 18px; color: var(--spark, #ffd166); text-shadow: 0 0 14px var(--spark, #ffd166); }
+.spark-float.popped { animation: sparkPop .45s ease-out; }
+@keyframes sparkFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.04); }
+}
+@keyframes sparkPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); filter: brightness(1.6); }
+  100% { transform: scale(1); }
+}
+
+/* доска искры */
+.spark-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 9px;
+}
+.spark-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-left: 3px solid var(--spark, #ffd166);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .012)), #0c161f;
+}
+.spark-ico {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  font-size: 17px;
+  color: var(--spark, #ffd166);
+  background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, .14), transparent 70%), #0a1219;
+  border: 1px solid var(--spark, #ffd166);
+}
+.spark-name { font-size: 13px; font-weight: 800; color: #eaf7ff; }
+.spark-text { font-size: 11.5px; color: var(--dim); font-family: var(--mono); }
+.spark-buffs {
+  font-size: 12.5px;
+  color: var(--good);
+  font-family: var(--mono);
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(138, 218, 106, .06);
+  border: 1px solid rgba(138, 218, 106, .18);
+}
+.spark-catch { align-self: flex-start; }
+body.no-anim .spark-float { animation: none; }

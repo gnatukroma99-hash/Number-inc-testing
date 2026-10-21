@@ -183,7 +183,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.upgrades.buy(state, G.registry.upgrade('tree_sieve'));
   check('узел «Решето» открыл механику', G.registry.mechanic('sieve').isUnlocked(state));
   const ids = dockBtns().map((b) => b.dataset.id);
-  check('досок на навигации', ids.length === 11, ids.join(','));
+  check('досок на навигации', ids.length === 12, ids.join(','));
 
   for (const id of ids) {
     const btn = dockBtns().find((b) => b.dataset.id === id);
@@ -282,7 +282,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
 
   section('5. Дерево ◆ (узлы, предки, цена в ядрах)');
   const tree = G.registry.upgradesOf('tree');
-  check('узлов в дереве', tree.length === 30, tree.length + ' шт');
+  check('узлов в дереве', tree.length === 32, tree.length + ' шт');
   check('ветви дерева', (G.content.tree.branches || []).length === 6,
     (G.content.tree.branches || []).map((t) => t.id).join(','));
   const deep = tree.filter((u) => u.tier === 't3');
@@ -364,6 +364,34 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('цена узла — в ядрах', /\u25c6/.test(textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy'))),
     textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy')));
 
+  section('5a0. Золотая искра ✦ (активный контент)');
+  check('система искры есть', !!G.spark && !!G.registry.mechanic('spark'));
+  check('типов искр', G.spark.types().length >= 4, G.spark.types().length + ' шт');
+  state.mech.spark = { nextIn: 0.1, left: 0, type: null, caught: 0, buffs: [] };
+  G.spark.tick(state, 0.2);                       // должен заспавниться
+  check('искра появляется по таймеру', G.spark.visible(state),
+    'on screen: ' + (G.spark.current(state) || {}).name);
+  const beforeMult = G.growth.M(state);
+  const caughtSpark = G.spark.catchSpark(state);
+  check('искру можно поймать', !!caughtSpark, caughtSpark && caughtSpark.name);
+  check('после поимки таймер сброшен', !G.spark.visible(state) && G.spark.nextIn(state) > 1,
+    'next: ' + Math.ceil(G.spark.nextIn(state)) + ' с');
+  check('буфф влияет (M или ΔT или ресурс)', (function () {
+    const m = G.spark.mult(state);
+    const d = G.spark.dtMult(state);
+    const res = (state.res.cores || 0) + (state.res.prime || 0);
+    return m > 1 || d < 1 || res > 0;
+  })(), 'M×' + G.spark.mult(state).toFixed(2) + ', ΔT×' + G.spark.dtMult(state).toFixed(2));
+  /* буфф истекает */
+  state.mech.spark.buffs.forEach((b) => (b.left = 0.01));
+  G.spark.tick(state, 1);
+  check('буффы истекают', G.spark.active(state).length === 0 && Math.abs(G.growth.M(state) - beforeMult) < Math.abs(beforeMult) * 0.9 + 1);
+  check('искра сбрасывается перерождением', (function () {
+    state.N = G.BN.fromLog10(20); state.D = 20;
+    G.prestige.perform(state);
+    return (state.mech.spark ? state.mech.spark.caught : 0) === 0;
+  })());
+
   section('5a1. Достижения и попапы');
   check('система достижений есть', !!G.achievements);
   check('список достижений не пуст', G.achievements.total() >= 15,
@@ -388,6 +416,35 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const allToasts = Array.from(doc.querySelectorAll('#toasts .toast')).map(textOf).join(' | ');
   check('появляется попап-тост', /ТестДостижение/.test(allToasts),
     'тостов в ленте: ' + doc.querySelectorAll('#toasts .toast').length);
+
+  section('5a1-bis. Ветвь «Ядра»: больше ◆ и «ядра не сгорают»');
+  const cg = G.registry.upgrade('tree_coregain');
+  check('узел «Щедрость ядер» есть', !!cg);
+  state.res.cores = 1000;
+  for (const id of ['tree_coregain', 'tree_coregain2']) state.upg[id] = 0;
+  state.N = G.BN.fromLog10(200); state.D = 200;
+  const baseGain = G.prestige.gain(state);
+  state.upg.tree_coregain = 5;                        // 1.10^5 = 1.61×
+  const boosted = G.prestige.gain(state);
+  check('«Щедрость ядер» увеличивает ◆', boosted > baseGain, baseGain + ' → ' + boosted);
+  /* «Узловая награда»: +◆ за каждый купленный узел */
+  const nodesBought = G.prestige.treeNodes(state);
+  state.upg.tree_corenodes = 2;
+  const withNodes = G.prestige.gain(state);
+  check('«Узловая награда» даёт ◆ за узлы', withNodes >= boosted + nodesBought * 2,
+    boosted + ' → ' + withNodes + ' (узлов: ' + nodesBought + ')');
+  /* «Ядра не сгорают»: множитель держится на рекорде */
+  state.meta.coresBest = 500;
+  state.res.cores = 10;
+  state.upg.tree_corekeep = 0;
+  const noKeep = G.prestige.mult(state);
+  state.upg.tree_corekeep = 1;
+  const keep = G.prestige.mult(state);
+  check('«Ядра не сгорают» держат множитель на рекорде', keep > noKeep * 100,
+    '×' + G.fmt.num(noKeep) + ' → ×' + G.fmt.num(keep));
+  state.upg.tree_corekeep = 0;
+  state.upg.tree_corenodes = 0;
+  state.upg.tree_coregain = 0;
 
   section('5a1b. Зум и панорама дерева (телефон + мышь)');
   /* нужна смонтированная доска дерева */

@@ -24,8 +24,8 @@
       if (!u || !u.id) throw new Error('upgrade без id');
       upgrades.set(u.id, Object.assign({ scope: 'run', max: Infinity, res: 'energy', autoBuy: true }, u));
       for (const f of ['formula', 'costFormula', 'costD', 'addM', 'powM', 'dtMult', 'energyMult',
-        'Mmult', 'spanMult', 'taperMult', 'coreGainMult', 'coreGainAdd', 'autoStepMult',
-        'shopCostMult', 'primeGainMult']) {
+        'Mmult', 'spanMult', 'taperMult', 'coreGainMult', 'coreGainAdd', 'coreGainPerNode',
+        'autoStepMult', 'shopCostMult', 'primeGainMult']) {
         if (u[f]) G.formula.precompile(u[f]);
       }
       return u;

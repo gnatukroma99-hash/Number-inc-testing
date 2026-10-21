@@ -256,6 +256,25 @@
       desc: 'Вершина ветви ядер.'
     },
     {
+      id: 'tree_corenodes', mech: 'tree', branch: 'cores', depth: 5, lane: 1, tier: 't3',
+      scope: 'meta', res: 'cores', icon: '🌳',
+      name: 'Узловая награда', base: 1500, growth: 2.20, max: 6,
+      formula: 'lvl', fmt: 'num', coreGainPerNode: '1 * lvl',
+      requires: ['tree_coremin'],
+      note: '◆ += купленных узлов дерева × lvl',
+      desc: 'Чем больше дерево прокачано, тем больше ядер приносит каждый перезаход.'
+    },
+    {
+      id: 'tree_corekeep', mech: 'tree', branch: 'cores', depth: 6, lane: 1, tier: 't3',
+      scope: 'meta', res: 'cores', icon: '🔒',
+      name: 'Ядра не сгорают', base: 3000, growth: 1, max: 1,
+      formula: 'lvl', fmt: 'pct',
+      requires: ['tree_corenodes'],
+      note: 'множитель 1.5^◆ считается от ЛУЧШЕГО значения ядер',
+      desc: 'Потраченные на дерево ядра больше не ослабляют множитель: он держится ' +
+            'на рекордном количестве ◆.'
+    },
+    {
       id: 'tree_coremin', mech: 'tree', branch: 'cores', depth: 4, lane: 1, tier: 't3',
       scope: 'meta', res: 'cores', icon: '◆',
       name: 'Гарантированные ядра', base: 600, growth: 2.10, max: 8,

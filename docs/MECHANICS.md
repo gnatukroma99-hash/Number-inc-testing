@@ -178,12 +178,14 @@ knee = 5, span = 17.5, power = 1.5
 | ⏩ Темп (−1) | `tree_tempo` → `tree_softcap` → `tree_pow` → `tree_span2` → `tree_span3` → `tree_tempo2` |
 | ◈ Множитель (0) | `tree_base` → `tree_core` → `tree_core2` → `tree_core3` → `tree_core4` → `tree_base2` |
 | 🤖 Автоматизация (0) | `tree_battery` → `tree_auto_all` → `tree_sieve` → `tree_mirror` → `tree_autofast` |
-| ◆ Ядра (+1) | `tree_coregain` → `tree_coregain2` → `tree_coregain3` → `tree_coregain4` → `tree_coremin` |
+| ◆ Ядра (+1) | `tree_coregain` → `tree_coregain2` → `tree_coregain3` → `tree_coregain4` → `tree_coremin` → `tree_corenodes` → `tree_corekeep` |
 | ❖ Доход (+1) | `tree_shop` → `tree_shop2` → `tree_energy2` → `tree_prime2` → `tree_energy3` |
 
-Всего **30 узлов**. Новые поля эффектов: `coreGainMult`/`coreGainAdd` (◆ за перерождение),
+Всего **32 узла**. Новые поля эффектов: `coreGainMult`/`coreGainAdd`/`coreGainPerNode` (◆ за перерождение),
 `autoStepMult` (частота автопокупок), `shopCostMult` (цена магазина), `primeGainMult` (❖).
-Ядра: `◆ = ((D−10)/4)^0.75 × (1 + 0.02·runs)` × `coreGainMult` + `coreGainAdd`.
+Ядра: `◆ = ((D−10)/4)^0.75 × (1 + 0.02·runs)` × `coreGainMult` + `coreGainAdd`
++ `узлов_дерева × coreGainPerNode`. Узел «Ядра не сгорают» (`tree_corekeep`) считает
+множитель `1.5^◆` от `max(cores, meta.coresBest)` — рекорд ядер никогда не уменьшается.
 
 | Узел | Ярус | Цена (◆) | Уровни | Эффект |
 |---|---|---|---|---|
@@ -288,6 +290,28 @@ sieveFound, mirrors, treeNodes, upgrades, playtime, achievements`.
 | Полное зеркало | `mirrors >= 7` |
 | Час в игре | `playtime >= 3600` |
 | Коллекционер | `achievements >= 12` |
+
+---
+
+## 13. Золотая искра — `spark` ✅ (v0.11.0)
+
+**Открытие:** `D ≥ 3`. **Сброс:** `scope: run` (таймеры и буффы — за забег).
+
+```
+раз в 70…150 с → на экране искра (15 с) → клик → эффект
+типы (веса): Вспышка ×12 M 25с (5) · Хроно ΔT ×0.45 20с (4) · Заряд +420 с ⚡ (4) ·
+             Ядро +2 ◆ (2) · Прайм +15 ❖ (3)
+M_total *= Π(активные buff.mult);  ΔT *= Π(активные buff.dt)
+```
+
+- Это **единственная активная механика**: без кликов забег идёт как раньше, с кликами — быстрее.
+- Данные — `content/spark.js`, логика — `systems/spark.js`, кнопка — `ui/spark.js`,
+  механика-обёртка — `mechanics/spark/` (тик + `mult`/`dtMult`), доска — «✦ Искра».
+- Буффы живут в `state.mech.spark.buffs` (секунды), по истечении удаляются.
+
+### Ядра за перерождение (v0.11.0)
+`◆ = ((D − minD) / 3.2)^0.85 × (1 + 0.02·runs) × coreGainMult + coreGainAdd + узлы×coreGainPerNode`
+Примеры: D 60 → 10 · D 100 → 18 · D 200 → 35 · D 308 → 46.
 
 ---
 
