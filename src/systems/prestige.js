@@ -27,6 +27,20 @@
 
     can(state) { return P.gain(state) > 0; },
 
+    /* стартовые цифры после перерождения — данные: content.prestige.start */
+    applyStart(state) {
+      const st = P.cfg().start;
+      if (!st || !st.node) return 0;
+      const lvl = G.lvl(state, st.node);
+      if (lvl <= 0) return 0;
+      const d = G.formula(st.formula || '0', { lvl: lvl });
+      if (!isFinite(d) || d <= 0) return 0;
+      state.N = G.BN.fromLog10(d);
+      state.D = d;
+      state.disp = null;
+      return d;
+    },
+
     perform(state) {
       const gain = P.gain(state);
       if (gain <= 0) return 0;
@@ -36,6 +50,9 @@
       state.meta.bestD = Math.max(state.meta.bestD || 0, G.growth.D(state));
 
       G.resetScopes(state, P.cfg().resetScopes || ['run']);
+
+      /* стартовый рывок из дерева ◆: после сброса поднимаем N до стартовых цифр */
+      P.applyStart(state);
 
       G.bus.emit('prestige:done', { gain: gain, cores: state.res.cores });
       return gain;

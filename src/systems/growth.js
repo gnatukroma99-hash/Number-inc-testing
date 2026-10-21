@@ -102,6 +102,8 @@
       exp = Math.min(exp, MAX_EXP);
 
       let m = base * (exp > 1 ? Math.pow(mech, exp) : mech);
+      /* плоские множители из дерева ◆ (данные: поле Mmult) */
+      m *= W.upgProduct(state, 'Mmult');
       if (!isFinite(m) || m <= 0) return 1;
       return m > 1e300 ? 1e300 : m;
     },
@@ -116,10 +118,13 @@
     hiddenFactor(state, dOverride) {
       const hs = G.content && G.content.hiddenSoftcap;
       if (!hs) return 1;
+      /* spanMult — узлы дерева ◆ могут отодвигать knee-зону (данные) */
+      let spanMult = W.upgProduct(state, 'spanMult');
+      if (!isFinite(spanMult) || spanMult <= 0) spanMult = 1;
       const v = G.formula(hs.formula, {
         D: dOverride !== undefined ? dOverride : W.D(state),
         knee: hs.knee,
-        span: hs.span,
+        span: hs.span * spanMult,
         power: hs.power
       });
       if (!isFinite(v) || v <= 0) return 0;

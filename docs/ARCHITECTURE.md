@@ -131,8 +131,23 @@ G.registry.addUpgrade({
   costD: '0.80 * 1.8 ** lvl', minD: 18,
 
   /* автоматизация: если куплен — доска сама покупает свои апгрейды */
-  autoMech: 'digitsum', scope: 'meta'
+  autoMech: 'digitsum', scope: 'meta',
+
+  /* v0.4.0 */
+  autoBuy: false,           // false = автоматизация НЕ покупает этот апгрейд сама
+  Mmult: '1.6 ** lvl',      // плоский множитель к M_total (дерево ◆)
+  spanMult: '1.12 ** lvl',  // ширина зоны невидимого софткапа ×
+  requires: ['tree_tempo'], // предки-узлы (дерево): у каждого уровень > 0
+  tier: 't1'                // ярус доски-дерева (для группировки в UI)
 });
+
+/* Дерево ◆: узлы — те же апгрейды, только платим ядрами. */
+G.registry.addUpgrade({
+  id: 'tree_auto_all', mech: 'tree', tier: 't2', scope: 'meta',
+  res: 'cores', base: 25, growth: 1, max: 1, formula: 'lvl'
+});
+/* Право автопокупки авто-апгрейдов задаётся данными:
+   G.content.automation.autoAllGate = 'tree_auto_all' — движок имён узлов не знает. */
 ```
 
 ### 3.4 Ресурс / Барьер / Ярус

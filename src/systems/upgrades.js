@@ -35,8 +35,16 @@
 
     isMaxed(state, u) { return G.lvl(state, u.id) >= u.max; },
 
+    /* требования-предки (дерево прокачки): массив id, у каждого уровень > 0 */
+    requirementsMet(state, u) {
+      if (!u.requires || !u.requires.length) return true;
+      for (const id of u.requires) if (G.lvl(state, id) <= 0) return false;
+      return true;
+    },
+
     canBuy(state, u) {
       if (U.isMaxed(state, u)) return false;
+      if (!U.requirementsMet(state, u)) return false;
 
       if (u.costD) {
         const price = costDigits(state, u);

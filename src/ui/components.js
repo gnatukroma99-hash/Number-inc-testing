@@ -5,8 +5,8 @@
 
   G.ui = G.ui || {};
 
-  const RES_ICON = { energy: '⚡', prime: '❖', delta: 'Δ', psi: 'Ψ', omega: 'Ω', crystal: '◈' };
-  const RES_NAME = { energy: 'энергии', prime: 'ПРАЙМ', delta: 'Осколков' };
+  const RES_ICON = { energy: '⚡', prime: '❖', cores: '◆', delta: 'Δ', psi: 'Ψ', omega: 'Ω', crystal: '◈', number: 'D' };
+  const RES_NAME = { energy: 'энергии', prime: 'ПРАЙМ', cores: 'Ядер', delta: 'Осколков' };
 
   function fmtEffect(u, val) {
     const mode = (G.state && G.state.settings.numberFormat) || 'short';
@@ -20,6 +20,9 @@
 
   const C = {
     RES_ICON: RES_ICON,
+
+    /* форматирование значения эффекта — общее для всех досок */
+    fmtEffect: fmtEffect,
 
     resIcon(res) { return RES_ICON[res] || '•'; },
     resName(res) { return RES_NAME[res] || res; },

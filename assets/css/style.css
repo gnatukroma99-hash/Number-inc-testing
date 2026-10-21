@@ -727,3 +727,85 @@ body.hide-formulas .formula-card { display: none; }
   color: var(--dim);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- дерево ◆ (v0.4.0) ---------- */
+
+.tree-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.node {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: linear-gradient(180deg, var(--panel2), var(--bg2));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: .15s;
+}
+.node.maxed {
+  border-color: rgba(255, 209, 102, .45);
+  box-shadow: 0 0 0 1px rgba(255, 209, 102, .12) inset;
+}
+.node.locked { opacity: .55; }
+
+.node-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+.node-icon {
+  width: 24px;
+  text-align: center;
+  color: #ffd166;
+  font-size: 16px;
+}
+.node-name { flex: 1 1 auto; }
+.node-lvl {
+  font-size: 11px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.node-desc { font-size: 12px; color: var(--dim); line-height: 1.4; }
+.node-eff {
+  font-size: 13px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.node-note {
+  font-size: 11px;
+  color: var(--dim2);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+.node-buy {
+  margin-top: 2px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: #0a1219;
+  color: var(--dim);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition: .15s;
+}
+.node-buy.can {
+  border-color: #ffd166;
+  color: #2a1e05;
+  background: linear-gradient(180deg, #ffe29a, #ffd166);
+}
+.node-buy.can:hover { filter: brightness(1.06); }
+.node-buy.cant, .node-buy.locked { cursor: not-allowed; opacity: .6; }
+.node-buy.maxed {
+  border-color: rgba(255, 209, 102, .4);
+  color: #ffd166;
+  cursor: default;
+}
+.tree-rules code { color: #ffd166; }

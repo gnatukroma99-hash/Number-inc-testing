@@ -22,8 +22,9 @@
     /* --- апгрейды --- */
     addUpgrade(u) {
       if (!u || !u.id) throw new Error('upgrade без id');
-      upgrades.set(u.id, Object.assign({ scope: 'run', max: Infinity, res: 'energy' }, u));
-      for (const f of ['formula', 'costFormula', 'costD', 'addM', 'powM', 'dtMult', 'energyMult']) {
+      upgrades.set(u.id, Object.assign({ scope: 'run', max: Infinity, res: 'energy', autoBuy: true }, u));
+      for (const f of ['formula', 'costFormula', 'costD', 'addM', 'powM', 'dtMult', 'energyMult',
+        'Mmult', 'spanMult', 'taperMult']) {
         if (u[f]) G.formula.precompile(u[f]);
       }
       return u;

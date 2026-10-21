@@ -36,7 +36,7 @@
       ]),
       C().section('Рост', baseUpg.map((u) => u.el)),
       C().section('Одноразовые ×2 ⚡', x2Upg.map((u) => u.el)),
-      C().section('Автоматизация (навсегда)', autoUpg.map((u) => u.el))
+      C().section('Автоматизация (навсегда, покупается вручную)', autoUpg.map((u) => u.el))
     ]);
     root.appendChild(el);
 
@@ -67,6 +67,7 @@
   }
 
   function describeLock(d) {
+    if (d.lockHint) return d.lockHint;
     if (d.id === 'primefit') return 'нужно 1 цифра (N ≥ 10)';
     if (d.id === 'primeranks') return 'нужно 2 цифры (N ≥ 100)';
     if (d.id === 'digitsum') return 'нужно 0.5 цифры (N ≥ 3)';

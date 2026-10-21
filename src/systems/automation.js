@@ -21,11 +21,21 @@
       return out;
     },
 
+    /* Разрешена ли автопокупка САМИХ авто-апгрейдов (autoBuy:false).
+       По умолчанию — нет: автоматизация одной доски не должна автоматизировать другие.
+       Право даёт узел дерева ◆ (id — в данных: content.automation.autoAllGate). */
+    autoAllOpen(state) {
+      const cfg = (G.content && G.content.automation) || {};
+      return cfg.autoAllGate ? G.lvl(state, cfg.autoAllGate) > 0 : false;
+    },
+
     buyCheapest(state, mech) {
+      const open = A.autoAllOpen(state);
       for (let n = 0; n < MAX_PER_PASS; n++) {
         let best = null;
         let bestCost = Infinity;
         for (const u of G.registry.upgradesOf(mech)) {
+          if (u.autoBuy === false && !open) continue;
           if (!G.upgrades.canBuy(state, u)) continue;
           const c = G.upgrades.currentCost(state, u);
           if (c < bestCost) { best = u; bestCost = c; }
