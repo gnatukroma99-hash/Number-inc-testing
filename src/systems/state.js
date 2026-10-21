@@ -7,6 +7,7 @@
   'use strict';
 
   G.SAVE_VERSION = 2;
+  G.VERSION = '0.3.0';
 
   const DEFAULT_SETTINGS = {
     numberFormat: 'short',     // short | sci | full

@@ -720,3 +720,10 @@ body.hide-formulas .formula-card { display: none; }
 .prestige-btn.cant { cursor: not-allowed; opacity: .55; }
 .prestige-hint { font-size: 12px; color: var(--dim); line-height: 1.45; }
 .prestige-hint.danger { color: var(--danger); }
+
+.modal-version {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}

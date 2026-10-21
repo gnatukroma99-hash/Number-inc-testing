@@ -111,6 +111,7 @@
       G.h('div', { class: 'modal-card' }, [
         G.h('div', { class: 'modal-head' }, [
           G.h('h2', { text: 'Настройки' }),
+          G.h('span', { class: 'modal-version', text: 'v' + (G.VERSION || '?') }),
           G.h('button', { class: 'icon-btn', text: '✕', onclick: () => close() })
         ]),
 
