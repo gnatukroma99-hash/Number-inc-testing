@@ -20,10 +20,10 @@
     hint: '◆ Ядра тратятся только здесь. Четыре ветви: каждая — своя цепочка. ' +
           'Следующий узел ветви виден только после покупки предыдущего.',
     branches: [
-      { id: 'start', name: 'Рывок', icon: '🚀', color: '#8ada6a', note: 'как начинается забег' },
-      { id: 'tempo', name: 'Темп', icon: '⏩', color: '#2bb5ff', note: 'скорость и софткап' },
-      { id: 'mult', name: 'Множитель', icon: '◈', color: '#ffd166', note: 'плоские × к M' },
-      { id: 'auto', name: 'Автоматизация', icon: '🤖', color: '#ff9de2', note: 'авто и новые механики' }
+      { id: 'start', name: 'Рывок', icon: '🚀', color: '#8ada6a', note: 'как начинается забег', dir: 'left', lane: 'up' },
+      { id: 'tempo', name: 'Темп', icon: '⏩', color: '#2bb5ff', note: 'скорость и софткап', dir: 'right', lane: 'up' },
+      { id: 'mult', name: 'Множитель', icon: '◈', color: '#ffd166', note: 'плоские × к M', dir: 'left', lane: 'down' },
+      { id: 'auto', name: 'Автоматизация', icon: '🤖', color: '#ff9de2', note: 'авто и новые механики', dir: 'right', lane: 'down' }
     ],
     tiers: [
       { id: 't1', name: 'I' },

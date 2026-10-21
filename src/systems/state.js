@@ -7,7 +7,7 @@
   'use strict';
 
   G.SAVE_VERSION = 2;
-  G.VERSION = '0.6.1';
+  G.VERSION = '0.7.1';
 
   const DEFAULT_SETTINGS = {
     numberFormat: 'short',     // short | sci | full
@@ -16,6 +16,7 @@
     autosave: true,
     autosaveInterval: 10,      // сек
     scientificHints: true,
+    sound: true,               // звук покупок/перерождения (WebAudio, без файлов)
     devMode: false,            // режим разработчика: ускорение всей игры
     devSpeed: 1,               // 1..100 (см. systems/timescale.js)
     cloudAuto: false,           // автосинхронизация с GitHub Gist

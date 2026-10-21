@@ -145,6 +145,10 @@
             state.settings.animations = v;
             G.ui.mainNumber.applySettings(state);
           }),
+          toggle('Звук (покупки, перерождение)', s.sound !== false, (v) => {
+            state.settings.sound = v;
+            if (v) G.sfx.play('node');
+          }),
           toggle('Показывать формулы механик', s.scientificHints, (v) => {
             state.settings.scientificHints = v;
             document.body.classList.toggle('hide-formulas', !v);

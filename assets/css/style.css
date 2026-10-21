@@ -950,3 +950,672 @@ body.hide-formulas .formula-card { display: none; }
 .node.unknown .node-icon { color: var(--dim2); }
 
 .tree-orphans { grid-column: 1 / -1; }
+
+/* ============================================================
+   ДЕРЕВО ◆ — звёздная карта (v0.7.0, референс: PoE skilltree)
+   ============================================================ */
+
+.tree-board .tree-stage {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0 12px;
+}
+
+.tree-map {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 760px;
+  aspect-ratio: 900 / 780;
+  margin: 0 auto;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 46%, rgba(43, 181, 255, .10), transparent 62%),
+    radial-gradient(70% 60% at 10% 8%, rgba(255, 157, 226, .07), transparent 62%),
+    radial-gradient(70% 60% at 90% 88%, rgba(53, 226, 192, .08), transparent 62%),
+    #04080d;
+}
+
+/* звёзды на фоне */
+.tree-map::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .75;
+  background-image:
+    radial-gradient(1.4px 1.4px at 12% 22%, rgba(255, 255, 255, .65), transparent),
+    radial-gradient(1.2px 1.2px at 26% 71%, rgba(255, 255, 255, .5), transparent),
+    radial-gradient(1.6px 1.6px at 38% 12%, rgba(255, 255, 255, .6), transparent),
+    radial-gradient(1.1px 1.1px at 47% 88%, rgba(255, 255, 255, .45), transparent),
+    radial-gradient(1.3px 1.3px at 58% 34%, rgba(255, 255, 255, .5), transparent),
+    radial-gradient(1.5px 1.5px at 64% 78%, rgba(255, 255, 255, .55), transparent),
+    radial-gradient(1.2px 1.2px at 73% 16%, rgba(255, 255, 255, .45), transparent),
+    radial-gradient(1.7px 1.7px at 82% 62%, rgba(255, 255, 255, .6), transparent),
+    radial-gradient(1.2px 1.2px at 91% 38%, rgba(255, 255, 255, .5), transparent),
+    radial-gradient(1.3px 1.3px at 8% 58%, rgba(255, 255, 255, .4), transparent),
+    radial-gradient(1.1px 1.1px at 19% 44%, rgba(255, 255, 255, .35), transparent),
+    radial-gradient(1.4px 1.4px at 33% 90%, rgba(255, 255, 255, .4), transparent),
+    radial-gradient(1.2px 1.2px at 55% 60%, rgba(255, 255, 255, .3), transparent),
+    radial-gradient(1.3px 1.3px at 77% 40%, rgba(255, 255, 255, .35), transparent),
+    radial-gradient(1.1px 1.1px at 96% 74%, rgba(255, 255, 255, .4), transparent),
+    radial-gradient(1.5px 1.5px at 42% 52%, rgba(255, 255, 255, .25), transparent);
+  background-size: 100% 100%;
+}
+
+/* линии-связки */
+.tree-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.tline {
+  stroke-width: 1.6;
+  opacity: .38;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+.tline.done { stroke-width: 2.4; opacity: .85; }
+.tline.is-hidden { stroke-dasharray: 4 8; opacity: .14; }
+
+/* центральный хаб */
+.tree-hub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 104px;
+  height: 104px;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.hub-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 209, 102, .38);
+  box-shadow: 0 0 34px rgba(255, 209, 102, .22), inset 0 0 26px rgba(255, 209, 102, .10);
+  animation: hubSpin 22s linear infinite;
+}
+.hub-core {
+  font-size: 30px;
+  color: #ffd166;
+  text-shadow: 0 0 20px rgba(255, 209, 102, .95);
+}
+.hub-label {
+  position: absolute;
+  bottom: -18px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffd166;
+  white-space: nowrap;
+  text-shadow: 0 0 10px rgba(255, 209, 102, .6);
+}
+@keyframes hubSpin { to { transform: rotate(360deg); } }
+
+/* клетка узла: центр орба на точке карты */
+.tree-map .tree-cell {
+  position: absolute;
+  transform: translate(-50%, -26px);
+  display: flex;
+  justify-content: center;
+  width: 156px;
+  z-index: 2;
+}
+.tree-map .tree-cell.ready { z-index: 3; }
+/* старые связки-псевдоэлементы больше не нужны */
+.tree-map .tree-cell::before,
+.tree-map .tree-cell::after { display: none; }
+
+/* карточка узла = орб + подпись */
+.tree-map .node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+.tree-map .node.maxed { border: none; box-shadow: none; }
+
+.tree-map .node-orb {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  cursor: pointer;
+  border: 2px solid var(--branch, var(--border));
+  background: radial-gradient(circle at 50% 30%, #16242f 0%, #050a10 74%);
+  color: var(--text);
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, .85), 0 0 10px rgba(0, 0, 0, .55);
+  transition: box-shadow .15s, transform .12s, border-color .15s;
+}
+.orb-icon { font-size: 17px; line-height: 1; }
+.orb-price {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--dim);
+  letter-spacing: .2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tree-map .node-orb.can {
+  box-shadow: 0 0 16px var(--branch, var(--accent)), inset 0 0 12px rgba(0, 0, 0, .8);
+  animation: orbPulse 1.9s ease-in-out infinite;
+}
+.tree-map .node-orb.can .orb-price { color: #eafff9; }
+.tree-map .node-orb.can:hover { transform: scale(1.07); }
+.tree-map .node-orb.cant { opacity: .8; }
+.tree-map .node-orb.maxed {
+  border-color: #ffd166;
+  color: #ffd166;
+  box-shadow: 0 0 18px rgba(255, 209, 102, .55), inset 0 0 12px rgba(0, 0, 0, .8);
+  cursor: default;
+}
+.tree-map .node-orb.maxed .orb-price { color: #ffd166; }
+@keyframes orbPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+.tree-map .node-label { width: 148px; text-align: center; }
+.tree-map .node-name {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text);
+  text-shadow: 0 1px 4px #000, 0 0 10px rgba(0, 0, 0, .9);
+}
+.tree-map .node-lvl { font-size: 10px; color: var(--dim2); }
+.tree-map .node-eff {
+  font-size: 10.5px;
+  color: var(--branch, var(--accent));
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 4px #000;
+}
+
+/* скрытый узел */
+.tree-map .node.unknown .node-orb {
+  border-style: dashed;
+  opacity: .5;
+  box-shadow: none;
+  animation: none;
+}
+.tree-map .node.unknown .node-name { color: var(--dim2); letter-spacing: 3px; }
+.tree-map .node.unknown .node-eff { color: transparent; }
+
+/* легенда ветвей */
+.tree-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 10px;
+}
+.tree-legend .tree-branch-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--branch, var(--border));
+  background: rgba(255, 255, 255, .03);
+}
+.tree-legend .branch-icon { font-size: 14px; }
+.tree-legend .branch-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--branch, var(--accent));
+}
+.tree-legend .branch-note { font-size: 10.5px; color: var(--dim2); }
+
+/* панель подробностей */
+.tree-info {
+  margin-top: 10px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--panel2), var(--bg2));
+  border: 1px solid var(--border);
+}
+.info-title { font-size: 13px; font-weight: 800; color: var(--text); }
+.info-desc { font-size: 12px; color: var(--dim); line-height: 1.45; margin-top: 3px; }
+.info-eff {
+  font-size: 12px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  margin-top: 4px;
+}
+
+.tree-map .tree-orphans { position: absolute; left: 10px; bottom: 10px; }
+.tree-board .prostor { display: none; }
+
+/* ============================================================
+   ОБЩИЙ ВИЗУАЛ v0.7.0 — «космос»: глубокий фон, свечение, стекло
+   ============================================================ */
+
+html, body {
+  background:
+    radial-gradient(1100px 700px at 12% -10%, rgba(43, 181, 255, .13), transparent 60%),
+    radial-gradient(900px 600px at 92% 6%, rgba(255, 157, 226, .09), transparent 62%),
+    radial-gradient(1200px 800px at 50% 118%, rgba(53, 226, 192, .10), transparent 60%),
+    #05080d fixed;
+}
+
+/* тонкая звёздная пыль поверх фона */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: .5;
+  background-image:
+    radial-gradient(1.2px 1.2px at 8% 14%, rgba(255, 255, 255, .5), transparent),
+    radial-gradient(1px 1px at 22% 64%, rgba(255, 255, 255, .35), transparent),
+    radial-gradient(1.3px 1.3px at 41% 28%, rgba(255, 255, 255, .4), transparent),
+    radial-gradient(1px 1px at 63% 82%, rgba(255, 255, 255, .3), transparent),
+    radial-gradient(1.4px 1.4px at 78% 36%, rgba(255, 255, 255, .45), transparent),
+    radial-gradient(1px 1px at 94% 70%, rgba(255, 255, 255, .3), transparent),
+    radial-gradient(1.1px 1.1px at 52% 6%, rgba(255, 255, 255, .35), transparent);
+}
+#app { position: relative; z-index: 1; }
+
+/* ---------- шапка ---------- */
+#hero {
+  border: 1px solid rgba(53, 226, 192, .22);
+  background:
+    linear-gradient(180deg, rgba(22, 34, 45, .95), rgba(13, 20, 27, .95));
+  box-shadow: 0 10px 34px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+#hero::after {
+  background:
+    radial-gradient(520px 140px at 18% 50%, rgba(53, 226, 192, .16), transparent 72%),
+    radial-gradient(420px 130px at 78% 40%, rgba(43, 181, 255, .12), transparent 70%);
+}
+.hero-number {
+  color: #f2fbff;
+  text-shadow: 0 0 26px rgba(53, 226, 192, .55), 0 0 60px rgba(43, 181, 255, .28);
+}
+.res {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .02));
+  border-color: rgba(255, 255, 255, .09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+.res.cores { border-color: rgba(255, 209, 102, .35); box-shadow: 0 0 16px rgba(255, 209, 102, .12); }
+
+/* ---------- доки ---------- */
+.dock {
+  position: relative;
+  padding-left: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .012));
+  border-color: rgba(255, 255, 255, .08);
+  border-radius: 11px;
+}
+.dock::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  transform: translateY(-50%);
+  border-radius: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+  transition: height .16s;
+}
+.dock:hover { border-color: rgba(53, 226, 192, .35); transform: translateX(1px); }
+.dock.active {
+  border-color: rgba(53, 226, 192, .55);
+  background: linear-gradient(90deg, rgba(53, 226, 192, .16), rgba(53, 226, 192, .02));
+  box-shadow: 0 0 22px rgba(53, 226, 192, .12), inset 0 0 0 1px rgba(53, 226, 192, .18);
+}
+.dock.active::before { height: 58%; }
+.dock-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  font-size: 13px;
+  background: rgba(53, 226, 192, .10);
+}
+
+/* ---------- доска ---------- */
+#board {
+  background:
+    radial-gradient(900px 300px at 50% -20%, rgba(43, 181, 255, .06), transparent 70%),
+    var(--panel);
+  border-color: rgba(255, 255, 255, .07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .03);
+}
+
+/* ---------- плитки ---------- */
+.tile {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .015));
+  border-color: rgba(255, 255, 255, .08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+.tile:hover { transform: translateY(-1px); border-color: rgba(53, 226, 192, .35); }
+.tile-val { text-shadow: 0 0 18px rgba(43, 181, 255, .25); }
+.tile-label { text-transform: uppercase; letter-spacing: .5px; font-size: 10.5px; }
+
+/* ---------- заголовки секций ---------- */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-size: 11.5px;
+  color: var(--dim);
+}
+.section-title::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, .12), transparent);
+}
+
+/* ---------- апгрейды ---------- */
+.upg {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .012));
+  border-color: rgba(255, 255, 255, .075);
+  border-radius: 11px;
+  transition: border-color .15s, transform .12s, box-shadow .15s;
+}
+.upg:hover {
+  border-color: rgba(53, 226, 192, .35);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+}
+.upg-buy {
+  font-variant-numeric: tabular-nums;
+  border-radius: 9px;
+}
+.upg-buy.can {
+  background: linear-gradient(180deg, #5cf3d5, var(--accent));
+  color: #04211c;
+  box-shadow: 0 0 16px rgba(53, 226, 192, .35);
+}
+.upg-buy.can:hover { filter: brightness(1.07); }
+.upg-buy.cant { background: rgba(255, 255, 255, .04); }
+
+/* ---------- цифры и полоски ---------- */
+.digit { border-color: rgba(255, 255, 255, .07); }
+.digit.prime { box-shadow: 0 0 16px rgba(255, 157, 226, .22); }
+.bar { border-color: rgba(255, 255, 255, .07); }
+.bar-fill {
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+  box-shadow: 0 0 12px rgba(53, 226, 192, .45);
+}
+
+/* ---------- карточки с формулами ---------- */
+.formula-card {
+  background: linear-gradient(180deg, rgba(43, 181, 255, .06), rgba(0, 0, 0, .12));
+  border-color: rgba(43, 181, 255, .18);
+}
+.formula-card code { color: #9fd8ff; }
+
+/* ---------- кнопки и модалка ---------- */
+.btn {
+  border-radius: 9px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+  transition: .15s;
+}
+.btn:hover { border-color: var(--accent); box-shadow: 0 0 16px rgba(53, 226, 192, .18); }
+.icon-btn { border-radius: 11px; }
+.icon-btn:hover { box-shadow: 0 0 16px rgba(53, 226, 192, .22); }
+.modal-card {
+  background: linear-gradient(180deg, var(--panel2), var(--panel));
+  border-color: rgba(255, 255, 255, .1);
+}
+
+/* ---------- тосты ---------- */
+.toast { border-radius: 11px; }
+
+/* ---------- скроллбары и фокус ---------- */
+* { scrollbar-width: thin; scrollbar-color: #24404f transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: #1d3240;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: #2a4a5e; background-clip: content-box; }
+:focus-visible { outline: 2px solid rgba(53, 226, 192, .55); outline-offset: 2px; }
+
+/* --- дерево: размер карты и легенда одной строкой (правка v0.7.0) --- */
+.tree-board .tree-stage { display: flex; justify-content: center; }
+.tree-map {
+  height: clamp(360px, 56vh, 620px);
+  width: auto;
+  min-width: 560px;
+  max-width: 100%;
+  aspect-ratio: 900 / 780;
+}
+.tree-legend .branch-note {
+  max-width: 118px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+/* --- дерево: геометрия 1000×940, аккуратные подписи --- */
+.tree-map { aspect-ratio: 1000 / 940; }
+.tree-map .tree-label, .tree-map .node-label { width: 122px; }
+.tree-map .node-name { font-size: 10.5px; }
+.tree-map .node-orb { width: 48px; height: 48px; }
+.tree-map .tree-cell { transform: translate(-50%, -24px); width: 132px; }
+
+/* --- дерево: карта в НАТУРАЛЬНОМ размере, чтобы подписи не наезжали --- */
+.tree-board .tree-stage {
+  display: block;
+  overflow: auto;
+  max-height: min(74vh, 760px);
+  border-radius: 18px;
+}
+.tree-map {
+  width: 1000px;
+  height: 940px;
+  min-width: 1000px;
+  max-width: none;
+  aspect-ratio: auto;
+}
+@media (max-width: 1180px) {
+  .tree-map { transform: scale(.82); transform-origin: top left; }
+  .tree-board .tree-stage { height: 790px; }
+}
+@media (max-width: 900px) {
+  .tree-map { transform: scale(.66); transform-origin: top left; }
+  .tree-board .tree-stage { height: 640px; }
+}
+@media (max-width: 680px) {
+  .tree-map { transform: scale(.52); transform-origin: top left; }
+  .tree-board .tree-stage { height: 510px; }
+}
+
+/* --- дерево: финальная геометрия 1000×840 (натуральный размер) --- */
+.tree-board .tree-stage {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  height: auto;
+  max-height: min(78vh, 860px);
+  overflow: auto;
+}
+.tree-map {
+  width: 1000px;
+  height: 840px;
+  min-width: 1000px;
+  max-width: none;
+  aspect-ratio: auto;
+  transform: none;
+  flex: 0 0 auto;
+}
+.tree-map .node-orb { width: 44px; height: 44px; }
+.tree-map .tree-cell { transform: translate(-50%, -22px); width: 124px; }
+.tree-map .node-label { width: 112px; }
+.tree-map .node-name { font-size: 10px; }
+.tree-map .node-eff { font-size: 10px; }
+.orb-price { font-size: 8.5px; }
+@media (max-width: 1180px) {
+  .tree-map { transform: scale(.86); transform-origin: top left; }
+  .tree-board .tree-stage { height: 730px; justify-content: flex-start; }
+}
+@media (max-width: 900px) {
+  .tree-map { transform: scale(.66); transform-origin: top left; }
+  .tree-board .tree-stage { height: 560px; justify-content: flex-start; }
+}
+
+/* --- дерево: компактные подписи и вписывание в экран --- */
+.tree-board .tree-stage {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  height: 730px;
+  max-height: none;
+  overflow: hidden;
+}
+.tree-map {
+  width: 1000px;
+  height: 780px;
+  min-width: 1000px;
+  transform: scale(.92);
+  transform-origin: top center;
+}
+.tree-map .node-label { width: 116px; line-height: 1.15; }
+.tree-map .node-lvl { font-size: 9px; opacity: .85; }
+.tree-map .node-eff { font-size: 9.5px; }
+@media (max-width: 1180px) {
+  .tree-map { transform: scale(.78); transform-origin: top left; }
+  .tree-board .tree-stage { height: 640px; justify-content: flex-start; overflow: auto; }
+}
+@media (max-width: 900px) {
+  .tree-map { transform: scale(.6); transform-origin: top left; }
+  .tree-board .tree-stage { height: 500px; overflow: auto; }
+}
+
+/* --- дерево: доска-«вьюпорт», карта масштабируется под область (fit в board.js) --- */
+.tree-board {
+  height: 100%;
+  min-height: 0;
+  gap: 10px;
+}
+.tree-board .board-hint { font-size: 12.5px; }
+.tree-board .tree-stage {
+  flex: 1 1 auto;
+  min-height: 360px;
+  height: auto;
+  overflow: hidden;
+  border-radius: 16px;
+  background: radial-gradient(120% 90% at 50% 45%, rgba(43, 181, 255, .07), transparent 65%), #04080d;
+  border: 1px solid rgba(255, 255, 255, .07);
+}
+.tree-map {
+  transform: none;
+  width: 1000px;
+  height: 780px;
+  min-width: 0;
+  flex: 0 0 auto;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+.tree-map::before { opacity: .5; }
+@media (max-width: 1180px) {
+  .tree-map { transform: none; }
+  .tree-board .tree-stage { height: auto; overflow: hidden; }
+}
+
+/* --- дерево: горизонтальная карта 1200×440 --- */
+.tree-map { width: 1200px; height: 440px; }
+
+/* --- дерево: на телефоне карту можно пролистать --- */
+.tree-board .tree-stage { overflow-y: hidden; }
+
+/* ============================================================
+   ДЕРЕВО ◆ — частицы у купленных узлов и «поток света» по линиям
+   ============================================================ */
+
+/* --- свет, текущий по связке (второй слой поверх линии) --- */
+.tline.flow {
+  stroke-width: 3.2;
+  stroke-dasharray: 7 26;
+  opacity: 0;
+  filter: drop-shadow(0 0 6px currentColor);
+  pointer-events: none;
+}
+.tline.flow.done { opacity: .95; animation: lineFlow 1.15s linear infinite; }
+.tline.flow.is-hidden { opacity: 0; animation: none; }
+@keyframes lineFlow { to { stroke-dashoffset: -33; } }
+
+/* --- орбита из искр вокруг купленного узла --- */
+.tree-map .node { position: relative; }
+.orb-orbit {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .35s;
+}
+.tree-map .node.done .orb-orbit { opacity: 1; }
+
+.orbit-spin {
+  position: absolute;
+  inset: -9px;
+  animation: orbitSpin 4.2s linear infinite;
+}
+.orbit-spin::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--branch, var(--accent));
+  opacity: .22;
+}
+@keyframes orbitSpin { to { transform: rotate(360deg); } }
+
+.spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px 0 0 -1.5px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 7px var(--branch, var(--accent)), 0 0 14px var(--branch, var(--accent));
+  animation: sparkBlink 1.9s ease-in-out infinite;
+}
+.spark.s1 { transform: rotate(0deg) translateY(-27px); }
+.spark.s2 { transform: rotate(120deg) translateY(-27px); animation-delay: .5s; }
+.spark.s3 { transform: rotate(240deg) translateY(-27px); animation-delay: 1s; }
+@keyframes sparkBlink {
+  0%, 100% { opacity: .35; }
+  50% { opacity: 1; }
+}
+
+/* настройка «Анимации» выключена — гасим всё лишнее */
+.no-anim .orb-orbit,
+.no-anim .tline.flow { display: none; }
+.no-anim .tree-map .node-orb.can { animation: none; }

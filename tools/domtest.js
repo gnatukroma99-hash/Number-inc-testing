@@ -302,6 +302,33 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('цена узла — в ядрах', /\u25c6/.test(textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy'))),
     textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy')));
 
+  section('5a2. Эффекты дерева: частицы у купленных узлов и поток света');
+  check('у каждого узла есть слой частиц', doc.querySelectorAll('#board .orb-orbit').length === tree.length,
+    doc.querySelectorAll('#board .orb-orbit').length + ' / ' + tree.length);
+  check('частицы есть у купленного узла',
+    doc.querySelectorAll('#board .node.done .orb-orbit').length > 0,
+    'купленных с частицами: ' + doc.querySelectorAll('#board .node.done .orb-orbit').length);
+  check('по связкам течёт свет', doc.querySelectorAll('#board .tline.flow').length >= tree.length - 4,
+    'flow-линий: ' + doc.querySelectorAll('#board .tline.flow').length);
+  check('купленные связки светятся', doc.querySelectorAll('#board .tline.flow.done').length > 0,
+    'done-линий: ' + doc.querySelectorAll('#board .tline.flow.done').length);
+  check('выключение анимаций гасит эффекты', (function () {
+    /* jsdom не считает CSS — проверяем, что правила существуют в стилях */
+    const css = fs.readFileSync(path.join(ROOT, 'assets/css/style.css'), 'utf8');
+    return /\.no-anim \.orb-orbit/.test(css) && /\.no-anim \.tline\.flow/.test(css) &&
+      /\.no-anim \.tree-map \.node-orb\.can/.test(css);
+  })(), 'правила .no-anim в style.css');
+
+  section('5a3. Звук (WebAudio, без файлов)');
+  check('G.sfx есть', !!G.sfx);
+  check('звук включён по умолчанию', G.sfx.enabled(state) === true);
+  check('play() не падает без AudioContext', (function () {
+    try { return G.sfx.play('buy') === false; } catch (e) { return false; }
+  })(), 'в jsdom AudioContext нет — система молчит');
+  state.settings.sound = false;
+  check('выключенный звук не играет', G.sfx.play('buy') === false && G.sfx.enabled(state) === false);
+  state.settings.sound = true;
+
   section('5b. Решето (новая механика из дерева)');
   const sv = G.registry.mechanic('sieve');
   /* секция 5 обнулила дерево — снова открываем цепочку ветви «Автоматизация» */
@@ -399,6 +426,21 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   }
   check('ползунок меняет devSpeed', state.settings.devSpeed === 50,
     'devSpeed=' + state.settings.devSpeed);
+  const soundToggle = Array.from(doc.querySelectorAll('#modal-root input[type="checkbox"]'))
+    .find((i) => /Звук/.test(i.closest('label') ? i.closest('label').textContent : ''));
+  check('есть переключатель звука', !!soundToggle);
+  if (soundToggle) {
+    state.settings.sound = true;
+    soundToggle.checked = false;
+    soundToggle.dispatchEvent(new win.Event('change', { bubbles: true }));
+  }
+  check('тумблер выключает звук', state.settings.sound === false);
+  if (soundToggle) {
+    soundToggle.checked = true;
+    soundToggle.dispatchEvent(new win.Event('change', { bubbles: true }));
+  }
+  check('тумблер включает звук обратно', state.settings.sound === true);
+
   const devToggle = Array.from(doc.querySelectorAll('#modal-root input[type="checkbox"]'))
     .find((i) => /Ускорение/.test(i.closest('label') ? i.closest('label').textContent : ''));
   check('есть переключатель ускорения', !!devToggle);
