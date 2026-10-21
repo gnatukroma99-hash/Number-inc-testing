@@ -178,6 +178,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const dockBtns = () => Array.from(doc.querySelectorAll('#docks .dock'));
   /* «Решето» открывается только узлом дерева ◆ — покупаем узел, чтобы доска была доступна */
   state.res.cores = 1e4;
+  G.upgrades.buy(state, G.registry.upgrade('tree_battery'));    // корень ветви «Автоматизация»
   G.upgrades.buy(state, G.registry.upgrade('tree_auto_all'));   // предок узла «Решето»
   G.upgrades.buy(state, G.registry.upgrade('tree_sieve'));
   check('узел «Решето» открыл механику', G.registry.mechanic('sieve').isUnlocked(state));
@@ -224,8 +225,8 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   section('5. Дерево ◆ (узлы, предки, цена в ядрах)');
   const tree = G.registry.upgradesOf('tree');
   check('узлов в дереве', tree.length === 13, tree.length + ' шт');
-  check('ярусов дерева', (G.content.tree.tiers || []).length === 3,
-    (G.content.tree.tiers || []).map((t) => t.id).join(','));
+  check('ветви дерева', (G.content.tree.branches || []).length === 4,
+    (G.content.tree.branches || []).map((t) => t.id).join(','));
   const deep = tree.filter((u) => u.tier === 't3');
   check('ярус III не дешевле 60 ◆', deep.length >= 4 &&
     deep.every((u) => u.base >= 60), deep.map((u) => u.id + ':' + u.base).join(' '));
@@ -254,22 +255,61 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     'D=' + G.growth.D(state).toFixed(2));
   state.upg.tree_headstart2 = 0;
   check('ядра не сбрасываются', state.res.cores >= coresBefore, 'cores=' + state.res.cores);
-  /* заблокированный узел нельзя купить кликом */
-  state.upg.tree_softcap = 0;
-  state.upg.tree_tempo = 0;
-  state.res.cores = 500;
+  /* ---- визуал дерева: ветви-колонки, скрытые узлы, связки ---- */
+  for (const u of tree) state.upg[u.id] = 0;
+  state.res.cores = 1e6;
   click(dockBtns().find((b) => b.dataset.id === 'tree'));
   G.ui.app.render(state);
-  const lockedBtn = Array.from(doc.querySelectorAll('#board .node-buy'))
-    .find((b) => /нужно:/.test(b.textContent));
-  check('кнопка предка показывает «нужно:»', !!lockedBtn, textOf(lockedBtn));
-  if (lockedBtn) click(lockedBtn);
-  check('клик по закрытому узлу ничего не купил', G.lvl(state, 'tree_softcap') === 0);
-  check('цена узла — в ядрах', /\u25c6/.test(textOf(doc.querySelector('#board .tree-grid .node-buy'))),
-    textOf(doc.querySelector('#board .tree-grid .node-buy')));
+
+  const map = doc.querySelector('#board .tree-map');
+  check('карта дерева отрисована', !!map);
+  const heads = doc.querySelectorAll('#board .tree-branch-head');
+  check('4 колонки-ветви', heads.length === 4, heads.length + ' шт');
+  const cells = Array.from(doc.querySelectorAll('#board .tree-cell'));
+  check('клеток по числу узлов', cells.length === tree.length, cells.length + ' / ' + tree.length);
+  check('связки-линии (::before не проверить, но классы есть)', cells.filter((c) => c.classList.contains('root')).length === 4,
+    'корней: ' + cells.filter((c) => c.classList.contains('root')).length);
+
+  const unknownShown = () => Array.from(doc.querySelectorAll('#board .node.unknown'))
+    .filter((n) => n.style.display !== 'none').length;
+  const realShown = (name) => {
+    const cards = Array.from(doc.querySelectorAll('#board .node'));
+    const card = cards.find((n) => !n.classList.contains('unknown') &&
+      textOf(n.querySelector('.node-name')) === name);
+    return card && card.style.display !== 'none';
+  };
+
+  check('на старте видно только 4 корня ветвей', unknownShown() === tree.length - 4,
+    'скрыто: ' + unknownShown() + ' из ' + tree.length);
+  check('2-й узел ветви скрыт', realShown('Слом софткапа') === false);
+  check('корень ветви виден', realShown('Вечный разгон') === true);
+  const hiddenBtn = Array.from(doc.querySelectorAll('#board .node.unknown .node-buy'))
+    .filter((b) => b.parentElement.style.display !== 'none');
+  check('у скрытого узла нет имени/цены', hiddenBtn.length === tree.length - 4 &&
+    !/[0-9]/.test(textOf(hiddenBtn[0])),
+    'кнопок: ' + hiddenBtn.length + ' из ' + (tree.length - 4) + ', текст: «' + textOf(hiddenBtn[0]) + '»');
+
+  /* покупаем корень ветви → следующий узел проявляется */
+  state.res.cores = 1e6;
+  const tempoBtn = Array.from(doc.querySelectorAll('#board .tree-cell .node:not(.unknown)'))
+    .find((n) => textOf(n.querySelector('.node-name')) === 'Вечный разгон')
+    .querySelector('.node-buy');
+  click(tempoBtn);
+  G.ui.app.render(state);
+  check('после покупки корня 2-й узел проявился', realShown('Слом софткапа') === true,
+    'ур. Вечный разгон = ' + G.lvl(state, 'tree_tempo'));
+  check('скрытых стало меньше', unknownShown() === tree.length - 5, 'скрыто: ' + unknownShown());
+  check('цена узла — в ядрах', /\u25c6/.test(textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy'))),
+    textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy')));
 
   section('5b. Решето (новая механика из дерева)');
   const sv = G.registry.mechanic('sieve');
+  /* секция 5 обнулила дерево — снова открываем цепочку ветви «Автоматизация» */
+  state.res.cores = 1e6;
+  G.upgrades.buy(state, G.registry.upgrade('tree_battery'));
+  G.upgrades.buy(state, G.registry.upgrade('tree_auto_all'));
+  G.upgrades.buy(state, G.registry.upgrade('tree_sieve'));
+  G.upgrades.buy(state, G.registry.upgrade('tree_mirror'));
   const fresh = G.newState();
   G.initResources(fresh);
   check('без узла доска закрыта', sv.isUnlocked(fresh) === false);

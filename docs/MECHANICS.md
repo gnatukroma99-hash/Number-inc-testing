@@ -159,9 +159,19 @@ knee = 5, span = 17.5, power = 1.5
 ## 9. Дерево ◆ — `tree` ✅ (v0.4.0)
 
 Узлы — обычные апгрейды (`res: 'cores'`, `scope: 'meta'`), поэтому в сейве новых полей нет.
+Дерево нарисовано **ветвями** (v0.6.1): у узла есть `branch` (id ветви) и `depth` (глубина),
+ветви описаны в `content.tree.branches`. Пока не куплен родитель из `requires`, узел **скрыт**
+(вместо карточки — заглушка `???`).
 Покупка — общий `systems/upgrades.js`; `requires` — массив id узлов-предков.
 
 `M_total = M_base · Π(механики)^exp(магазин) · Mmult(дерево) · 1.5^◆`
+
+| Ветвь | Узлы по порядку (глубина 0 → N) |
+|---|---|
+| 🚀 Рывок | `tree_headstart` → `tree_headstart2` |
+| ⏩ Темп | `tree_tempo` → `tree_softcap` → `tree_pow` → `tree_span2` |
+| ◈ Множитель | `tree_base` → `tree_core` → `tree_core2` |
+| 🤖 Автоматизация | `tree_battery` → `tree_auto_all` → `tree_sieve` → `tree_mirror` |
 
 | Узел | Ярус | Цена (◆) | Уровни | Эффект |
 |---|---|---|---|---|
@@ -169,9 +179,9 @@ knee = 5, span = 17.5, power = 1.5
 | `tree_base` Плотность | I | `1 · 1.55^lvl` | 12 | `M_base += 40·lvl` |
 | `tree_battery` Ядро-батарейка | I | `2 · 2.20^lvl` | 6 | `⚡ ×= 3^lvl` |
 | `tree_tempo` Вечный разгон | I | `2 · 1.70^lvl` | 6 | `ΔT ×= 0.97^lvl` |
-| `tree_auto_all` Главный автоматизатор | II | **25** | 1 | авто-покупка сама покупает авто всех досок |
+| `tree_auto_all` Главный автоматизатор | II | **25** | 1 | авто-покупка сама покупает авто всех досок (нужен `tree_battery`) |
 | `tree_softcap` Слом софткапа | II | `6 · 1.85^lvl` | 6 | `span ×= 1.12^lvl` (нужен `tree_tempo`) |
-| `tree_core` Плотное ядро | II | `4 · 1.90^lvl` | 8 | `M ×= 1.6^lvl` (нужен `tree_auto_all`) |
+| `tree_core` Плотное ядро | II | `4 · 1.90^lvl` | 8 | `M ×= 1.6^lvl` (нужен `tree_base`) |
 | `tree_pow` Показатель II | II | `10 · 2.00^lvl` | 5 | `powM ×= 1.03^lvl`, степень ≤ 1.5 (нужен `tree_softcap`) |
 | `tree_sieve` Решето | III | **80** | 1 | открывает механику «Решето» (нужен `tree_auto_all`) |
 | `tree_headstart2` Рывок II | III | `90 · 2.20^lvl` | 4 | `+10` стартовых цифр за уровень (нужен `tree_headstart`) |

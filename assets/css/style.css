@@ -867,3 +867,86 @@ body.hide-formulas .formula-card { display: none; }
   border-color: var(--accent);
   font-weight: 800;
 }
+
+/* ---------- дерево ◆ как настоящее дерево: ветви и связки (v0.6.1) ---------- */
+
+.tree-map {
+  display: grid;
+  align-items: start;
+  gap: 32px 18px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 6px 2px 14px;
+}
+
+.tree-branch-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .05), transparent);
+  border-bottom: 2px solid var(--branch, var(--border));
+}
+.branch-icon { font-size: 18px; line-height: 1; }
+.branch-name { font-weight: 800; font-size: 14px; color: var(--branch, var(--accent)); }
+.branch-note { font-size: 11px; color: var(--dim2); text-align: center; }
+
+.tree-cell { position: relative; }
+.tree-cell .node { border-left: 3px solid var(--branch, var(--border)); }
+
+/* связка «предыдущий → текущий» */
+.tree-cell::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -32px;
+  height: 32px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--branch, var(--border));
+  opacity: .55;
+}
+.tree-cell::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -10px;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 9px solid var(--branch, var(--border));
+  opacity: .75;
+}
+.tree-cell.root::before,
+.tree-cell.root::after { display: none; }
+
+/* скрытая часть ветви — пунктир */
+.tree-cell.is-hidden::before {
+  width: 0;
+  background: none;
+  border-left: 2px dashed var(--dim2);
+  opacity: .45;
+}
+.tree-cell.is-hidden::after { border-top-color: var(--dim2); opacity: .3; }
+
+.node-tier {
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  color: var(--dim2);
+  font-weight: 700;
+}
+.node.unknown {
+  border-style: dashed;
+  opacity: .75;
+}
+.node.unknown .node-name { color: var(--dim2); letter-spacing: 3px; }
+.node.unknown .node-icon { color: var(--dim2); }
+
+.tree-orphans { grid-column: 1 / -1; }
