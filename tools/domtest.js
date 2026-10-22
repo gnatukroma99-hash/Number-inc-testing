@@ -201,7 +201,8 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.upgrades.buy(state, G.registry.upgrade('tree_sieve'));
   check('узел «Решето» открыл механику', G.registry.mechanic('sieve').isUnlocked(state));
   const ids = dockBtns().map((b) => b.dataset.id);
-  check('досок на навигации', ids.length === 12, ids.join(','));
+  check('досок на навигации', ids.length === G.registry.mechanics().length + 1,
+    ids.length + ' шт (механик ' + G.registry.mechanics().length + ' + core): ' + ids.join(','));
 
   for (const id of ids) {
     const btn = dockBtns().find((b) => b.dataset.id === id);
@@ -753,6 +754,133 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     G.prestige.perform(state);
     return (state.mech.mirror ? state.mech.mirror.grain : 0) === 0;
   })());
+
+  section('5d. Автомат ⌾ (новая механика: честный рандом, гарант, джекпот)');
+  /* предыдущая секция закончилась перерождением → D = 0, автомат был бы закрыт */
+  state.N = G.BN.fromLog10(12); state.D = 12;
+  const slot = G.registry.mechanic('slot');
+  check('механика slot в реестре', !!slot && !!G.slot, slot && slot.id);
+  check('в доках есть вкладка автомата', dockBtns().some((b) => b.dataset.id === 'slot'),
+    dockBtns().map((b) => b.dataset.id).join(','));
+  check('без 6 цифр автомат закрыт', slot.isUnlocked(G.newState()) === false &&
+    slot.isUnlocked(state) === true, 'D=' + G.growth.D(state).toFixed(1));
+
+  /* шансы считаются перебором всех 1000 комбинаций — никаких «на глаз» */
+  const slotOdds = G.slot.odds();
+  const sumP = slotOdds.reduce((s, o) => s + o.p, 0);
+  const combos = slotOdds.reduce((s, o) => s + o.n, 0);
+  const ev = slotOdds.reduce((s, o) => s + o.p * o.mult, 0);
+  check('шансы перебирают все 1000 комбинаций', combos === 1000 && Math.abs(sumP - 1) < 1e-12,
+    combos + ' комбo, Σp=' + sumP.toFixed(3));
+  check('EV ставки < 1 — автомат не печатает ⌁', ev < 1 && ev > 0.5, 'EV=' + ev.toFixed(3));
+
+  const rngSeq = (vals) => { let i = 0; return () => vals[i++ % vals.length]; };
+  state.mech.slot = null;
+  const sd = G.slot.data(state);
+  sd.share = 0.5;
+  state.res.energy = 1000;
+  G.slot.setRng(() => 0.15);                     /* 1,1,1 — три в ряд */
+  let sp = G.slot.spin(state);
+  check('три в ряд платят ×20', sp && sp.rule === 'triple' && sp.payout === sp.stake * 20,
+    sp && sp.digits.join('') + ' → ' + sp.name + ' (' + sp.payout + ')');
+  check('ставка списывается и выплата возвращается', state.res.energy === 1000 - 500 + 10000,
+    '⌁ = ' + state.res.energy);
+  check('пауза блокирует вторую прокрутку', G.slot.spin(state) === null && !G.slot.ready(state),
+    'cd=' + sd.cd.toFixed(2));
+  G.slot.tick(state, G.content.slot.gap + 0.01);
+  check('после паузы можно снова', G.slot.ready(state));
+
+  state.res.energy = 1e5;
+  const coresBeforeSlot = state.res.cores || 0;
+  const mNoBuff = G.growth.M(state);
+  G.slot.setRng(() => 0.75);                     /* 7,7,7 — джекпот */
+  sp = G.slot.spin(state);
+  check('777 — джекпот ×50 и +2 ◆', sp.rule === 'jack' && sp.payout === sp.stake * 50 &&
+    (state.res.cores || 0) === coresBeforeSlot + 2,
+    sp.digits.join('') + ' → ' + sp.name + ', ◆ ' + coresBeforeSlot + ' → ' + (state.res.cores || 0));
+  check('буфф джекпота множит M втрое', Math.abs(G.growth.M(state) / mNoBuff - 3) < 1e-9,
+    'M ×' + (G.growth.M(state) / mNoBuff).toFixed(2));
+  G.slot.tick(state, G.content.slot.jackpot.dur + 0.1);
+  check('буфф истекает', Math.abs(G.growth.M(state) - mNoBuff) < 1e-9);
+
+  /* холодная серия и гарант */
+  sd.cd = 0; sd.cold = 0;
+  state.res.energy = 1000;
+  G.slot.setRng(rngSeq([0.15, 0.35, 0.55]));     /* 1,3,5 — мимо */
+  sp = G.slot.spin(state);
+  check('пустая прокрутка: выплата 0, холод +1',
+    sp.rule === 'none' && sp.payout === 0 && sd.cold === 1,
+    sp.digits.join('') + ' → ' + sp.name + ', cold=' + sd.cold);
+  sd.cd = 0; sd.cold = G.content.slot.pity - 1;
+  state.res.energy = 1000;
+  sp = G.slot.spin(state);
+  check('гарант после ' + G.content.slot.pity + ' пустых — ×2',
+    sp.pity === true && sp.rule === 'pair' && sp.payout === sp.stake * 2,
+    'pity=' + sp.pity + ', ' + sp.name + ' ×' + sp.mult);
+  check('гарант сбрасывает холод', sd.cold === 0, 'cold=' + sd.cold);
+
+  /* доска */
+  click(dockBtns().find((b) => b.dataset.id === 'slot'));
+  state.res.energy = 5000;
+  G.ui.app.render(state);
+  check('доска: три барабана', doc.querySelectorAll('#board .slot-reel').length === 3);
+  check('доска: доли ставки из данных',
+    doc.querySelectorAll('#board .slot-share').length === G.content.slot.shares.length,
+    doc.querySelectorAll('#board .slot-share').length + ' шт');
+  check('доска: таблица выплат = правила',
+    doc.querySelectorAll('#board .slot-row').length === G.slot.rules().length,
+    doc.querySelectorAll('#board .slot-row').length + ' / ' + G.slot.rules().length);
+  click(Array.from(doc.querySelectorAll('#board .slot-share')).pop());
+  check('доля ставки переключается', G.slot.data(state).share === 1, 'share=' + G.slot.data(state).share);
+  G.slot.data(state).cd = 0;
+  G.slot.setRng(() => 0.75);
+  const spinBtnEl = doc.querySelector('#board .slot-spin');
+  /* тап с pointerType=touch + click: на телефоне именно так и работает */
+  spinBtnEl.dispatchEvent(ptr('pointerdown', 100, 100, 41, 'touch'));
+  spinBtnEl.dispatchEvent(ptr('pointerup', 100, 100, 41, 'touch'));
+  click(spinBtnEl);
+  check('кнопка КРУТИТЬ крутит тапом и пишет результат',
+    /×\s*50/.test(textOf(doc.querySelector('#board .slot-outcome'))),
+    textOf(doc.querySelector('#board .slot-outcome')));
+  check('барабаны показывают выпавшие цифры',
+    Array.from(doc.querySelectorAll('#board .slot-digit')).map(textOf).join('') === '777',
+    Array.from(doc.querySelectorAll('#board .slot-digit')).map(textOf).join(''));
+  check('история прокруток заполняется', doc.querySelectorAll('#board .slot-chip').length >= 1,
+    'чипов: ' + doc.querySelectorAll('#board .slot-chip').length);
+
+  /* сейв и сброс */
+  const slotSpins = G.slot.data(state).spins;
+  const slotSaved = G.save.serialize(state);
+  G.slot.data(state).spins = 0;
+  const slotRestored = G.save.deserialize(slotSaved);
+  check('счётчики автомата переживают сейв',
+    slotRestored.mech.slot && slotRestored.mech.slot.spins === slotSpins,
+    slotSpins + ' → ' + (slotRestored.mech.slot || {}).spins);
+  state.N = G.BN.fromLog10(20); state.D = 20;
+  G.prestige.perform(state);
+  check('автомат сбрасывается перерождением',
+    (state.mech.slot ? state.mech.slot.spins : 0) === 0, 'spins=' + (state.mech.slot || {}).spins);
+
+  section('5d1. Аудит тача по остальным доскам (тап = покупка)');
+  /* Дерево было единственной доской со своим pointer-кодом и там баг уже был.
+     Здесь проверяем остальные: тап обычным touch-указателем должен покупать. */
+  const lvlSum = () => G.registry.allUpgrades().reduce((s, u) => s + G.lvl(state, u.id), 0);
+  for (const id of ['digitsum', 'primefit', 'primeranks', 'shop', 'sieve', 'mirror']) {
+    if (!dockBtns().some((b) => b.dataset.id === id)) continue;
+    state.N = G.BN.fromLog10(30); state.D = 30;
+    state.res.energy = 1e12; state.res.prime = 1e9; state.res.cores = 1e9;
+    click(dockBtns().find((b) => b.dataset.id === id));
+    G.ui.app.render(state);
+    const btn = Array.from(doc.querySelectorAll('#board .upg .upg-buy')).filter((b) => !b.disabled)[0];
+    if (!btn) { check('тап: ' + id + ' — есть что купить', false, 'нет доступных кнопок'); continue; }
+    const before = lvlSum();
+    btn.dispatchEvent(ptr('pointerdown', 120, 300, 51, 'touch'));
+    btn.dispatchEvent(ptr('pointerup', 120, 300, 51, 'touch'));
+    click(btn);
+    G.ui.app.render(state);
+    check('тап покупает на доске ' + id, lvlSum() > before,
+      'уровней: ' + before + ' → ' + lvlSum());
+  }
 
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));

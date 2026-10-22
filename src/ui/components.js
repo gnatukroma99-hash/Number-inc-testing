@@ -13,12 +13,12 @@
   const MECH_COLOR = {
     core: '#35e2c0', digitsum: '#2bb5ff', primefit: '#a78bfa', primeranks: '#ff9de2',
     analysis: '#38e0ff', shop: '#ffd166', sieve: '#7cf7b0', mirror: '#5eead4',
-    tree: '#ffd166', achievements: '#ffc75f'
+    tree: '#ffd166', achievements: '#ffc75f', slot: '#ffd166'
   };
 
   const MECH_ICON = {
     core: '×', digitsum: 'Σ', primefit: '⧉', primeranks: '❖', analysis: 'Δ',
-    shop: 'cart', sieve: '⌗', mirror: '⧗', tree: '◆'
+    shop: 'cart', sieve: '⌗', mirror: '⧗', tree: '◆', slot: 'slot'
   };
 
   function fmtEffect(u, val) {

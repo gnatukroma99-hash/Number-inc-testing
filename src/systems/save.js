@@ -11,8 +11,10 @@
     KEY: KEY,
 
     /* ---- сериализация ---- */
+    /* ВАЖНО: отдаём СНИМОК, а не ссылки на живые объекты state. Раньше res/upg/mech
+       уходили по ссылке, и правка state после serialize() меняла уже «сохранённые» данные. */
     serialize(state) {
-      return {
+      return JSON.parse(JSON.stringify({
         v: G.SAVE_VERSION,
         created: state.created,
         lastSeen: Date.now(),
@@ -23,7 +25,7 @@
         stats: state.stats,
         settings: state.settings,
         meta: state.meta
-      };
+      }));
     },
 
     deserialize(data) {
