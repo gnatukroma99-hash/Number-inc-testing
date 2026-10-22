@@ -579,6 +579,85 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   stage.dispatchEvent(ptr('pointerup', 440, 300, 12, 'touch'));
   click(zbtns[2]);
 
+  section('5a1c. Дерево на телефоне: тап → лист → покупка (тач-путь)');
+  /* Раньше тач-путь вообще не проверялся: click() шлёт MouseEvent без pointerType,
+     доска считала это мышью и шла веткой «клик = покупка». Поэтому «кнопка в листе
+     не покупает на телефоне» (buyOnce(selected.u) — у апгрейда нет .u) доехал до юзера. */
+  for (const u of G.registry.upgradesOf('tree')) state.upg[u.id] = 0;
+  state.res.cores = 1e6;
+  click(dockBtns().find((b) => b.dataset.id === 'tree'));
+  G.ui.app.render(state);
+
+  const tstage = doc.querySelector('#board .tree-stage');
+  const tapAt = (el, x, y, id, dx, dy) => {
+    el.dispatchEvent(ptr('pointerdown', x, y, id, 'touch'));
+    if (dx || dy) el.dispatchEvent(ptr('pointermove', x + dx, y + dy, id, 'touch'));
+    el.dispatchEvent(ptr('pointerup', x + (dx || 0), y + (dy || 0), id, 'touch'));
+  };
+  const orbOf = (name) => {
+    const card = Array.from(doc.querySelectorAll('#board .tree-cell .node'))
+      .find((n) => !n.classList.contains('unknown') &&
+        textOf(n.querySelector('.node-name')) === name);
+    return card && card.querySelector('.node-orb');
+  };
+  const tipEl = () => doc.querySelector('#board .tree-tip');
+  const sheetBuy = () => doc.querySelector('#board .tree-tip .tip-buy');
+
+  const orbTempo = orbOf('Вечный разгон');
+  check('корневой узел доступен для тапа', !!orbTempo);
+  tapAt(orbTempo, 200, 200, 21);
+  G.ui.app.render(state);
+  check('тап по узлу открывает лист снизу',
+    doc.body.classList.contains('tree-sheet-mode') && tipEl().classList.contains('on') &&
+    tipEl().classList.contains('sheet'),
+    'sheet=' + tipEl().classList.contains('sheet'));
+  check('сам тап по узлу не покупает (нужен лист)', G.lvl(state, 'tree_tempo') === 0,
+    'ур. ' + G.lvl(state, 'tree_tempo'));
+
+  /* главный регресс: кнопка «купить» в листе — это единственный путь покупки на телефоне */
+  const lvlSheet = G.lvl(state, 'tree_tempo');
+  const priceFirst = textOf(sheetBuy());
+  click(sheetBuy());
+  check('кнопка в листе реально покупает (телефон)', G.lvl(state, 'tree_tempo') === lvlSheet + 1,
+    lvlSheet + ' → ' + G.lvl(state, 'tree_tempo'));
+  click(sheetBuy());
+  check('повторный тап покупает ещё', G.lvl(state, 'tree_tempo') === lvlSheet + 2,
+    'ур. ' + G.lvl(state, 'tree_tempo'));
+  check('цена в листе растёт после покупки', textOf(sheetBuy()) !== priceFirst,
+    '«' + priceFirst + '» → «' + textOf(sheetBuy()) + '»');
+
+  /* палец дрожит: 8 px — ещё тап, 50 px — уже панорама */
+  /* чистое касание по пустому месту снимает выделение */
+  tapAt(tstage, 300, 300, 22);
+  G.ui.app.render(state);
+  tapAt(orbOf('Слом софткапа') || orbTempo, 240, 240, 23, 4, 4);
+  G.ui.app.render(state);
+  check('тап с дрожью 8 px не становится панорамой',
+    tipEl().classList.contains('on') && G.lvl(state, 'tree_tempo') === lvlSheet + 2,
+    'ур. ' + G.lvl(state, 'tree_tempo'));
+
+  tapAt(tstage, 300, 300, 24);          /* снять выделение чистым тапом */
+  G.ui.app.render(state);
+  const lvlBeforeDrag = G.lvl(state, 'tree_tempo');
+  const transformBefore = doc.querySelector('#board .tree-map').style.transform;
+  tapAt(orbTempo, 260, 260, 25, 30, 20);   /* 50 px — это панорама */
+  G.ui.app.render(state);
+  check('сдвиг 50 px — панорама, лист не открывается',
+    !tipEl().classList.contains('on') && G.lvl(state, 'tree_tempo') === lvlBeforeDrag,
+    'лист=' + tipEl().classList.contains('on') + ', ур. ' + G.lvl(state, 'tree_tempo'));
+  check('панорама при этом реально сдвинула карту',
+    doc.querySelector('#board .tree-map').style.transform !== transformBefore, 'transform изменился');
+
+  /* два пальца — щипок, а не покупка */
+  const lvlPinch = G.lvl(state, 'tree_tempo');
+  tstage.dispatchEvent(ptr('pointerdown', 300, 300, 31, 'touch'));
+  tstage.dispatchEvent(ptr('pointerdown', 340, 300, 32, 'touch'));
+  tstage.dispatchEvent(ptr('pointerup', 300, 300, 31, 'touch'));
+  tstage.dispatchEvent(ptr('pointerup', 340, 300, 32, 'touch'));
+  G.ui.app.render(state);
+  check('двумя пальцами ничего не покупается', G.lvl(state, 'tree_tempo') === lvlPinch,
+    'ур. ' + G.lvl(state, 'tree_tempo'));
+
   section('5a2. Эффекты дерева: частицы у купленных узлов и поток света');
   /* возвращаемся на доску дерева и покупаем корень — иначе нечего подсвечивать */
   state.res.cores = 1e6;

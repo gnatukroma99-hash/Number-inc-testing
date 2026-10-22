@@ -23,6 +23,7 @@
   const ZSTART = 1.6;
   const PAD = 120;            /* сколько карты обязано остаться в кадре */
   const DRAG_SLOP = 5;        /* сдвиг в px, после которого это уже панорама, а не клик */
+  const DRAG_SLOP_TOUCH = 12; /* палец «дрожит» сильнее: тап на телефоне не должен стать панорамой */
   const HOLD_DELAY = 380;     /* зажатие на узле → повторные покупки */
   const HOLD_EVERY = 150;
 
@@ -199,7 +200,9 @@
       const tipBuy = G.h('button', { class: 'tip-buy', type: 'button' });
       const tip = G.h('div', { class: 'tree-tip' }, [tipTitle, tipSub, tipDesc, tipEff, tipBuy]);
       tipBuy.addEventListener('click', () => {
-        if (selected) buyOnce(selected.u);
+        /* selected — это сам апгрейд (так его ставит selectNode), а не запись карточки,
+           поэтому .u здесь нет: раньше кнопка в листе молча не покупала НА ТЕЛЕФОНЕ. */
+        if (selected) buyOnce(selected);
       });
 
       let selected = null;      /* узел, закреплённый тапом */
@@ -484,7 +487,8 @@
 
         const dx = e.clientX - pan.sx;
         const dy = e.clientY - pan.sy;
-        if (!pan.moved && Math.abs(dx) + Math.abs(dy) < DRAG_SLOP) return;
+        const slop = e.pointerType === 'touch' ? DRAG_SLOP_TOUCH : DRAG_SLOP;
+        if (!pan.moved && Math.abs(dx) + Math.abs(dy) < slop) return;
         if (!pan.moved) {
           pan.moved = true;
           stage.classList.add('grabbing');
