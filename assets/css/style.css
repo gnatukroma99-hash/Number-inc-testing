@@ -2262,3 +2262,53 @@ body.no-anim .slot-digit.roll, body.no-anim .slot-spin.hit { animation: none !im
 .slot-share.slot-res { flex: 0 1 auto; min-width: 54px; font-size: 15px; padding: 8px 12px; }
 .slot-outcome.reson { color: #c9a0ff; text-shadow: 0 0 12px rgba(201, 160, 255, .5); }
 .slot-note { margin-top: 8px; font-size: 11.5px; line-height: 1.45; color: var(--dim); }
+
+/* ---------- Ярус 2: БОЛЬШОЙ БУМ и глифы ◈ (v0.14.0) ---------- */
+.bigbang-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 16px;
+  font: 800 15px/1 var(--mono);
+  letter-spacing: .06em;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 209, 102, .5);
+  background: linear-gradient(180deg, rgba(255, 209, 102, .22), rgba(255, 157, 226, .12));
+  color: #ffe6a8;
+}
+.bigbang-btn:disabled { opacity: .45; }
+.bb-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.bb-col { padding: 10px 12px; border-radius: 11px; background: rgba(255, 255, 255, .03); }
+.bb-col.good { border-left: 2px solid var(--good, #8ada6a); }
+.bb-col.bad { border-left: 2px solid #ff6b6b; }
+.bb-col-title { font: 800 12px/1.2 system-ui, sans-serif; color: #eaf7ff; margin-bottom: 6px; }
+.bb-list { margin: 0; padding-left: 16px; }
+.bb-list li { font-size: 11.5px; line-height: 1.5; color: var(--dim); }
+
+.glyph-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+.glyph-card {
+  position: relative;
+  padding: 12px 10px 11px;
+  border-radius: 13px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .03);
+  cursor: pointer;
+  text-align: center;
+  transition: .15s;
+}
+.glyph-card.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.glyph-card.reson { border-color: var(--glyph, #ffd166); box-shadow: 0 0 14px rgba(255, 209, 102, .28); }
+.glyph-digit { font: 800 30px/1 var(--mono); color: var(--glyph, #eaf7ff); font-variant-numeric: tabular-nums; }
+.glyph-name { margin-top: 5px; font: 800 12px/1.2 system-ui, sans-serif; color: #eaf7ff; }
+.glyph-text { margin-top: 4px; font-size: 10.5px; line-height: 1.35; color: var(--dim2); }
+.glyph-badge {
+  position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+  font: 700 9px/1 var(--mono); letter-spacing: .04em;
+  color: var(--glyph, var(--dim2)); white-space: nowrap;
+}
+.glyph-roll { width: 100%; margin-top: 12px; padding: 13px; font: 800 14px/1 var(--mono); }
+.glyph-lead { margin-top: 10px; font: 700 11.5px/1.4 var(--mono); color: var(--dim); }
+.glyph-effect { font: 800 12.5px/1.6 var(--mono); color: var(--accent); }
+@media (max-width: 720px) {
+  .glyph-slots { grid-template-columns: 1fr; }
+  .bb-cols { grid-template-columns: 1fr; }
+}

@@ -21,14 +21,14 @@
     hint: '◆ Ядра тратятся только здесь. Восемь ветвей: каждая — своя цепочка. ' +
           'Следующий узел ветви виден только после покупки предыдущего.',
     branches: [
-      { id: 'start', name: 'Рывок', icon: 'rocket', color: '#8ada6a', note: 'старт забега сильнее', angle: -141 },
+      { id: 'start', name: 'Рывок', icon: 'rocket', color: '#8ada6a', note: 'старт забега сильнее', angle: -135 },
       { id: 'tempo', name: 'Темп', icon: 'fast', color: '#2bb5ff', note: 'скорость и софткап', angle: -90 },
-      { id: 'mult', name: 'Множитель', icon: '◈', color: '#ffd166', note: 'плоские × к M', angle: -39 },
-      { id: 'income', name: 'Доход', icon: '❖', color: '#6ee7f9', note: 'энергия, ❖, цены', angle: 13 },
-      { id: 'auto', name: 'Автоматизация', icon: 'robot', color: '#ff9de2', note: 'авто и механики', angle: 64 },
-      { id: 'spark', name: 'Искра', icon: '✦', color: '#ffd166', note: 'ловить искры выгоднее', angle: 116 },
-      { id: 'cores', name: 'Ядра', icon: '◆', color: '#ffb14d', note: 'больше ◆ за перерождение', angle: 167 },
-      { id: 'slot', name: 'Автомат', icon: 'slot', color: '#ffd166', note: 'автомат крутится чаще и платит больше', angle: 219 }
+      { id: 'mult', name: 'Множитель', icon: '◈', color: '#ffd166', note: 'плоские × к M', angle: -45 },
+      { id: 'income', name: 'Доход', icon: '❖', color: '#6ee7f9', note: 'энергия, ❖, цены', angle: 0 },
+      { id: 'auto', name: 'Автоматизация', icon: 'robot', color: '#ff9de2', note: 'авто и механики', angle: 45 },
+      { id: 'spark', name: 'Искра', icon: '✦', color: '#ffd166', note: 'ловить искры выгоднее', angle: 90 },
+      { id: 'cores', name: 'Ядра', icon: '◆', color: '#ffb14d', note: 'больше ◆ за перерождение', angle: 135 },
+      { id: 'slot', name: 'Автомат', icon: 'slot', color: '#ffd166', note: 'автомат крутится чаще и платит больше', angle: 180 }
     ],
     tiers: [
       { id: 't1', name: 'I' },

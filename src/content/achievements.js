@@ -62,6 +62,16 @@
       { id: 'a_slot_streak', icon: 'sparkle', name: 'Горячая рука', desc: '5 выигрышей подряд',
         cond: 'slotStreak >= 5' },
 
+      /* --- Ярус 2 (v0.14.0) --- */
+      { id: 'a_bang', icon: 'burst', name: 'БОЛЬШОЙ БУМ', desc: 'Схлопнуть число первый раз',
+        cond: 'bangs >= 1' },
+      { id: 'a_wall', icon: 'brick', name: 'За стеной', desc: 'Снять стену 1e308 навсегда',
+        cond: 'wallPassed >= 1' },
+      { id: 'a_glyphs', icon: '◈', name: 'Собрание', desc: 'Заполнить все 3 слота глифов',
+        cond: 'glyphs >= 3' },
+      { id: 'a_glyphres', icon: '✦', name: 'Резонанс глифов', desc: 'Глиф совпал с первой цифрой числа',
+        cond: 'glyphReson >= 1' },
+
       { id: 'a_hour', icon: 'clock', name: 'Час в игре', desc: 'Час суммарного времени',
         cond: 'playtime >= 3600' },
       { id: 'a_collector', icon: 'trophy', name: 'Коллекционер', desc: 'Открыть 12 достижений',

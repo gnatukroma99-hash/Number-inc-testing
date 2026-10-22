@@ -184,6 +184,13 @@
         growE: cfg.growE !== undefined ? cfg.growE : 1.25
       });
       e *= W.upgProduct(state, 'energyMult');
+      /* механики могут усилить/ослабить добычу ⌁ (общий хук, имён механик движок не знает) */
+      for (const m of G.registry.mechanics()) {
+        if (m.isUnlocked && !m.isUnlocked(state)) continue;
+        if (typeof m.energyMult !== 'function') continue;
+        const k = m.energyMult(state);
+        if (isFinite(k) && k > 0) e *= k;
+      }
       return isFinite(e) && e > 0 ? e : 0;
     },
 

@@ -28,6 +28,8 @@
   const HOLD_EVERY = 150;
 
   const TIER_LABEL = { t1: 'I', t2: 'II', t3: 'III', t4: 'IV' };
+  /* геометрия карты наружу — чтобы тесты ловили выход узлов за край и перекрытие ветвей */
+  mech.geometry = { SIZE: SIZE, HUB: HUB, R0: R0, RSTEP: RSTEP, DRIFT: DRIFT };
 
   function svgEl(tag, attrs) {
     const el = document.createElementNS('http://www.w3.org/2000/svg', tag);

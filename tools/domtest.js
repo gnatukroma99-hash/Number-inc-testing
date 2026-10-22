@@ -1043,6 +1043,37 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.slot.setRng(null);
 
   section('5f. Ярус IV дерева (5000+ ◆)');
+  /* геометрия карты: две ветви с одинаковым углом рисуются ДРУГ НА ДРУГЕ.
+     Так и было с «Автоматом» (219°) и «Рывком» (−141° = 219°) — исправлено в v0.14.0. */
+  const angles = (G.content.tree.branches || []).map((b) => ({ id: b.id, a: ((Number(b.angle) % 360) + 360) % 360 }));
+  let minGap = 360, minPair = null;
+  for (let i = 0; i < angles.length; i++) {
+    for (let j = i + 1; j < angles.length; j++) {
+      let d = Math.abs(angles[i].a - angles[j].a);
+      d = Math.min(d, 360 - d);
+      if (d < minGap) { minGap = d; minPair = angles[i].id + '/' + angles[j].id; }
+    }
+  }
+  check('ветви дерева не перекрываются по углу', minGap >= 22,
+    'минимальный зазор ' + minGap.toFixed(1) + '° (' + minPair + ')');
+
+  /* узлы не должны вылезать за карту: глубокая ветвь на оси 0°/180° упирается в край */
+  const geo = G.registry.mechanic('tree').geometry;
+  check('геометрия карты доступна тестам', !!geo && geo.SIZE > 0, JSON.stringify(geo));
+  const outside = [];
+  for (const u of tree) {
+    const bi = (G.content.tree.branches || []).findIndex((b) => b.id === u.branch);
+    if (bi < 0) continue;
+    const ed = u.depth || 0;
+    const ang = ((Number(G.content.tree.branches[bi].angle) || 0) +
+      Math.sin(ed * 0.8 + bi * 1.9) * geo.DRIFT) * Math.PI / 180;
+    const rad = geo.R0 + ed * geo.RSTEP;
+    const x = geo.HUB + Math.cos(ang) * rad;
+    const y = geo.HUB + Math.sin(ang) * rad;
+    if (x < 0 || y < 0 || x > geo.SIZE || y > geo.SIZE) outside.push(u.id + ' (' + x.toFixed(0) + ',' + y.toFixed(0) + ')');
+  }
+  check('все узлы влезают в карту', outside.length === 0,
+    outside.length ? outside.slice(0, 4).join(' · ') : (tree.length + ' узлов внутри ' + geo.SIZE + '×' + geo.SIZE));
   const t4 = G.registry.upgradesOf('tree').filter((u) => u.tier === 't4');
   check('ярус IV: 6 узлов', t4.length === 6, t4.map((u) => u.id).join(','));
   check('ярус IV: цены 5000+ ◆', t4.every((u) => u.base >= 5000),
@@ -1097,6 +1128,127 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('узел яруса IV покупается за ◆', G.lvl(state, 'tree_tempo3') === 1,
     'ур. ' + G.lvl(state, 'tree_tempo3'));
   for (const u of G.registry.upgradesOf('tree')) state.upg[u.id] = 0;
+
+  section('5g. Ярус 2: БОЛЬШОЙ БУМ + Δ');
+  const bb = G.registry.mechanic('bigbang');
+  const gl = G.registry.mechanic('glyphs');
+  check('механики bigbang и glyphs в реестре', !!bb && !!gl && !!G.bigbang && !!G.glyphs,
+    (bb && bb.id) + ', ' + (gl && gl.id));
+  check('в доках есть вкладки БУМ и Глифы',
+    dockBtns().some((b) => b.dataset.id === 'bigbang') && dockBtns().some((b) => b.dataset.id === 'glyphs'),
+    'доков: ' + dockBtns().length);
+  check('валюта Δ зарегистрирована', !!G.registry.resource('delta'),
+    'scope = ' + (G.registry.resource('delta') || {}).scope);
+
+  state.N = G.BN.fromLog10(250); state.D = 250;
+  check('БУМ не считается ниже порога', G.bigbang.gain(state) === 0 && !G.bigbang.canDo(state),
+    'D=250 → Δ ' + G.bigbang.gain(state));
+
+  state.N = G.BN.fromLog10(313); state.D = 313;
+  const gainPredict = G.bigbang.gain(state);
+  check('Δ за БУМ считается по формуле', gainPredict > 0, 'Δ ' + gainPredict);
+  const wallBefore = G.growth.wallFactor(state);
+  check('стена режет рост до БУМА', wallBefore > 0 && wallBefore < 0.9,
+    'фактор роста ' + wallBefore.toFixed(3));
+  const coresBeforeBB = state.res.cores || 0;
+  state.res.energy = 1234;
+  const gotDelta = G.bigbang.perform(state);
+  check('БУМ даёт Δ', gotDelta === gainPredict && state.res.delta >= gotDelta,
+    'Δ ' + state.res.delta + ' (получено ' + gotDelta + ')');
+  check('стена 1e308 снята навсегда', G.bigbang.wallPassed(state) &&
+    (state.meta.passedBarriers || []).indexOf('wall_308') >= 0, JSON.stringify(state.meta.passedBarriers));
+  state.N = G.BN.fromLog10(313); state.D = 313;
+  check('стена больше не тормозит рост', G.growth.wallFactor(state) === 1,
+    'фактор ' + wallBefore.toFixed(3) + ' → ' + G.growth.wallFactor(state).toFixed(3));
+  check('◆ и дерево пережили БУМ', (state.res.cores || 0) >= coresBeforeBB,
+    '◆ ' + coresBeforeBB + ' → ' + state.res.cores);
+  check('забег сброшен (⌁ в ноль)', (state.res.energy || 0) === 0, '⌁ ' + state.res.energy);
+  check('ярус 2 открыт', state.meta.tier === 'tier2' && G.bigbang.tierOpen(state), state.meta.tier);
+
+  section('5h. Глифы ◈ (рандом с плюсом и минусом)');
+  state.N = G.BN.fromLog10(12); state.D = 12;
+  check('глифы открылись после БУМА', gl.isUnlocked(state) === true);
+  check('до БУМА глифы закрыты', gl.isUnlocked({ res: { delta: 0 }, meta: {}, mech: {} }) === false);
+
+  /* детерминированный рандом: редкость и профиль тоже бросаются */
+  let gSeed = 2024;
+  G.glyphs.setRng(() => { gSeed = (gSeed * 1103515245 + 12345) % 2147483648; return gSeed / 2147483648; });
+  state.res.delta = 30;
+  G.glyphs.restart(state);
+  const dBefore = state.res.delta;
+  G.glyphs.setActive(state, 0);
+  let rolled = G.glyphs.roll(state);
+  check('прокрутка стоит Δ', state.res.delta === dBefore - G.content.glyphs.rollCost,
+    'Δ ' + dBefore + ' → ' + state.res.delta);
+  check('глиф попал в выбранный слот', G.glyphs.data(state).slots[0] === rolled.glyph &&
+    rolled.slot === 0, 'цифра ' + rolled.glyph.digit + ', ' + rolled.glyph.rarity);
+  state.res.delta = 0;
+  check('без Δ прокрутки нет', G.glyphs.roll(state) === null && !G.glyphs.canRoll(state));
+
+  /* резонанс: глиф с цифрой, равной первой цифре числа, сильнее в 1.5 раза */
+  state.res.delta = 100;
+  const lead2 = G.glyphs.leadDigit(state);
+  G.glyphs.restart(state);
+  const gd = G.glyphs.data(state);
+  gd.slots[0] = { id: 900, digit: lead2, rarity: 'common', profile: 'greed' };
+  const effReson = G.glyphs.effects(state);
+  gd.slots[0] = { id: 901, digit: (lead2 + 5) % 10, rarity: 'common', profile: 'greed' };
+  const effPlain = G.glyphs.effects(state);
+  check('резонанс-глиф сильнее обычного', effReson.reson === 1 && effPlain.reson === 0 &&
+    Math.abs(effReson.M - (1 + 0.35 * G.content.glyphs.resonance)) < 1e-9 &&
+    Math.abs(effPlain.M - 1.35) < 1e-9,
+    'M ×' + effReson.M.toFixed(3) + ' (резонанс) vs ×' + effPlain.M.toFixed(3));
+  check('минус профиля тоже растёт', effReson.energy < effPlain.energy,
+    '⌁ ' + effReson.energy.toFixed(3) + ' vs ' + effPlain.energy.toFixed(3));
+
+  /* эффекты доходят до движка через хуки механик */
+  state.mech.glyphs = null;
+  const dNo = G.glyphs.data(state);
+  dNo.slots[0] = null;
+  const dtNo = G.growth.dt(state);
+  const eNo = G.growth.energyRate(state);
+  const mNo = G.growth.M(state);
+  dNo.slots[0] = { id: 902, digit: (lead2 + 4) % 10, rarity: 'common', profile: 'greed' };
+  check('глифы меняют M', G.growth.M(state) > mNo, 'M ×' + (G.growth.M(state) / mNo).toFixed(3));
+  dNo.slots[1] = { id: 903, digit: (lead2 + 3) % 10, rarity: 'common', profile: 'tide' };
+  check('глифы меняют ΔT и ⌁', G.growth.dt(state) < dtNo && G.growth.energyRate(state) !== eNo,
+    'ΔT ' + dtNo.toFixed(2) + ' → ' + G.growth.dt(state).toFixed(2) +
+    ', ⌁ ' + eNo.toFixed(2) + ' → ' + G.growth.energyRate(state).toFixed(2));
+
+  /* сейв и сброс */
+  const gSaved = G.save.serialize(state);
+  const gBack = G.save.deserialize(gSaved);
+  check('глифы переживают сейв',
+    gBack.mech.glyphs && gBack.mech.glyphs.slots.filter(Boolean).length >= 1,
+    'слотов занято: ' + (gBack.mech.glyphs ? gBack.mech.glyphs.slots.filter(Boolean).length : 0));
+  G.resetScopes(state, ['run']);
+  check('обычное перерождение глифы не сбрасывает (scope tier)',
+    (G.glyphs.data(state).slots || []).filter(Boolean).length >= 1,
+    'занято: ' + G.glyphs.data(state).slots.filter(Boolean).length);
+  G.glyphs.setRng(null);
+
+  /* доски */
+  state.N = G.BN.fromLog10(12); state.D = 12;
+  state.res.delta = 50;
+  click(dockBtns().find((b) => b.dataset.id === 'glyphs'));
+  G.ui.app.render(state);
+  check('доска глифов: три слота', doc.querySelectorAll('#board .glyph-card').length ===
+    (G.content.glyphs.slots || 3), doc.querySelectorAll('#board .glyph-card').length + ' шт');
+  const rollEl = doc.querySelector('#board .glyph-roll');
+  const deltaBeforeRoll = state.res.delta;
+  click(rollEl);
+  check('кнопка прокрутки работает тапом', state.res.delta === deltaBeforeRoll - G.content.glyphs.rollCost,
+    'Δ ' + deltaBeforeRoll + ' → ' + state.res.delta);
+  click(dockBtns().find((b) => b.dataset.id === 'bigbang'));
+  G.ui.app.render(state);
+  const bbBtn = doc.querySelector('#board .bigbang-btn');
+  check('доска БУМА: кнопка на месте', !!bbBtn);
+  state.N = G.BN.fromLog10(307); state.D = 307;
+  G.ui.app.render(state);
+  const deltaBeforeBang = state.res.delta;
+  click(bbBtn);
+  check('кнопка БУМА срабатывает', state.res.delta > deltaBeforeBang && (state.meta.bangs || 0) >= 2,
+    'Δ ' + deltaBeforeBang + ' → ' + state.res.delta + ', бУМов ' + state.meta.bangs);
 
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
