@@ -58,6 +58,11 @@
         id: 'echo', name: 'Эхо', color: '#c9a0ff',
         plus: { M: 0.20, speed: 0.04 }, minus: { dt: 1.06 },
         text: 'M +20 % · скорость +0.04 · ΔT ×1.06'
+      },
+      {
+        id: 'kernel', name: 'Ядро', color: '#ffb14d',
+        plus: { coreGain: 0.3 }, minus: { M: 0.2 },
+        text: '◆ за перерождение +30 % · M −20 %'
       }
     ]
   };

@@ -14,19 +14,25 @@ const RUNS = Math.max(1, Number(process.argv[2] || 1));
 const MAX_MIN = Number(process.argv[3] || 400);
 const DT = 0.05;
 
-const FILES = [
-  'src/core/eventbus.js', 'src/core/bignum.js', 'src/core/digits.js', 'src/core/formula.js',
-  'src/core/format.js', 'src/core/dom.js', 'src/core/registry.js',
-  'src/systems/state.js', 'src/systems/primes.js', 'src/systems/sampling.js',
-  'src/systems/upgrades.js', 'src/systems/growth.js', 'src/systems/prestige.js',
-  'src/systems/automation.js', 'src/systems/achievements.js', 'src/systems/spark.js', 'src/systems/save.js',
-  'src/content/tier1.js', 'src/content/prestige.js', 'src/content/automation.js', 'src/content/tree.js', 'src/content/achievements.js', 'src/content/spark.js',
-  'src/mechanics/digitsum/index.js', 'src/mechanics/primefit/index.js',
-  'src/mechanics/primeranks/index.js', 'src/mechanics/analysis/index.js',
-  'src/mechanics/shop/index.js', 'src/mechanics/prestige/index.js',
-  'src/mechanics/tree/index.js', 'src/mechanics/sieve/index.js', 'src/mechanics/mirror/index.js',
-  'src/mechanics/achievements/index.js', 'src/mechanics/spark/index.js'
-];
+/* Список скриптов берём из index.html — иначе bench грузит устаревший набор и,
+   например, не видит новых механик (и условия достижений падают в ReferenceError).
+   Не грузим только то, что требует реального DOM/браузера: main.js, ui/*, доски механик. */
+function filesFromIndex() {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const out = [];
+  const re = /<script\s+src="([^"]+)"/g;
+  let m;
+  while ((m = re.exec(html))) {
+    const src = m[1].split('?')[0];
+    if (src === 'src/main.js') continue;
+    if (src.indexOf('src/ui/') === 0) continue;
+    if (/^src\/mechanics\/[^/]+\/board\.js$/.test(src)) continue;
+    out.push(src);
+  }
+  return out;
+}
+
+const FILES = filesFromIndex();
 
 const sandbox = {
   window: {},

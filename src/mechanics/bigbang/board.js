@@ -25,10 +25,13 @@
         G.h('ul', { class: 'bb-list' }, items.map((t) => G.h('li', { text: t })))
       ]);
 
+      const rows = G.registry.upgradesOf('bigbang').map((u) => C.upgradeRow(G.state, u));
+
       const el = G.h('div', { class: 'board-body' }, [
         G.h('p', { class: 'board-hint', text: mech.hint }),
         C.grid([tNow.el, tGain.el, tBangs.el, tWall.el]),
         btn,
+        C.section('Осколки в силу (покупки за Δ)', rows.map((r) => r.el)),
         C.section('Что происходит', [
           G.h('div', { class: 'bb-cols' }, [
             list('Останется', G.content.bigbang.keeps || [], 'good'),
@@ -47,6 +50,7 @@
           tBangs.set(String(state.meta.bangs || 0));
           tWall.set(G.bigbang.wallPassed(state) ? 'снята' : 'держится');
           tWall.setClass('tile ' + (G.bigbang.wallPassed(state) ? 'good' : 'bad'));
+          rows.forEach((r) => r.update(state));
           btn.disabled = gain <= 0;
           btn.textContent = gain > 0
             ? 'БОЛЬШОЙ БУМ · +' + G.fmt.num(gain) + ' Δ'

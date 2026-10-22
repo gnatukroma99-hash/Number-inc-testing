@@ -35,4 +35,37 @@
     keeps: ['◆ Ядра и дерево', 'Δ Осколки', 'достижения и рекорды', 'настройки и облако'],
     loses: ['⌁ энергия, ❖ ПРАЙМ', 'все апгрейды забега', 'автомат и искры забега']
   };
+
+  /* ============ АПГРЕЙДЫ ЯРУСА 2 (за Δ) ============
+     Покупаются только осколками Δ, поэтому на первый забег не влияют.
+     Поля — общие поля движка (coreGainMult/coreGainAdd/coreGainPerNode/deltaGainMult):
+     их собирают systems/prestige.js и systems/bigbang.js, имён механик движок не знает. */
+  G.registry.addUpgrades([
+    {
+      id: 't2_corebase', mech: 'bigbang', scope: 'tier', res: 'delta', icon: 'core',
+      name: 'Осколки в ядра', base: 3, growth: 2.20, max: 8,
+      formula: '1.6 ** lvl', fmt: 'x', coreGainMult: '1.6 ** lvl',
+      note: '◆ за перерождение ×= 1.6^lvl'
+    },
+    {
+      id: 't2_coreadd', mech: 'bigbang', scope: 'tier', res: 'delta', icon: '◆',
+      name: 'Ядро сверху', base: 5, growth: 2.40, max: 6,
+      formula: '5 * lvl', fmt: 'num', coreGainAdd: '5 * lvl',
+      note: '+5·lvl ◆ к каждому перерождению',
+      requires: ['t2_corebase']
+    },
+    {
+      id: 't2_corepernode', mech: 'bigbang', scope: 'tier', res: 'delta', icon: 'tree',
+      name: 'Узел = ядро', base: 8, growth: 2.60, max: 4,
+      formula: 'lvl', fmt: 'num', coreGainPerNode: '1 * lvl',
+      note: '+1·lvl ◆ за каждый купленный узел дерева',
+      requires: ['t2_coreadd']
+    },
+    {
+      id: 't2_delta', mech: 'bigbang', scope: 'tier', res: 'delta', icon: '◈',
+      name: 'Глубокий БУМ', base: 4, growth: 2.30, max: 8,
+      formula: '1.3 ** lvl', fmt: 'x', deltaGainMult: '1.3 ** lvl',
+      note: 'Δ за БУМ ×= 1.3^lvl'
+    }
+  ]);
 })(window.G = window.G || {});

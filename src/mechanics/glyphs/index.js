@@ -56,7 +56,7 @@
     /* суммарные эффекты всех надетых глифов */
     effects(state) {
       const d = S.data(state);
-      let M = 1, dt = 1, energy = 1, speed = 0, reson = 0, used = 0;
+      let M = 1, dt = 1, energy = 1, speed = 0, coreGain = 0, reson = 0, used = 0;
       for (let i = 0; i < d.slots.length; i++) {
         const g = d.slots[i];
         if (!g) continue;
@@ -70,12 +70,14 @@
         if (plus.energy) energy *= 1 + plus.energy * k;
         if (plus.speed) speed += plus.speed * k;
         if (plus.dt) dt *= Math.pow(plus.dt, k);
+        if (plus.coreGain) coreGain += plus.coreGain * k;
         if (minus.M) M *= Math.max(0.15, 1 - minus.M * k);
         if (minus.energy) energy *= Math.max(0.15, 1 - minus.energy * k);
         if (minus.speed) speed -= minus.speed * k;
         if (minus.dt) dt *= Math.pow(minus.dt, k);
+        if (minus.coreGain) coreGain -= minus.coreGain * k;
       }
-      return { M: M, dt: dt, energy: energy, speed: speed, reson: reson, used: used };
+      return { M: M, dt: dt, energy: energy, speed: speed, coreGain: coreGain, reson: reson, used: used };
     },
 
     /* можно ли крутить */
@@ -150,6 +152,7 @@
     mult(state) { return S.effects(state).M; },
     dtMult(state) { return S.effects(state).dt; },
     energyMult(state) { return S.effects(state).energy; },
+    coreGainMult(state) { return 1 + S.effects(state).coreGain; },
     speedBonus(state) { return S.effects(state).speed; },
 
     onReset(state) { S.restart(state); },

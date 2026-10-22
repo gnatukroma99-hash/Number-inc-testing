@@ -1498,6 +1498,81 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('кнопка сжатия работает тапом', G.chrono.left(state) > 0 && state.res.delta < deltaChrono,
     'Δ ' + deltaChrono + ' → ' + state.res.delta);
 
+  section('5l. Ядра после БУМА: покупки за Δ, глифы и испытания (§1.4.1 — только первый забег)');
+  state.N = G.BN.fromLog10(120); state.D = 120;
+  state.res.delta = 500;
+  const t2 = G.registry.upgradesOf('bigbang');
+  check('апгрейды Яруса 2 в реестре', t2.length === 4, t2.map((u) => u.id).join(','));
+  check('все покупки — за Δ и scope tier', t2.every((u) => u.res === 'delta' && u.scope === 'tier'),
+    t2.map((u) => u.res).join(','));
+  check('доска БУМА показывает покупки за Δ', (function () {
+    click(dockBtns().find((b) => b.dataset.id === 'bigbang'));
+    G.ui.app.render(state);
+    return doc.querySelectorAll('#board .upg').length >= 4;
+  })(), 'рядов апгрейдов: ' + doc.querySelectorAll('#board .upg').length);
+
+  for (const u of G.registry.upgradesOf('tree')) state.upg[u.id] = 0;
+  const gainBase = G.prestige.gain(state);
+  state.upg.t2_corebase = 2;
+  const gainMult = G.prestige.gain(state);
+  check('«Осколки в ядра» умножают ◆ за P1',
+    Math.abs(gainMult / gainBase - Math.pow(1.6, 2)) < 0.05,
+    '◆ ' + gainBase + ' → ' + gainMult);
+  state.upg.t2_coreadd = 3;
+  check('«Ядро сверху» добавляет ◆ к P1', G.prestige.gain(state) - gainMult >= 15,
+    '+' + (G.prestige.gain(state) - gainMult) + ' ◆');
+  const gainPerNode0 = G.prestige.gain(state);
+  state.upg.t2_corepernode = 2;
+  state.upg.tree_tempo = 1; state.upg.tree_softcap = 1;   /* 2 узла → +2·2 ◆ */
+  check('«Узел = ядро» даёт ◆ за узлы дерева', G.prestige.gain(state) - gainPerNode0 >= 4,
+    '+' + (G.prestige.gain(state) - gainPerNode0) + ' ◆ за 2 узла');
+
+  state.N = G.BN.fromLog10(310); state.D = 310;   /* БУМ считается только от 300 цифр */
+  const dGain0 = G.bigbang.gain(state);
+  state.upg.t2_delta = 3;
+  const dGain1 = G.bigbang.gain(state);
+  state.N = G.BN.fromLog10(120); state.D = 120;
+  check('«Глубокий БУМ» умножает Δ', dGain1 > dGain0 && dGain0 > 0, 'Δ ' + dGain0 + ' → ' + dGain1);
+
+  /* глиф «Ядро» тоже даёт ◆ */
+  state.mech.glyphs = null;
+  const gls = G.glyphs.data(state);
+  gls.slots[0] = { id: 501, digit: 0, rarity: 'common', profile: 'kernel' };
+  check('глиф «Ядро» даёт ◆-множитель', G.glyphs.effects(state).coreGain > 0 &&
+    G.registry.mechanic('glyphs').coreGainMult(state) > 1,
+    'coreGain +' + (G.glyphs.effects(state).coreGain * 100).toFixed(0) + '%');
+  const coresNoGlyph = (function () {
+    const e = G.glyphs.effects(state);
+    gls.slots[0] = null;
+    const g2 = G.prestige.gain(state);
+    gls.slots[0] = { id: 501, digit: 0, rarity: 'common', profile: 'kernel' };
+    return g2;
+  })();
+  check('глиф «Ядро» реально увеличивает ◆ за P1', G.prestige.gain(state) > coresNoGlyph,
+    '◆ ' + coresNoGlyph + ' → ' + G.prestige.gain(state));
+
+  /* награда испытания с ◆ */
+  const chHard = G.challenges.find('ch_numb');
+  check('у сложного испытания награда про ◆', !!(chHard.reward && chHard.reward.coreGainMult),
+    chHard.reward.text);
+  if (G.challenges.done(state).indexOf('ch_numb') < 0) G.challenges.done(state).push('ch_numb');
+  check('пройденное испытание повышает ◆',
+    Math.abs(G.registry.mechanic('challenges').coreGainMult(state) - 1.4) < 1e-9,
+    '×' + G.registry.mechanic('challenges').coreGainMult(state));
+
+  /* всё вместе: ◆ после БУМА заметно больше, чем было без Яруса 2 */
+  check('после БУМА ядра идут легче', (function () {
+    const withT2 = G.prestige.gain(state);
+    const keep = {};
+    for (const u of t2) { keep[u.id] = state.upg[u.id]; state.upg[u.id] = 0; }
+    const savedDone = G.challenges.done(state).slice();
+    G.challenges.done(state).length = 0;
+    const before = G.prestige.gain(state);
+    G.challenges.done(state).push.apply(G.challenges.done(state), savedDone);
+    for (const u of t2) state.upg[u.id] = keep[u.id];
+    return withT2 > before;
+  })());
+
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
   G.debug.setD(120);

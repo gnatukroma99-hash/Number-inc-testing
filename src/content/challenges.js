@@ -49,8 +49,8 @@
         id: 'ch_numb', name: 'Онемение', goal: 130, cost: 10,
         blockMech: ['digitsum', 'primefit', 'shop'],
         dtMult: 1.5,
-        text: 'Награда: M ×1.5 навсегда',
-        reward: { text: 'M ×1.5', Mmult: '1.5' }
+        text: 'Награда: ◆ за перерождение ×1.4 навсегда',
+        reward: { text: '◆ ×1.4', coreGainMult: '1.4' }
       }
     ]
   };

@@ -139,6 +139,19 @@
       return m;
     },
 
+    /* ◆ за перерождение от пройденных испытаний */
+    coreGainMult(state) {
+      let k = 1;
+      for (const id of C.done(state)) {
+        const c = find(id);
+        if (c && c.reward && c.reward.coreGainMult) {
+          const v = G.formula(c.reward.coreGainMult, { lvl: 1 });
+          if (isFinite(v) && v > 0) k *= v;
+        }
+      }
+      return k;
+    },
+
     speedBonus(state) {
       let b = 0;
       for (const id of C.done(state)) {
@@ -177,6 +190,7 @@
     mult(state) { return C.mult(state); },
     dtMult(state) { return C.dtMult(state); },
     energyMult(state) { return C.energyMult(state); },
+    coreGainMult(state) { return C.coreGainMult(state); },
     speedBonus(state) { return C.speedBonus(state); },
     onReset(state) { C.restart(state); },
 
