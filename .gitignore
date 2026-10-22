@@ -1,0 +1,23 @@
+# ---- python ----
+__pycache__/
+*.pyc
+.venv/
+venv/
+build/
+dist/
+*.spec.bak
+
+# ---- секреты ----
+*.token
+.env
+.env.*
+secrets/
+
+# ---- системный мусор / редакторы ----
+Thumbs.db
+desktop.ini
+.DS_Store
+.idea/
+.vscode/
+*.log
+*.tmp
