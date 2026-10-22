@@ -12,10 +12,10 @@
       const tLeft = C.tile('Осталось', '');
 
       const cards = G.achievements.list().map((a) => {
-        const icon = G.h('div', { class: 'ach-icon', text: a.icon || '★' });
+        const icon = G.h('div', { class: 'ach-icon' }, [G.ui.icons.node(a.icon || 'star')]);
         const name = G.h('div', { class: 'ach-name', text: a.name });
         const desc = G.h('div', { class: 'ach-desc', text: a.desc || '' });
-        const mark = G.h('div', { class: 'ach-mark', text: '✔' });
+        const mark = G.h('div', { class: 'ach-mark' }, [G.ui.icons.node('check')]);
         const el = G.h('div', { class: 'ach' }, [icon, G.h('div', { class: 'ach-body' }, [name, desc]), mark]);
         return { a: a, el: el };
       });

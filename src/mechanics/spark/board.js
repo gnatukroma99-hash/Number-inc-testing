@@ -7,6 +7,8 @@
 
   mech.board = {
     mount(root) {
+      let lastNow = null;
+      let buffSig = null;
       const tNext = C.tile('До искры', 'accent');
       const tCaught = C.tile('Поймано', 'good');
       const tNow = C.tile('Сейчас на экране', '');
@@ -14,7 +16,7 @@
 
       /* карточки типов: что можно поймать */
       const cards = G.spark.types().map((t) => {
-        const icon = G.h('div', { class: 'spark-ico', text: t.icon || '✦' });
+        const icon = G.h('div', { class: 'spark-ico' }, [G.ui.icons.node(t.icon || 'sparkle')]);
         icon.style.setProperty('--spark', t.color || '#ffd166');
         return G.h('div', { class: 'spark-card' }, [
           icon,
@@ -27,7 +29,9 @@
 
       const rushEl = G.h('div', { class: 'spark-rush' });
       const buffsEl = G.h('div', { class: 'spark-buffs' });
-      const catchBtn = G.h('button', { class: 'btn spark-catch', type: 'button', text: '✦ Поймать' });
+      const catchIco = G.h('span', { class: 'spark-catch-ico' });
+      const catchTxt = G.h('span', { class: 'spark-catch-txt', text: 'Поймать' });
+      const catchBtn = G.h('button', { class: 'btn spark-catch', type: 'button' }, [catchIco, catchTxt]);
       catchBtn.addEventListener('click', () => {
         const t = G.spark.catchSpark(G.state);
         if (t) G.ui.toast('✦ ' + t.name + ': ' + t.text, 'good', 2500);
@@ -56,21 +60,40 @@
           const next = G.spark.nextIn(state);
           tNext.set(Math.ceil(next) + ' с');
           tCaught.set(String((state.mech.spark && state.mech.spark.caught) || 0));
-          tNow.set(now ? now.icon + ' ' + now.name : '—');
+          tNow.set(now ? now.name : '—');
           catchBtn.disabled = !now;
-          catchBtn.textContent = now ? now.icon + ' Поймать: ' + now.name : '✦ Подожди искру';
+          if (lastNow !== (now && now.id)) {
+            lastNow = now && now.id;
+            G.ui.icons.set(catchIco, now ? now.icon : 'sparkle');
+            catchTxt.textContent = now ? 'Поймать: ' + now.name : 'Подожди искру';
+          }
 
           const rush = G.spark.rush(state);
-          rushEl.textContent = rush.active
-            ? '⚡ ИСКРОВОЙ РАЖ · осталось ' + Math.ceil(rush.left) + ' с · серия ' +
+          const rushTxt = rush.active
+            ? 'ИСКРОВОЙ РАЖ · осталось ' + Math.ceil(rush.left) + ' с · серия ' +
               rush.streak + '/' + rush.need + ' · каждая N-я поимка запускает раж заново'
             : 'Искровой раж запускается каждой ' + rush.cfg.every + '-й поимкой: ' +
               rush.need + ' искр подряд → ◆ и мощный буфф';
+          if (rushEl.textContent !== rushTxt) rushEl.textContent = rushTxt;
 
           const active = G.spark.active(state);
-          buffsEl.textContent = active.length
-            ? active.map((b) => b.icon + ' ' + b.name + ' · ' + b.text + ' · ' + Math.ceil(b.left) + ' с').join('   |   ')
-            : 'сейчас пусто';
+          const sig = active.map((b) => b.id + ':' + Math.ceil(b.left) + ':' + b.text).join('|');
+          if (sig !== buffSig) {
+            buffSig = sig;
+            G.dom.clear(buffsEl);
+            if (!active.length) {
+              buffsEl.textContent = 'сейчас пусто';
+            } else {
+              for (const b of active) {
+                buffsEl.appendChild(G.h('div', { class: 'spark-buff' }, [
+                  G.ui.icons.node(b.icon || 'sparkle'),
+                  G.h('span', { class: 'spark-buff-name', text: b.name }),
+                  G.h('span', { class: 'spark-buff-text', text: b.text }),
+                  G.h('span', { class: 'spark-buff-left', text: Math.ceil(b.left) + ' с' })
+                ]));
+              }
+            }
+          }
           const d = state.mech.spark || {};
           const life = (G.content.spark && G.content.spark.lifetime) || 15;
           bar.set(now ? Math.max(0, Math.min(1, (d.left || 0) / life)) : 0,

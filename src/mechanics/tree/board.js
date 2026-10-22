@@ -1,21 +1,30 @@
-/* mechanics/tree/board.js — доска «Дерево ◆» в стиле звёздной карты (референс — PoE-skilltree):
-   светящиеся круглые узлы, тонкие линии-связки, тёмный фон со звёздами, центральный хаб.
-   Ветви = направления (углы), глубина = радиус. Узел следующей глубины СКРЫТ,
+/* mechanics/tree/board.js — доска «Дерево ◆» = полноэкранная карта созвездия.
+   Только карта: ни плиток, ни легенды. Имя и описание узла — по наведению (мышь)
+   или по тапу (телефон, карточка внизу с кнопкой «купить»).
+   Ветви = углы (branch.angle), глубина = радиус. Узел следующей глубины СКРЫТ,
    пока не куплен предыдущий (`requires` в данных).
-   Покупка — общий systems/upgrades.js, в движке нет имён узлов. */
+   Панорама: зажать и везти можно ГДЕ УГОДНО (в т.ч. по узлам); покупка — клик
+   без движения. Покупка — общий systems/upgrades.js, имён узлов в движке нет. */
 (function (G) {
   'use strict';
 
   const mech = G.registry.mechanic('tree');
   const C = G.ui.components;
 
-  /* геометрия карты: ветви расходятся ВЛЕВО и ВПРАВО от центрального хаба,
-     глубина — шаг по горизонтали, ветви разнесены по двум «полосам» + лёгкий зигзаг */
-  const W = 1460;
-  const H = 460;
-  const X_STEP = 96;
-  const LANE = 104;
-  const ZIG = 14;
+  /* круговая геометрия: сторона карты, центр, радиусы колец, дрейф угла по глубине */
+  const SIZE = 2200;
+  const HUB = SIZE / 2;
+  const R0 = 210;
+  const RSTEP = 138;
+  const DRIFT = 5;
+
+  const ZMIN = 0.6;
+  const ZMAX = 4;
+  const ZSTART = 1.6;
+  const PAD = 120;            /* сколько карты обязано остаться в кадре */
+  const DRAG_SLOP = 5;        /* сдвиг в px, после которого это уже панорама, а не клик */
+  const HOLD_DELAY = 380;     /* зажатие на узле → повторные покупки */
+  const HOLD_EVERY = 150;
 
   const TIER_LABEL = { t1: 'I', t2: 'II', t3: 'III' };
 
@@ -33,170 +42,136 @@
     return v;
   }
 
-  /* ---------- узел ---------- */
+  /* ---------- узел: орб + скрытая подпись ---------- */
   function nodeCard(u) {
-    const orb = G.h('button', { class: 'node-buy node-orb', type: 'button' });
-    const iconEl = G.h('span', { class: 'orb-icon', text: u.icon || '●' });
+    const orb = G.h('button', { class: 'node-orb', type: 'button', 'aria-label': u.name });
+    const icoEl = G.h('span', { class: 'orb-ico' }, [G.ui.icons.node(u.icon || 'diamond')]);
     const priceEl = G.h('span', { class: 'orb-price' });
-    orb.appendChild(iconEl);
+    const ring = G.h('span', { class: 'orb-ring', 'aria-hidden': 'true' });
+    orb.appendChild(ring);
+    orb.appendChild(icoEl);
     orb.appendChild(priceEl);
 
     const nameEl = G.h('div', { class: 'node-name', text: u.name });
     const lvlEl = G.h('div', { class: 'node-lvl' });
-    const effEl = G.h('div', { class: 'node-eff' });
+    const el = G.h('div', { class: 'node' }, [orb, G.h('div', { class: 'node-label' }, [nameEl, lvlEl])]);
 
-    /* частицы вокруг купленного узла (чистый CSS, без JS в кадре) */
-    const orbit = G.h('div', { class: 'orb-orbit', 'aria-hidden': 'true' }, [
-      G.h('span', { class: 'orbit-spin' }, [
-        G.h('i', { class: 'spark s1' }),
-        G.h('i', { class: 'spark s2' }),
-        G.h('i', { class: 'spark s3' })
-      ])
-    ]);
-
-    const real = G.h('div', { class: 'node' }, [
-      orbit,
-      orb,
-      G.h('div', { class: 'node-label' }, [nameEl, lvlEl, effEl])
-    ]);
-
-    /* заглушка: «ты не видишь, что там дальше» */
     const unknown = G.h('div', { class: 'node unknown' }, [
-      G.h('button', { class: 'node-buy node-orb', type: 'button', disabled: 'disabled' }, [
-        G.h('span', { class: 'orb-icon', text: '?' }),
-        G.h('span', { class: 'orb-price', text: '—' })
-      ]),
-      G.h('div', { class: 'node-label' }, [
-        G.h('div', { class: 'node-name', text: '???' }),
-        G.h('div', { class: 'node-lvl', text: 'скрыто' }),
-        G.h('div', { class: 'node-eff' })
-      ])
+      G.h('span', { class: 'node-orb', 'aria-hidden': 'true' }, [G.h('span', { class: 'orb-ico' }, [G.ui.icons.node('lock')])])
     ]);
 
-    /* покупка: клик + зажатие */
-    let hold = null;
-    const stop = () => { if (hold) { clearInterval(hold); hold = null; } };
     let flashTimer = null;
-    const flash = (bought) => {
-      if (!bought || (G.animationsOff && G.animationsOff())) return;
-      real.classList.remove('bought');
-      void real.offsetWidth;
-      real.classList.add('bought');
+    function flash() {
+      if (G.animationsOff && G.animationsOff()) return;
+      el.classList.remove('bought');
+      void el.offsetWidth;
+      el.classList.add('bought');
       if (flashTimer) clearTimeout(flashTimer);
-      flashTimer = setTimeout(() => real.classList.remove('bought'), 460);
-    };
-    orb.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      flash(G.upgrades.buy(G.state, u));
-      stop();
-      hold = setInterval(() => flash(G.upgrades.buy(G.state, u)), 140);
-    });
-    orb.addEventListener('pointerup', stop);
-    orb.addEventListener('pointerleave', stop);
-    orb.addEventListener('pointercancel', stop);
+      flashTimer = setTimeout(() => el.classList.remove('bought'), 460);
+    }
+
+    function visible(s) {
+      return G.upgrades.requirementsMet(s, u) || G.lvl(s, u.id) > 0;
+    }
 
     function update(s) {
-      const visible = G.upgrades.requirementsMet(s, u) || G.lvl(s, u.id) > 0;
-      real.style.display = visible ? '' : 'none';
-      unknown.style.display = visible ? 'none' : '';
-      if (!visible) return;
+      const on = visible(s);
+      el.style.display = on ? '' : 'none';
+      unknown.style.display = on ? 'none' : '';
+      if (!on) return;
 
       const lvl = G.lvl(s, u.id);
       const maxed = lvl >= u.max;
-      const cur = G.upgrades.value(s, u);
-
-      lvlEl.textContent = maxed ? 'макс · ' + TIER_LABEL[u.tier] : 'ур. ' + lvl + ' / ' + u.max;
-      effEl.textContent = maxed ? C.fmtEffect(u, cur) : C.fmtEffect(u, cur) + ' → ' + C.fmtEffect(u, nextValue(s, u, lvl));
+      lvlEl.textContent = maxed ? 'макс' : 'ур. ' + lvl + (isFinite(u.max) ? '/' + u.max : '');
 
       if (maxed) {
-        priceEl.textContent = 'max';
+        priceEl.textContent = '';
         orb.disabled = true;
-        orb.className = 'node-buy node-orb maxed';
-        real.className = 'node maxed done';
-        real.title = u.name + ' — максимум';
+        el.className = 'node maxed done';
         return;
       }
       const can = G.upgrades.canBuy(s, u);
-      priceEl.textContent = G.fmt.num(G.upgrades.currentCost(s, u)) + ' ◆';
+      priceEl.textContent = G.fmt.num(G.upgrades.currentCost(s, u));
       orb.disabled = !can;
-      orb.className = 'node-buy node-orb' + (can ? ' can' : ' cant');
-      real.className = 'node' + (lvl > 0 ? ' done' : '') + (can ? ' ready' : '');
-      real.title = u.name + ' · ' + u.note + '\n' + (u.desc || '') + ' · ' + TIER_LABEL[u.tier];
+      el.className = 'node' + (lvl > 0 ? ' done' : '') + (can ? ' ready' : '');
     }
 
-    return { real: real, unknown: unknown, update: update, u: u };
+    return { el: el, unknown: unknown, orb: orb, update: update, flash: flash, visible: visible, u: u };
   }
 
   /* ---------- доска ---------- */
   mech.board = {
     mount(root) {
-      const tCores = C.tile('◆ Ядра', 'accent');
-      const tNodes = C.tile('Узлов', 'good');
-      const tGain = C.tile('Дадут за забег', 'good');
-      const tNext = C.tile('Следующий узел', '');
-
       const cfg = G.content.tree || {};
       const branches = cfg.branches || [];
       const all = G.registry.upgradesOf('tree');
 
       const map = G.h('div', { class: 'tree-map' });
-      const svg = svgEl('svg', {
-        class: 'tree-lines',
-        viewBox: '0 0 ' + W + ' ' + H,
-        preserveAspectRatio: 'none'
-      });
-      map.appendChild(svg);
+      map.style.width = SIZE + 'px';
+      map.style.height = SIZE + 'px';
 
-      /* центральный хаб */
+      /* кольца глубины + лучи ветвей — фон карты */
+      const rings = svgEl('svg', { class: 'tree-rings', viewBox: '0 0 ' + SIZE + ' ' + SIZE });
+      const lines = svgEl('svg', { class: 'tree-lines', viewBox: '0 0 ' + SIZE + ' ' + SIZE });
+      map.appendChild(rings);
+      map.appendChild(lines);
+
+      let maxDepth = 0;
+      for (const u of all) maxDepth = Math.max(maxDepth, u.depth || 0);
+
+      for (let d = 0; d <= maxDepth; d++) {
+        rings.appendChild(svgEl('circle', {
+          cx: HUB, cy: HUB, r: R0 + d * RSTEP, class: 'tring' + (d === 0 ? ' base' : '')
+        }));
+      }
+      branches.forEach((b) => {
+        const a = (Number(b.angle) || 0) * Math.PI / 180;
+        const rad = R0 + maxDepth * RSTEP;
+        rings.appendChild(svgEl('line', {
+          x1: HUB, y1: HUB,
+          x2: HUB + Math.cos(a) * rad, y2: HUB + Math.sin(a) * rad,
+          class: 'tray', stroke: b.color || '#35e2c0'
+        }));
+      });
+
+      /* центральный хаб: ◆ и сколько ядер */
+      const hubLabel = G.h('div', { class: 'hub-label' });
       const hub = G.h('div', { class: 'tree-hub' }, [
         G.h('div', { class: 'hub-ring' }),
-        G.h('div', { class: 'hub-core', text: '◆' }),
-        G.h('div', { class: 'hub-label' })
+        G.h('div', { class: 'hub-core' }, [G.ui.icons.node('core')]),
+        hubLabel
       ]);
+      hub.style.left = HUB + 'px';
+      hub.style.top = HUB + 'px';
       map.appendChild(hub);
 
       const cards = [];
-      const lines = [];
+      const links = [];
 
       branches.forEach((b, i) => {
-        const dir = b.dir === 'left' ? -1 : 1;                 /* в какую сторону растёт ветвь */
-        const lane = (b.lane === 'down' ? 1 : b.lane === 'up' ? -1 : Number(b.lane) || 0);  /* полоса */
-        const list = all.filter((u) => u.branch === b.id)
-          .sort((x, y) => (x.depth || 0) - (y.depth || 0));
+        const base = Number(b.angle) || 0;
+        const color = b.color || '#35e2c0';
+        const list = all.filter((u) => u.branch === b.id).sort((x, y) => (x.depth || 0) - (y.depth || 0));
+        let prev = { x: HUB, y: HUB };
 
-        let prev = { x: W / 2, y: H / 2 };
-
-        list.forEach((u, idx) => {
+        list.forEach((u) => {
           const d = u.depth || 0;
-          const x = W / 2 + dir * X_STEP * (d + 1);
-          const y = H / 2 + lane * LANE + Math.sin(d * 1.1 + i * 1.7) * ZIG;
+          const a = (base + Math.sin(d * 0.8 + i * 1.9) * DRIFT) * Math.PI / 180;
+          const rad = R0 + d * RSTEP;
+          const x = HUB + Math.cos(a) * rad;
+          const y = HUB + Math.sin(a) * rad;
 
-          /* линия от предыдущего узла ветви */
-          const ln = svgEl('line', {
-            x1: prev.x, y1: prev.y, x2: x, y2: y,
-            class: 'tline',
-            stroke: b.color || '#35e2c0'
-          });
-          svg.appendChild(ln);
-          const flow = svgEl('line', {
-            x1: prev.x, y1: prev.y, x2: x, y2: y,
-            class: 'tline flow',
-            stroke: b.color || '#35e2c0'
-          });
-          svg.appendChild(flow);
-          lines.push({ el: ln, flow: flow, u: u });
+          const ln = svgEl('line', { x1: prev.x, y1: prev.y, x2: x, y2: y, class: 'tline', stroke: color });
+          const flow = svgEl('line', { x1: prev.x, y1: prev.y, x2: x, y2: y, class: 'tline flow', stroke: color });
+          lines.appendChild(ln);
+          lines.appendChild(flow);
+          links.push({ el: ln, flow: flow, u: u });
 
           const card = nodeCard(u);
-          const cell = G.h('div', {
-            class: 'tree-cell' + (d === 0 ? ' root' : ''),
-            style: {
-              left: (x / W * 100).toFixed(3) + '%',
-              top: (y / H * 100).toFixed(3) + '%'
-            }
-          }, [card.real, card.unknown]);
-          cell.style.setProperty('--branch', b.color || '#35e2c0');
-          cell.dataset.depth = String(d);
-          cell.addEventListener('mouseenter', () => showInfo(card.u));
+          const cell = G.h('div', { class: 'tree-cell' }, [card.el, card.unknown]);
+          cell.style.left = x + 'px';
+          cell.style.top = y + 'px';
+          cell.style.setProperty('--branch', color);
           map.appendChild(cell);
 
           cards.push({ u: u, card: card, cell: cell });
@@ -211,93 +186,153 @@
         orphans.forEach((u) => {
           const card = nodeCard(u);
           cards.push({ u: u, card: card, cell: null });
-          box.appendChild(G.h('div', { class: 'tree-cell root' }, [card.real, card.unknown]));
+          box.appendChild(G.h('div', { class: 'tree-cell' }, [card.el, card.unknown]));
         });
         map.appendChild(box);
       }
 
-      /* легенда-ветви */
-      const legend = G.h('div', { class: 'tree-legend' }, branches.map((b) => {
-        const chip = G.h('div', { class: 'tree-branch-head', title: (b.name || b.id) + ' — ' + (b.note || '') }, [
-          G.h('span', { class: 'branch-icon', text: b.icon || '•' }),
-          G.h('span', { class: 'branch-name', text: b.name || b.id }),
-          G.h('span', { class: 'branch-note', text: b.note || '' })
-        ]);
-        chip.style.setProperty('--branch', b.color || 'var(--accent)');
-        return chip;
-      }));
+      /* ---------- карточка узла: по наведению (мышь) или по тапу (телефон) ---------- */
+      const tipTitle = G.h('div', { class: 'tip-title' });
+      const tipSub = G.h('div', { class: 'tip-sub' });
+      const tipDesc = G.h('div', { class: 'tip-desc' });
+      const tipEff = G.h('div', { class: 'tip-eff' });
+      const tipBuy = G.h('button', { class: 'tip-buy', type: 'button' });
+      const tip = G.h('div', { class: 'tree-tip' }, [tipTitle, tipSub, tipDesc, tipEff, tipBuy]);
+      tipBuy.addEventListener('click', () => {
+        if (selected) buyOnce(selected.u);
+      });
 
-      /* панель подробностей узла */
-      const infoTitle = G.h('div', { class: 'info-title', text: 'Наведи на узел' });
-      const infoDesc = G.h('div', { class: 'info-desc', text: 'Семь ветвей расходятся от центра; дальше — глубже. Колесо/щипок — зум, перетаскивание — панорама, ⌖ — к центру.' });
-      const infoEff = G.h('div', { class: 'info-eff' });
-      const info = G.h('div', { class: 'tree-info' }, [infoTitle, infoDesc, infoEff]);
+      let selected = null;      /* узел, закреплённый тапом */
+      let hovered = null;       /* узел под мышью */
+      let hideTimer = null;
 
-      function showInfo(u) {
-        if (!u) return;
-        const s = G.state;
-        const lvl = G.lvl(s, u.id);
-        infoTitle.textContent = u.name + ' · ярус ' + (TIER_LABEL[u.tier] || '?') +
-          ' · ур. ' + lvl + ' / ' + u.max;
-        infoDesc.textContent = (u.desc || '') + ' ' + (u.note || '');
-        infoEff.textContent = lvl >= u.max
-          ? 'сейчас: ' + C.fmtEffect(u, G.upgrades.value(s, u))
-          : 'сейчас: ' + C.fmtEffect(u, G.upgrades.value(s, u)) +
-            ' → ' + C.fmtEffect(u, nextValue(s, u, lvl)) +
-            '   ·   цена: ' + G.fmt.num(G.upgrades.currentCost(s, u)) + ' ◆';
+      function buyOnce(u) {
+        const ok = G.upgrades.buy(G.state, u);
+        const c = cards.find((x) => x.u === u);
+        if (c && ok) c.card.flash();
+        if (tip.classList.contains('on')) fillTip(u);
       }
 
-      /* ---- управление видом: приближение/отдаление (колесо, щипок, кнопки) ---- */
-      const view = { z: 1, tx: 0, ty: 0 };
-      const ZMIN = 1;
-      const ZMAX = 6;
-      let baseK = 1;
+      function fillTip(u) {
+        const s = G.state;
+        const lvl = G.lvl(s, u.id);
+        const maxed = lvl >= u.max;
+        const cur = G.upgrades.value(s, u);
+        tipTitle.textContent = u.name;
+        tipSub.textContent = 'ярус ' + (TIER_LABEL[u.tier] || '?') + ' · ур. ' + lvl + ' / ' + u.max;
+        tipDesc.textContent = (u.desc || '') + (u.note ? ' (' + u.note + ')' : '');
+        tipEff.textContent = maxed
+          ? 'сейчас: ' + C.fmtEffect(u, cur) + ' · максимум'
+          : 'сейчас: ' + C.fmtEffect(u, cur) + ' → ' + C.fmtEffect(u, nextValue(s, u, lvl));
+        if (maxed) {
+          tipBuy.textContent = 'максимум';
+          tipBuy.disabled = true;
+          tipBuy.classList.add('maxed');
+        } else {
+          tipBuy.disabled = !G.upgrades.canBuy(s, u);
+          tipBuy.classList.remove('maxed');
+          G.dom.clear(tipBuy);
+          tipBuy.appendChild(G.ui.icons.node('core'));
+          tipBuy.appendChild(G.h('span', { text: G.fmt.num(G.upgrades.currentCost(s, u)) }));
+        }
+      }
 
-      const zoomIn = G.h('button', { class: 'tree-zoom-btn', type: 'button', title: 'Приблизить', text: '+' });
-      const zoomOut = G.h('button', { class: 'tree-zoom-btn', type: 'button', title: 'Отдалить', text: '−' });
-      const zoomFit = G.h('button', { class: 'tree-zoom-btn', type: 'button', title: 'Вписать', text: '⤢' });
-      const zoomCenter = G.h('button', { class: 'tree-zoom-btn', type: 'button', title: 'К центру дерева', text: '⌖' });
+      /* поставить карточку у узла (мышь) либо внизу листом (телефон) */
+      function placeTip(u, cell) {
+        if (!cell || document.body.classList.contains('tree-sheet-mode')) {
+          tip.classList.add('sheet');
+          tip.style.left = '';
+          tip.style.top = '';
+          return;
+        }
+        tip.classList.remove('sheet');
+        const sr = stage.getBoundingClientRect();
+        const r = cell.getBoundingClientRect();
+        const w = stage.clientWidth;
+        const h = stage.clientHeight;
+        const half = Math.min(160, Math.max(80, w / 2 - 10));
+        let x = r.left - sr.left + r.width / 2;
+        let y = r.top - sr.top - 14;
+        x = x < half + 8 ? half + 8 : x > w - half - 8 ? w - half - 8 : x;
+        tip.classList.remove('below');
+        if (y < 90) { tip.classList.add('below'); y = r.bottom - sr.top + 14; }
+        if (y > h - 40) y = h - 40;
+        tip.style.left = x.toFixed(1) + 'px';
+        tip.style.top = y.toFixed(1) + 'px';
+      }
+
+      function showTip(u, cell) {
+        selected = null;
+        hovered = u;
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+        fillTip(u);
+        tip.classList.add('on');
+        placeTip(u, cell);
+      }
+
+      function hideTip(now) {
+        hovered = null;
+        if (hideTimer) clearTimeout(hideTimer);
+        const run = () => { if (!hovered && !selected) tip.classList.remove('on'); };
+        if (now) run(); else hideTimer = setTimeout(run, 130);
+      }
+
+      function selectNode(u, cell) {
+        selected = u;
+        hovered = null;
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+        fillTip(u);
+        tip.classList.add('on');
+        placeTip(u, cell);
+        stage.classList.add('picking');
+        for (const c of cards) if (c.cell) c.cell.classList.toggle('sel', c.u === u);
+      }
+
+      function clearSelection() {
+        selected = null;
+        stage.classList.remove('picking');
+        for (const c of cards) if (c.cell) c.cell.classList.remove('sel');
+        tip.classList.remove('on');
+      }
+
+      tip.addEventListener('pointerenter', () => { if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } });
+      tip.addEventListener('pointerleave', (e) => { if (!selected && e.pointerType !== 'touch') hideTip(); });
+
+      /* ---------- минимальная шапка: ядра, узлы, выход ---------- */
+      const hudCores = G.h('span', { class: 'tree-hud-cores' });
+      const hudNodes = G.h('span', { class: 'tree-hud-nodes' });
+      const closeBtn = G.h('button', { class: 'tree-close', type: 'button', title: 'Закрыть (Esc)' }, [G.ui.icons.node('close')]);
+      closeBtn.addEventListener('click', () => G.ui.docks.select('core'));
+      const hud = G.h('div', { class: 'tree-hud' }, [
+        G.h('div', { class: 'tree-hud-left' }, [hudCores, G.h('span', { class: 'tree-hud-sep' }), hudNodes]),
+        closeBtn
+      ]);
+
+      /* ---------- кнопки зума ---------- */
+      const mkBtn = (icon, title) => G.h('button', { class: 'tree-zoom-btn', type: 'button', title: title }, [G.ui.icons.node(icon)]);
+      const zoomIn = mkBtn('plus', 'Приблизить');
+      const zoomOut = mkBtn('minus', 'Отдалить');
+      const zoomFit = mkBtn('fit', 'Вся карта');
+      const zoomCenter = mkBtn('center', 'К центру');
       const zoomBar = G.h('div', { class: 'tree-zoom' }, [zoomIn, zoomOut, zoomFit, zoomCenter]);
 
-      const stage = G.h('div', { class: 'tree-stage' }, [map, zoomBar]);
-
-      const el = G.h('div', { class: 'board-body tree-board' }, [
-        G.h('p', { class: 'board-hint', text: mech.hint }),
-        C.grid([tCores.el, tNodes.el, tGain.el, tNext.el]),
-        legend,
-        stage,
-        info
-      ]);
+      const stage = G.h('div', { class: 'tree-stage' }, [map, hud, zoomBar, tip]);
+      const el = G.h('div', { class: 'board-body tree-board' }, [stage]);
       root.appendChild(el);
 
       /* ---------- масштаб и панорама ----------
-         baseK — «вписать карту в область», view.z — пользовательский зум (1…6).
-         Итоговый масштаб = baseK * z, сдвиг = view.tx/ty, всё в CSS transform. */
-      function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+         baseK — «вписать карту целиком», view.z — зум пользователя. */
+      const view = { z: ZSTART, tx: 0, ty: 0 };
+      let baseK = 1;
+      const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+      const contentSize = () => ({ w: SIZE * baseK * view.z, h: SIZE * baseK * view.z });
 
-      function contentSize() { return { w: W * baseK * view.z, h: H * baseK * view.z }; }
-
-      /* можно ли тащить карту (она больше видимой области) */
-      function pannable() {
-        const c = contentSize();
-        return c.w > stage.clientWidth + 2 || c.h > stage.clientHeight + 2;
-      }
-
-      /* вернуть вид к центру дерева (хаб) */
-      function centerView() {
-        const c = contentSize();
-        view.tx = (stage.clientWidth - c.w) / 2;
-        view.ty = (stage.clientHeight - c.h) / 2;
-        applyView();
-      }
-
-      /* держим карту в кадре: если она меньше области — центрируем, если больше — не даём утащить */
       function clampPan() {
         const cw = stage.clientWidth;
         const ch = stage.clientHeight;
         const c = contentSize();
-        view.tx = (c.w <= cw) ? (cw - c.w) / 2 : clamp(view.tx, cw - c.w, 0);
-        view.ty = (c.h <= ch) ? (ch - c.h) / 2 : clamp(view.ty, ch - c.h, 0);
+        view.tx = clamp(view.tx, PAD - c.w, cw - PAD);
+        view.ty = clamp(view.ty, PAD - c.h, ch - PAD);
       }
 
       function applyView() {
@@ -305,23 +340,24 @@
         const k = baseK * view.z;
         map.style.transformOrigin = 'top left';
         map.style.transform = 'translate(' + view.tx.toFixed(1) + 'px,' + view.ty.toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
-        stage.classList.toggle('zoomed', view.z > 1.01);
-        stage.classList.toggle('pannable', pannable());
+        stage.classList.toggle('far', view.z < 1.15);
         zoomOut.disabled = view.z <= ZMIN + 1e-6;
         zoomIn.disabled = view.z >= ZMAX - 1e-6;
       }
 
-      /* масштабирование относительно точки (px от левого верхнего края области) */
+      function centerView() {
+        view.tx = stage.clientWidth / 2 - HUB * baseK * view.z;
+        view.ty = stage.clientHeight / 2 - HUB * baseK * view.z;
+        applyView();
+      }
+
       function zoomAt(z, px, py) {
         const oldK = baseK * view.z;
         const newZ = clamp(z, ZMIN, ZMAX);
         if (Math.abs(newZ - view.z) < 1e-6) return;
         const newK = baseK * newZ;
-        const cx = stage.clientWidth / 2;
-        const cy = stage.clientHeight / 2;
-        const ax = (px === undefined ? cx : px);
-        const ay = (py === undefined ? cy : py);
-        /* сохраняем точку под курсором/пальцем */
+        const ax = px === undefined ? stage.clientWidth / 2 : px;
+        const ay = py === undefined ? stage.clientHeight / 2 : py;
         const lx = (ax - view.tx) / oldK;
         const ly = (ay - view.ty) / oldK;
         view.z = newZ;
@@ -330,42 +366,35 @@
         applyView();
       }
 
-      /* пересчёт базового масштаба под текущий размер области — БЕЗ сброса зума */
+      /* базовый масштаб под размер области — без сброса зума и центра */
       function refit() {
-        const h = stage.clientHeight;
         const w = stage.clientWidth;
-        if (!h || !w) return;
-        baseK = Math.max(0.12, Math.min(w / W, h / H));
+        const h = stage.clientHeight;
+        if (!w || !h) return;
+        const oldK = baseK * view.z;
+        const mx = (w / 2 - view.tx) / oldK;
+        const my = (h / 2 - view.ty) / oldK;
+        baseK = Math.min(w / SIZE, h / SIZE);
+        const newK = baseK * view.z;
+        view.tx = w / 2 - mx * newK;
+        view.ty = h / 2 - my * newK;
         applyView();
       }
 
-      /* «Вписать»: базовый масштаб + зум = 1 (кнопка ⤢) */
-      let autoZoomed = false;
       function fit() {
-        const h = stage.clientHeight;
         const w = stage.clientWidth;
-        if (!h || !w) return;
-        baseK = Math.max(0.12, Math.min(w / W, h / H));
-        view.z = 1;
-        /* на телефоне «вписанная» карта слишком мелкая — сразу приближаем к центру */
-        if (!autoZoomed && w < 760) {
-          autoZoomed = true;
-          view.z = 1.7;
-        }
+        const h = stage.clientHeight;
+        if (!w || !h) return;
+        baseK = Math.min(w / SIZE, h / SIZE);
+        view.z = ZMIN;
         centerView();
       }
 
-      applyView();
-      window.addEventListener('resize', refit);
-      setTimeout(refit, 60);
-
-      /* ---------- кнопки ---------- */
       zoomIn.addEventListener('click', () => zoomAt(view.z * 1.35));
       zoomOut.addEventListener('click', () => zoomAt(view.z / 1.35));
       zoomFit.addEventListener('click', fit);
-      zoomCenter.addEventListener('click', centerView);
+      zoomCenter.addEventListener('click', () => { centerView(); });
 
-      /* ---------- колесо мыши / трекпад ---------- */
       stage.addEventListener('wheel', (e) => {
         if (!e.deltaY) return;
         e.preventDefault();
@@ -374,141 +403,207 @@
         zoomAt(view.z * f, e.clientX - r.left, e.clientY - r.top);
       }, { passive: false });
 
-      /* ---------- перетаскивание мышью / пером ---------- */
-      let pan = null;
+      /* ---------- единая обработка указателей: панорама, щипок, клик, зажатие ---------- */
+      const ptrs = new Map();       /* pointerId → {x, y} */
+      let pan = null;               /* {id, sx, sy, tx, ty, moved} */
+      let pinch = null;             /* {d, z, cx, cy} */
+      let hold = null;              /* {u, timer, repeat} */
+      let tapCell = null;           /* узел, на котором началось нажатие */
+
+      function stopHold() {
+        if (!hold) return;
+        clearTimeout(hold.delay);
+        clearInterval(hold.repeat);
+        hold = null;
+      }
+
+      function cellOf(target) {
+        const cell = target && target.closest ? target.closest('.tree-cell') : null;
+        if (!cell) return null;
+        const orb = cell.querySelector('.node-orb');
+        if (!orb || orb.disabled) return null;
+        return cards.find((c) => c.cell === cell) || null;
+      }
+
+      function twoPointers() {
+        const it = ptrs.values();
+        const a = it.next().value;
+        const b = it.next().value;
+        return { a: a, b: b };
+      }
+
       stage.addEventListener('pointerdown', (e) => {
-        if (e.pointerType === 'touch') return;           // тач — ниже, со щипком
-        if (e.button !== 0) return;
-        if (e.target.closest('button, .tree-zoom')) return;
-        pan = { x: e.clientX, y: e.clientY, tx: view.tx, ty: view.ty, id: e.pointerId };
-        stage.classList.add('grabbing');
+        if (e.target.closest('.tree-zoom') || e.target.closest('.tree-hud') || e.target.closest('.tree-tip')) return;
+        if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
         try { stage.setPointerCapture(e.pointerId); } catch (err) { /* не критично */ }
+        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (ptrs.size === 2) {
+          stopHold();
+          const p = twoPointers();
+          pinch = {
+            d: Math.hypot(p.a.x - p.b.x, p.a.y - p.b.y) || 1,
+            z: view.z
+          };
+          pan = null;
+          hideTip(true);
+          return;
+        }
+        if (ptrs.size > 2) return;
+
+        pan = { id: e.pointerId, sx: e.clientX, sy: e.clientY, tx: view.tx, ty: view.ty, moved: false };
+        tapCell = cellOf(e.target);
+
+        /* зажатие на узле — повторные покупки (только мышь/перо) */
+        if (tapCell && e.pointerType !== 'touch') {
+          const u = tapCell.u;
+          hold = { u: u, delay: null, repeat: null, moved: false };
+          hold.delay = setTimeout(() => {
+            if (!hold || hold.moved) return;
+            buyOnce(u);
+            hold.repeat = setInterval(() => buyOnce(u), HOLD_EVERY);
+          }, HOLD_DELAY);
+        }
       });
+
       stage.addEventListener('pointermove', (e) => {
-        if (!pan || e.pointerId !== pan.id) return;
+        if (!ptrs.has(e.pointerId)) return;
+        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (pinch && ptrs.size >= 2) {
+          e.preventDefault();
+          const p = twoPointers();
+          const d = Math.hypot(p.a.x - p.b.x, p.a.y - p.b.y) || 1;
+          const r = stage.getBoundingClientRect();
+          const mx = (p.a.x + p.b.x) / 2 - r.left;
+          const my = (p.a.y + p.b.y) / 2 - r.top;
+          zoomAt(pinch.z * (d / pinch.d), mx, my);
+          return;
+        }
+        if (!pan || pan.id !== e.pointerId) return;
+
+        const dx = e.clientX - pan.sx;
+        const dy = e.clientY - pan.sy;
+        if (!pan.moved && Math.abs(dx) + Math.abs(dy) < DRAG_SLOP) return;
+        if (!pan.moved) {
+          pan.moved = true;
+          stage.classList.add('grabbing');
+          if (hold) { hold.moved = true; stopHold(); }
+          hideTip(true);
+        }
         e.preventDefault();
-        view.tx = pan.tx + (e.clientX - pan.x);
-        view.ty = pan.ty + (e.clientY - pan.y);
+        view.tx = pan.tx + dx;
+        view.ty = pan.ty + dy;
         applyView();
       });
-      const endPan = (e) => {
-        if (pan && (!e || e.pointerId === pan.id)) {
+
+      function endPointer(e, cancelled) {
+        ptrs.delete(e.pointerId);
+        if (ptrs.size < 2 && pinch) pinch = null;
+        const wasPan = pan && pan.id === e.pointerId ? pan : null;
+        if (wasPan) {
           pan = null;
           stage.classList.remove('grabbing');
         }
-      };
-      stage.addEventListener('pointerup', endPan);
-      stage.addEventListener('pointercancel', endPan);
+        if (hold) {
+          const held = hold;
+          stopHold();
+          if (!held.moved) buyOnce(held.u);       /* короткое нажатие без движения = покупка */
+          tapCell = null;
+          return;
+        }
+        if (cancelled || !wasPan || wasPan.moved) { tapCell = null; return; }
 
-      /* ---------- тач: щипок = зум, один палец = панорама ---------- */
-      let pinch = null;
-      let drag = null;
-      let lastTap = 0;
-
-      const dist = (t) => {
-        const dx = t[0].clientX - t[1].clientX;
-        const dy = t[0].clientY - t[1].clientY;
-        return Math.sqrt(dx * dx + dy * dy) || 1;
-      };
-      const mid = (t) => {
-        const r = stage.getBoundingClientRect();
-        return {
-          x: (t[0].clientX + t[1].clientX) / 2 - r.left,
-          y: (t[0].clientY + t[1].clientY) / 2 - r.top
-        };
-      };
-
-      stage.addEventListener('touchstart', (e) => {
-        const tt = e.touches;
-        if (!tt || !tt.length) return;
-        if (tt.length === 2) {
-          pinch = { d: dist(e.touches), z: view.z };
-          drag = null;
-          stage.classList.add('grabbing');
-        } else if (tt.length === 1) {
-          const now = Date.now();
-          if (now - lastTap < 300) {           /* двойной тап — приблизить/сбросить */
-            lastTap = 0;
-            if (view.z > 1.01) fit(); else zoomAt(2, tt[0].clientX - stage.getBoundingClientRect().left, tt[0].clientY - stage.getBoundingClientRect().top);
-            return;
+        /* нажатие без движения */
+        if (tapCell) {
+          const c = tapCell;
+          tapCell = null;
+          if (e.pointerType === 'touch') {
+            document.body.classList.add('tree-sheet-mode');
+            selectNode(c.u, c.cell);
+          } else {
+            buyOnce(c.u);
+            showTip(c.u, c.cell);
           }
-          lastTap = now;
-          drag = { x: tt[0].clientX, y: tt[0].clientY, tx: view.tx, ty: view.ty };
-          if (pannable()) stage.classList.add('grabbing');
+          return;
         }
-      }, { passive: true });
+        if (e.pointerType === 'touch') clearSelection();
+        tapCell = null;
+      }
 
-      stage.addEventListener('touchmove', (e) => {
-        const tt = e.touches;
-        if (!tt || !tt.length) return;
-        if (tt.length === 2 && pinch) {
-          e.preventDefault();
-          const z = pinch.z * (dist(tt) / pinch.d);
-          const m = mid(tt);
-          zoomAt(z, m.x, m.y);
-        } else if (drag && tt.length === 1 && pannable()) {
-          e.preventDefault();
-          view.tx = drag.tx + (tt[0].clientX - drag.x);
-          view.ty = drag.ty + (tt[0].clientY - drag.y);
-          applyView();
+      stage.addEventListener('pointerup', (e) => endPointer(e, false));
+      stage.addEventListener('pointercancel', (e) => endPointer(e, true));
+
+      /* наведение мышью: карточка узла, без покупки */
+      stage.addEventListener('pointerover', (e) => {
+        if (e.pointerType === 'touch') return;
+        const c = cellOf(e.target);
+        if (c) { document.body.classList.remove('tree-sheet-mode'); showTip(c.u, c.cell); }
+      });
+      stage.addEventListener('pointerout', (e) => {
+        if (e.pointerType === 'touch') return;
+        const c = cellOf(e.target);
+        if (c && !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('.tree-tip'))) hideTip();
+      });
+
+      const onKey = (e) => {
+        if (e.key === 'Escape' && document.body.classList.contains('board-full')) {
+          if (selected) { clearSelection(); return; }
+          G.ui.docks.select('core');
         }
-      }, { passive: false });
-
-      const endTouch = () => {
-        pinch = null;
-        drag = null;
-        stage.classList.remove('grabbing');
       };
-      stage.addEventListener('touchend', endTouch);
-      stage.addEventListener('touchcancel', endTouch);
+      window.addEventListener('keydown', onKey);
 
+      /* ---------- размеры и первый кадр ---------- */
       let lastSize = { w: 0, h: 0 };
       const onResize = () => {
         const w = stage.clientWidth;
         const h = stage.clientHeight;
-        if (!w || !h) return;
-        if (w !== lastSize.w || h !== lastSize.h) {
-          lastSize = { w: w, h: h };
-          refit();          /* размер изменился — пересчитываем базу, зум сохраняем */
-        }
+        if (!w || !h || (w === lastSize.w && h === lastSize.h)) return;
+        lastSize = { w: w, h: h };
+        if (w < 720) document.body.classList.add('tree-sheet-mode');
+        refit();
       };
-      setTimeout(onResize, 80);
+      window.addEventListener('resize', onResize);
+
+      baseK = Math.min((stage.clientWidth || 1200) / SIZE, (stage.clientHeight || 700) / SIZE) || 0.4;
+      refit();
+      centerView();
+      setTimeout(() => { onResize(); centerView(); }, 60);
 
       return {
+        destroy() {
+          window.removeEventListener('resize', onResize);
+          window.removeEventListener('keydown', onKey);
+          stopHold();
+          document.body.classList.remove('tree-sheet-mode');
+        },
+
         update(state) {
           onResize();
-          tCores.set(G.fmt.num(state.res.cores || 0));
-          tNodes.set(mech.bought(state) + ' / ' + mech.total());
-          tGain.set('+' + G.prestige.gain(state) + ' ◆');
-          hub.querySelector('.hub-label').textContent = G.fmt.num(state.res.cores || 0) + ' ◆';
-
-          let next = null;
-          for (const c of cards) {
-            if (!G.upgrades.requirementsMet(state, c.u)) continue;
-            if (G.upgrades.isMaxed(state, c.u)) continue;
-            const cost = G.upgrades.currentCost(state, c.u);
-            if (!next || cost < next.cost) next = { u: c.u, cost: cost };
-          }
-          tNext.set(next ? next.u.name + ' · ' + G.fmt.num(next.cost) + ' ◆' : 'всё куплено');
+          hudCores.textContent = G.fmt.num(state.res.cores || 0) + ' ◆';
+          hudNodes.textContent = mech.bought(state) + ' / ' + mech.total();
+          hubLabel.textContent = G.fmt.num(state.res.cores || 0);
 
           for (const c of cards) {
             c.card.update(state);
             if (c.cell) {
-              const visible = G.upgrades.requirementsMet(state, c.u) || G.lvl(state, c.u.id) > 0;
-              c.cell.classList.toggle('is-hidden', !visible);
+              const on = c.card.visible(state);
+              c.cell.classList.toggle('is-hidden', !on);
               c.cell.classList.toggle('ready', G.upgrades.canBuy(state, c.u));
             }
           }
-          for (const l of lines) {
-            const visible = G.upgrades.requirementsMet(state, l.u) || G.lvl(state, l.u.id) > 0;
+          for (const l of links) {
+            const on = G.upgrades.requirementsMet(state, l.u) || G.lvl(state, l.u.id) > 0;
             const done = G.lvl(state, l.u.id) > 0;
-            l.el.classList.toggle('is-hidden', !visible);
+            l.el.classList.toggle('is-hidden', !on);
             l.el.classList.toggle('done', done);
-            if (l.flow) {
-              l.flow.classList.toggle('is-hidden', !visible);
-              l.flow.classList.toggle('done', done);
-            }
+            l.flow.classList.toggle('is-hidden', !on);
+            l.flow.classList.toggle('done', done);
           }
+          /* открытая карточка узла должна обновлять числа */
+          if ((hovered || selected) && tip.classList.contains('on')) fillTip(hovered || selected);
+          if (selected && G.upgrades.isMaxed(state, selected)) clearSelection();
         }
       };
     }

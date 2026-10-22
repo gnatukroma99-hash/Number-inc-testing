@@ -18,7 +18,7 @@
       desc: 'Тяжёлая версия прайм-стайла для позднего забега.'
     },
     {
-      id: 'pq_jack', icon: '🎰', mech: 'primefit', name: 'Джекпот-стайл', res: 'energy',
+      id: 'pq_jack', icon: 'slot', mech: 'primefit', name: 'Джекпот-стайл', res: 'energy',
       base: 5000, growth: 3.2, max: 5,
       formula: '1 + 2 * lvl', fmt: 'x',
       note: 'при q = 15: M ×= 1 + 2·lvl',

@@ -31,7 +31,7 @@
       G.ui.toast(
         'Пока тебя не было (' + G.fmt.time(offline.seconds) + '): +' +
         offline.gainedD.toFixed(1) + ' цифр, +' +
-        G.fmt.num(offline.energy, state.settings.numberFormat) + ' ⚡',
+        G.fmt.num(offline.energy, state.settings.numberFormat) + ' ⌁',
         'accent',
         6000
       );

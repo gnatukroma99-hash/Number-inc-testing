@@ -7,6 +7,7 @@
      4) каждый механика-файл из src/mechanics/* подключён в index.html (и наоборот);
      5) отсутствие ESM (import/export) и запрещённого знака ^ в формулах-строках. */
 'use strict';
+require('./_limit')(120);
 
 const fs = require('fs');
 const path = require('path');

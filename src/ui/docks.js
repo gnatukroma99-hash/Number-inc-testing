@@ -38,7 +38,7 @@
         G.h('code', { text: 'E = 0.4 · (1 + log10 N)² · 1.25^lvl' })
       ]),
       C().section('Рост', baseUpg.map((u) => u.el)),
-      C().section('Одноразовые ×2 ⚡', x2Upg.map((u) => u.el)),
+      C().section('Одноразовые ×2 ⌁', x2Upg.map((u) => u.el)),
       C().section('Автоматизация (навсегда, покупается вручную)', autoUpg.map((u) => u.el))
     ]);
     root.appendChild(el);
@@ -94,7 +94,7 @@
       const badge = G.h('span', { class: 'dock-badge' });
       const btn = G.h('button', { class: 'dock', dataset: { id: d.id }, title: d.name || '' }, [
         G.h('span', { class: 'dock-bar' }),
-        G.h('span', { class: 'dock-icon', text: d.icon || '•' }),
+        G.h('span', { class: 'dock-icon' }, [G.ui.icons.node(d.icon || 'diamond')]),
         G.h('span', { class: 'dock-text', text: d.short || d.name }),
         badge
       ]);
@@ -114,7 +114,12 @@
     }
     activeId = id;
     stateMech = id;
+    if (activeBoard && activeBoard.destroy) activeBoard.destroy();
+    activeBoard = null;
     G.dom.clear(boardEl);
+
+    /* полноэкранные доски (карта дерева): прячем число и меню */
+    document.body.classList.toggle('board-full', !!d.fullscreen);
 
     let mount = null;
     if (id === 'core') mount = mountCore;

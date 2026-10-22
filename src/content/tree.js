@@ -4,8 +4,8 @@
 
    Как добавить узел: одна строка в addUpgrades().
      branch    — ветвь (id из G.content.tree.branches)
-     depth     — глубина в ветви (0 — корень)
-     lane      — номер «полосы» (число, 0 = центр): -1 вверх, +1 вниз
+     depth     — глубина в ветви (0 — у центра)
+     lane      — устарело, не читается: раскладка круговая (угол ветви + радиус глубины)
      requires  — предки; пока не куплены, узел СКРЫТ
      tier      — ярус по цене (бейдж): t1 / t2 / t3
      эффект    — поле, которое читает движок:
@@ -21,13 +21,13 @@
     hint: '◆ Ядра тратятся только здесь. Семь ветвей: каждая — своя цепочка. ' +
           'Следующий узел ветви виден только после покупки предыдущего.',
     branches: [
-      { id: 'start', name: 'Рывок', icon: '🚀', color: '#8ada6a', note: 'старт забега сильнее', dir: 'left', lane: -1.5 },
-      { id: 'tempo', name: 'Темп', icon: '⏩', color: '#2bb5ff', note: 'скорость и софткап', dir: 'right', lane: -1.5 },
-      { id: 'mult', name: 'Множитель', icon: '◈', color: '#ffd166', note: 'плоские × к M', dir: 'left', lane: -0.5 },
-      { id: 'auto', name: 'Автоматизация', icon: '🤖', color: '#ff9de2', note: 'авто и механики', dir: 'right', lane: -0.5 },
-      { id: 'cores', name: 'Ядра', icon: '◆', color: '#ffb14d', note: 'больше ◆ за перерождение', dir: 'left', lane: 0.5 },
-      { id: 'income', name: 'Доход', icon: '❖', color: '#6ee7f9', note: 'энергия, ❖, цены', dir: 'right', lane: 0.5 },
-      { id: 'spark', name: 'Искра', icon: '✦', color: '#ffd166', note: 'ловить искры выгоднее', dir: 'left', lane: 1.5 }
+      { id: 'start', name: 'Рывок', icon: 'rocket', color: '#8ada6a', note: 'старт забега сильнее', angle: -141 },
+      { id: 'tempo', name: 'Темп', icon: 'fast', color: '#2bb5ff', note: 'скорость и софткап', angle: -90 },
+      { id: 'mult', name: 'Множитель', icon: '◈', color: '#ffd166', note: 'плоские × к M', angle: -39 },
+      { id: 'income', name: 'Доход', icon: '❖', color: '#6ee7f9', note: 'энергия, ❖, цены', angle: 13 },
+      { id: 'auto', name: 'Автоматизация', icon: 'robot', color: '#ff9de2', note: 'авто и механики', angle: 64 },
+      { id: 'spark', name: 'Искра', icon: '✦', color: '#ffd166', note: 'ловить искры выгоднее', angle: 116 },
+      { id: 'cores', name: 'Ядра', icon: '◆', color: '#ffb14d', note: 'больше ◆ за перерождение', angle: 167 }
     ],
     tiers: [
       { id: 't1', name: 'I' },
@@ -37,10 +37,10 @@
   };
 
   G.registry.addUpgrades([
-    /* ================= 🚀 ветвь «Рывок» ================= */
+    /* ================= ветвь «Рывок» ================= */
     {
       id: 'tree_headstart', mech: 'tree', branch: 'start', depth: 0, lane: -1, tier: 't1',
-      scope: 'meta', res: 'cores', icon: '🚀',
+      scope: 'meta', res: 'cores', icon: 'rocket',
       name: 'Стартовый рывок', base: 1, growth: 1.90, max: 8,
       formula: '2 * lvl', fmt: 'num',
       note: 'после P1 N = 10^(2·lvl)',
@@ -48,7 +48,7 @@
     },
     {
       id: 'tree_headstart2', mech: 'tree', branch: 'start', depth: 1, lane: -1, tier: 't3',
-      scope: 'meta', res: 'cores', icon: '🚀',
+      scope: 'meta', res: 'cores', icon: 'rocket',
       name: 'Рывок II', base: 90, growth: 2.20, max: 4,
       formula: '10 * lvl', fmt: 'num',
       requires: ['tree_headstart'],
@@ -57,7 +57,7 @@
     },
     {
       id: 'tree_headstart3', mech: 'tree', branch: 'start', depth: 2, lane: -1, tier: 't3',
-      scope: 'meta', res: 'cores', icon: '🚀',
+      scope: 'meta', res: 'cores', icon: 'rocket',
       name: 'Рывок III', base: 400, growth: 2.40, max: 3,
       formula: '40 * lvl', fmt: 'num',
       requires: ['tree_headstart2'],
@@ -65,10 +65,10 @@
       desc: 'Забег начинается почти с прошлой вершины.'
     },
 
-    /* ================= ⏩ ветвь «Темп» ================= */
+    /* ================= ветвь «Темп» ================= */
     {
       id: 'tree_tempo', mech: 'tree', branch: 'tempo', depth: 0, lane: -1, tier: 't1',
-      scope: 'meta', res: 'cores', icon: '⏩',
+      scope: 'meta', res: 'cores', icon: 'fast',
       name: 'Вечный разгон', base: 2, growth: 1.70, max: 6,
       formula: '1 / (0.97 ** lvl)', fmt: 'x', dtMult: '0.97 ** lvl',
       note: 'ΔT ×= 0.97^lvl',
@@ -76,7 +76,7 @@
     },
     {
       id: 'tree_softcap', mech: 'tree', branch: 'tempo', depth: 1, lane: -1, tier: 't2',
-      scope: 'meta', res: 'cores', icon: '🪓',
+      scope: 'meta', res: 'cores', icon: 'axe',
       name: 'Слом софткапа', base: 6, growth: 1.85, max: 6,
       formula: '1.12 ** lvl', fmt: 'x', spanMult: '1.12 ** lvl',
       requires: ['tree_tempo'],
@@ -94,7 +94,7 @@
     },
     {
       id: 'tree_span2', mech: 'tree', branch: 'tempo', depth: 3, lane: -1, tier: 't3',
-      scope: 'meta', res: 'cores', icon: '🪓',
+      scope: 'meta', res: 'cores', icon: 'axe',
       name: 'Слом софткапа II', base: 60, growth: 2.00, max: 5,
       formula: '1.15 ** lvl', fmt: 'x', spanMult: '1.15 ** lvl',
       requires: ['tree_pow'],
@@ -103,7 +103,7 @@
     },
     {
       id: 'tree_span3', mech: 'tree', branch: 'tempo', depth: 4, lane: -1, tier: 't3',
-      scope: 'meta', res: 'cores', icon: '🪓',
+      scope: 'meta', res: 'cores', icon: 'axe',
       name: 'Слом софткапа III', base: 250, growth: 2.10, max: 4,
       formula: '1.18 ** lvl', fmt: 'x', spanMult: '1.18 ** lvl',
       requires: ['tree_span2'],
@@ -112,7 +112,7 @@
     },
     {
       id: 'tree_tempo2', mech: 'tree', branch: 'tempo', depth: 5, lane: -1, tier: 't3',
-      scope: 'meta', res: 'cores', icon: '⏩',
+      scope: 'meta', res: 'cores', icon: 'fast',
       name: 'Разгон II', base: 500, growth: 2.20, max: 4,
       formula: '1 / (0.96 ** lvl)', fmt: 'x', dtMult: '0.96 ** lvl',
       requires: ['tree_span3'],
@@ -122,7 +122,7 @@
     /* ================= ◈ ветвь «Множитель» ================= */
     {
       id: 'tree_base', mech: 'tree', branch: 'mult', depth: 0, lane: 0, tier: 't1',
-      scope: 'meta', res: 'cores', icon: '▪',
+      scope: 'meta', res: 'cores', icon: 'grid',
       name: 'Плотность', base: 1, growth: 1.55, max: 12,
       formula: '40 * lvl', fmt: 'num', addM: '40 * lvl',
       note: 'M_base += 40·lvl',
@@ -174,18 +174,18 @@
       desc: 'Жирный флэт — работает даже без механик.'
     },
 
-    /* ================= 🤖 ветвь «Автоматизация» ================= */
+    /* ================= ветвь «Автоматизация» ================= */
     {
       id: 'tree_battery', mech: 'tree', branch: 'auto', depth: 0, lane: 0, tier: 't1',
-      scope: 'meta', res: 'cores', icon: '⚡',
+      scope: 'meta', res: 'cores', icon: 'bolt',
       name: 'Ядро-батарейка', base: 2, growth: 2.20, max: 6,
       formula: '3 ** lvl', fmt: 'x', energyMult: '3 ** lvl',
-      note: '⚡ ×= 3^lvl',
+      note: '⌁ ×= 3^lvl',
       desc: 'Энергия навсегда: быстрее раскупоривается «Рост».'
     },
     {
       id: 'tree_auto_all', mech: 'tree', branch: 'auto', depth: 1, lane: 0, tier: 't2',
-      scope: 'meta', res: 'cores', icon: '🤖',
+      scope: 'meta', res: 'cores', icon: 'robot',
       name: 'Главный автоматизатор', base: 25, growth: 1, max: 1,
       formula: 'lvl', fmt: 'pct',
       requires: ['tree_battery'],
@@ -212,7 +212,7 @@
     },
     {
       id: 'tree_autofast', mech: 'tree', branch: 'auto', depth: 4, lane: 0, tier: 't3',
-      scope: 'meta', res: 'cores', icon: '⚙',
+      scope: 'meta', res: 'cores', icon: 'gear',
       name: 'Авто-ускоритель', base: 220, growth: 2.00, max: 3,
       formula: '1.5 ** lvl', fmt: 'x', autoStepMult: '1.5 ** lvl',
       requires: ['tree_mirror'],
@@ -258,7 +258,7 @@
     },
     {
       id: 'tree_corenodes', mech: 'tree', branch: 'cores', depth: 5, lane: 1, tier: 't3',
-      scope: 'meta', res: 'cores', icon: '🌳',
+      scope: 'meta', res: 'cores', icon: 'tree',
       name: 'Узловая награда', base: 1500, growth: 2.20, max: 6,
       formula: 'lvl', fmt: 'num', coreGainPerNode: '1 * lvl',
       requires: ['tree_coremin'],
@@ -267,7 +267,7 @@
     },
     {
       id: 'tree_corekeep', mech: 'tree', branch: 'cores', depth: 6, lane: 1, tier: 't3',
-      scope: 'meta', res: 'cores', icon: '🔒',
+      scope: 'meta', res: 'cores', icon: 'lock',
       name: 'Ядра не сгорают', base: 3000, growth: 1, max: 1,
       formula: 'lvl', fmt: 'pct',
       requires: ['tree_corenodes'],
@@ -285,7 +285,7 @@
       desc: 'Флэт-бонус: даже короткий забег приносит ядра.'
     },
 
-    /* ================= ✦ ветвь «Искра» ================= */
+    /* ================= ветвь «Искра» ================= */
     {
       id: 'tree_sparklife', mech: 'tree', branch: 'spark', depth: 0, lane: 1.5, tier: 't1',
       scope: 'meta', res: 'cores', icon: '✦',
@@ -310,7 +310,7 @@
       formula: '1.35 ** lvl', fmt: 'x', sparkPower: '1.35 ** lvl',
       requires: ['tree_sparkrate'],
       note: 'сила эффектов искры ×= 1.35^lvl',
-      desc: 'Буффы, ⚡, ◆ и ❖ с искры становятся мощнее.'
+      desc: 'Буффы, ⌁, ◆ и ❖ с искры становятся мощнее.'
     },
     {
       id: 'tree_sparkdouble', mech: 'tree', branch: 'spark', depth: 3, lane: 1.5, tier: 't3',
@@ -325,7 +325,7 @@
     /* ================= ❖ ветвь «Доход» ================= */
     {
       id: 'tree_shop', mech: 'tree', branch: 'income', depth: 0, lane: 1, tier: 't1',
-      scope: 'meta', res: 'cores', icon: '🛒',
+      scope: 'meta', res: 'cores', icon: 'cart',
       name: 'Скидка магазина', base: 5, growth: 1.80, max: 6,
       formula: '0.96 ** lvl', fmt: 'x', shopCostMult: '0.96 ** lvl',
       note: 'цена магазина ×= 0.96^lvl',
@@ -333,7 +333,7 @@
     },
     {
       id: 'tree_shop2', mech: 'tree', branch: 'income', depth: 1, lane: 1, tier: 't2',
-      scope: 'meta', res: 'cores', icon: '🛒',
+      scope: 'meta', res: 'cores', icon: 'cart',
       name: 'Скидка магазина II', base: 45, growth: 2.00, max: 6,
       formula: '0.93 ** lvl', fmt: 'x', shopCostMult: '0.93 ** lvl',
       requires: ['tree_shop'],
@@ -342,11 +342,11 @@
     },
     {
       id: 'tree_energy2', mech: 'tree', branch: 'income', depth: 2, lane: 1, tier: 't3',
-      scope: 'meta', res: 'cores', icon: '⚡',
+      scope: 'meta', res: 'cores', icon: 'bolt',
       name: 'Энергия II', base: 180, growth: 2.00, max: 8,
       formula: '5 ** lvl', fmt: 'x', energyMult: '5 ** lvl',
       requires: ['tree_shop2'],
-      note: '⚡ ×= 5^lvl',
+      note: '⌁ ×= 5^lvl',
       desc: 'Мощный источник энергии для дорогих досок.'
     },
     {
@@ -360,11 +360,11 @@
     },
     {
       id: 'tree_energy3', mech: 'tree', branch: 'income', depth: 4, lane: 1, tier: 't3',
-      scope: 'meta', res: 'cores', icon: '⚡',
+      scope: 'meta', res: 'cores', icon: 'bolt',
       name: 'Энергия III', base: 900, growth: 2.20, max: 6,
       formula: '4 ** lvl', fmt: 'x', energyMult: '4 ** lvl',
       requires: ['tree_prime2'],
-      note: '⚡ ×= 4^lvl',
+      note: '⌁ ×= 4^lvl',
       desc: 'Вершина ветви дохода.'
     }
   ]);

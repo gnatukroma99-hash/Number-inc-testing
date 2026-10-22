@@ -19,7 +19,7 @@
       desc: 'Второй слой: работает на той же сумме цифр, но дешевле за уровень.'
     },
     {
-      id: 'sd_stab', icon: '🧊', mech: 'digitsum', name: 'Стабилизатор', res: 'energy',
+      id: 'sd_stab', icon: 'ice', mech: 'digitsum', name: 'Стабилизатор', res: 'energy',
       base: 300, growth: 2.5, max: 10,
       formula: '4 + 2 * lvl', fmt: 'num',
       note: 'Δt сэмпла = 4 + 2·lvl',

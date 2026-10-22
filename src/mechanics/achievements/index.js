@@ -9,7 +9,7 @@
     order: 11,
     name: 'Достижения',
     short: 'Награды',
-    icon: '🏆',
+    icon: 'trophy',
     scope: 'meta',
     noBulk: true,          // тут нет апгрейдов — панель покупок не нужна
     hint: 'Открываются сами, когда в игре происходит важное. Каждое даёт +1% к M навсегда.',
@@ -23,7 +23,7 @@
     },
 
     status(state) {
-      return '🏆' + G.achievements.count(state) + '/' + G.achievements.total();
+      return '' + G.achievements.count(state) + '/' + G.achievements.total();
     }
   });
 })(window.G = window.G || {});

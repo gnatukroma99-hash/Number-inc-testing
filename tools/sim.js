@@ -4,6 +4,7 @@
    невидимый софткап и барьер 1e308.
    Если node нет — файл просто лежит, игра от него не зависит. */
 'use strict';
+require('./_limit')(900);
 
 const MINUTES = Number(process.argv[2] || 120);
 const REPORT = Number(process.argv[3] || 300);

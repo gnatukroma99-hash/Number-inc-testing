@@ -57,7 +57,7 @@
       const id = now.id + ':' + Math.ceil(G.spark.data(state).left);
       if (shownId !== now.id || !el.classList.contains('visible')) {
         el.style.setProperty('--spark', rush.active ? '#ff7ad9' : (now.color || '#ffd166'));
-        el.querySelector('.spark-float-icon').textContent = now.icon || '✦';
+        G.ui.icons.set(el.querySelector('.spark-float-icon'), now.icon || 'sparkle');
         place(Math.floor((state.stats.playtime || 0) * 7) + now.id.length * 13);
         shownId = now.id;
         el.classList.add('visible');

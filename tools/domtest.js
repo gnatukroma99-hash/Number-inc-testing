@@ -10,6 +10,7 @@
    Требует jsdom (devDependency):  npm i -D jsdom
    Агент запускает это вместо «открой браузер и посмотри». */
 'use strict';
+require('./_limit')(180);
 
 const fs = require('fs');
 const path = require('path');
@@ -86,6 +87,19 @@ async function waitBoot(win, ms) {
   return false;
 }
 
+/* событие-указатель для панорамы/щипка: доска читает pointerId и pointerType,
+   обычный MouseEvent их не имеет — дописываем руками (jsdom PointerEvent не всегда полный). */
+function makePtr(win) {
+  return function ptr(type, x, y, id, pointerType) {
+    const ev = new win.MouseEvent(type, {
+      bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0
+    });
+    const extra = { pointerId: id === undefined ? 1 : id, pointerType: pointerType || 'mouse' };
+    for (const k in extra) Object.defineProperty(ev, k, { value: extra[k], configurable: true });
+    return ev;
+  };
+}
+
 function click(el) {
   if (!el) return false;
   el.dispatchEvent(new el.ownerDocument.defaultView.MouseEvent('pointerdown', { bubbles: true }));
@@ -127,6 +141,7 @@ async function main() {
 }
 
 async function runTests({ dom, win, G, srcs, loadMs, doc }) {
+  const ptr = makePtr(win);
   check('скриптов найдено', srcs.length > 5, srcs.length + ' шт, ' + loadMs + ' мс');
   check('G создан', !!G);
   check('G.VERSION', !!G.VERSION, G.VERSION);
@@ -202,7 +217,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   }
   for (const id of ids) {
     click(dockBtns().find((b) => b.dataset.id === id));
-    const btns = Array.from(doc.querySelectorAll('#board .upg-buy, #board .node-buy'));
+    const btns = Array.from(doc.querySelectorAll('#board .upg-buy, #board .node-orb'));
     for (const b of btns) for (let i = 0; i < 3; i++) click(b);
     log('доска', id, 'кнопок:', btns.length);
   }
@@ -293,9 +308,11 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   state.res.cores = 5000;     // чтобы проверять именно требования, а не нехватку ядер
   if (G.lvl(state, 'tree_tempo')) state.upg.tree_tempo = 0;
   state.upg.tree_span2 = 0;   /* чтобы требования были честными */
+  state.upg.tree_softcap = 0;  /* на этом сейве узел мог быть уже выкуплен */
   check('предок блокирует узел', G.upgrades.canBuy(state, soft) === false);
   state.upg.tree_tempo = 1;
-  check('с предком узел доступен', G.upgrades.canBuy(state, soft) === true);
+  check('с предком узел доступен', G.upgrades.canBuy(state, soft) === true,
+    'tempо=' + G.lvl(state, 'tree_tempo') + ', lvl=' + G.lvl(state, soft.id) + ' (max)');
   state.upg.tree_span2 = 0;
   state.res.cores = 500;
   state.upg.tree_headstart = 0;
@@ -325,12 +342,15 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
 
   const map = doc.querySelector('#board .tree-map');
   check('карта дерева отрисована', !!map);
-  const heads = doc.querySelectorAll('#board .tree-branch-head');
-  check('7 полос-ветвей', heads.length === 7, heads.length + ' шт');
+  const spokes = doc.querySelectorAll('#board .tree-rings .tray');
+  check('7 лучей-ветвей от хаба', spokes.length === 7, spokes.length + ' шт');
   const cells = Array.from(doc.querySelectorAll('#board .tree-cell'));
   check('клеток по числу узлов', cells.length === tree.length, cells.length + ' / ' + tree.length);
-  check('связки-линии (::before не проверить, но классы есть)', cells.filter((c) => c.classList.contains('root')).length === 7,
-    'корней: ' + cells.filter((c) => c.classList.contains('root')).length);
+  check('кольца глубины нарисованы', doc.querySelectorAll('#board .tree-rings .tring').length >= 4,
+    'колец: ' + doc.querySelectorAll('#board .tree-rings .tring').length);
+  /* эмоджи-начертание = Extended_Pictographic; знаки валют (◆ ⌁ ⌗ ❖ ✦) — не эмоджи */
+  const emojiInMap = textOf(map).match(/\p{Extended_Pictographic}/gu);
+  check('в карте нет эмоджи', !emojiInMap, emojiInMap ? emojiInMap.join(' ') : (textOf(map).slice(0, 60)));
 
   const unknownShown = () => Array.from(doc.querySelectorAll('#board .node.unknown'))
     .filter((n) => n.style.display !== 'none').length;
@@ -348,24 +368,24 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     'скрыто: ' + unknownShown() + ' из ' + tree.length);
   check('2-й узел ветви скрыт', realShown('Слом софткапа') === false);
   check('корень ветви виден', realShown('Вечный разгон') === true);
-  const hiddenBtn = Array.from(doc.querySelectorAll('#board .node.unknown .node-buy'))
-    .filter((b) => b.parentElement.style.display !== 'none');
+  const hiddenBtn = Array.from(doc.querySelectorAll('#board .node.unknown .node-orb'))
+    .filter((b) => b.closest('.node').style.display !== 'none');
   check('у скрытого узла нет имени/цены', hiddenBtn.length === tree.length - 7 &&
     !/[0-9]/.test(textOf(hiddenBtn[0])),
-    'кнопок: ' + hiddenBtn.length + ' из ' + (tree.length - 4) + ', текст: «' + textOf(hiddenBtn[0]) + '»');
+    'кнопок: ' + hiddenBtn.length + ' из ' + (tree.length - 7) + ', текст: «' + textOf(hiddenBtn[0]) + '»');
 
   /* покупаем корень ветви → следующий узел проявляется */
   state.res.cores = 1e6;
   const tempoBtn = Array.from(doc.querySelectorAll('#board .tree-cell .node:not(.unknown)'))
     .find((n) => textOf(n.querySelector('.node-name')) === 'Вечный разгон')
-    .querySelector('.node-buy');
+    .querySelector('.node-orb');
   click(tempoBtn);
   G.ui.app.render(state);
   check('после покупки корня 2-й узел проявился', realShown('Слом софткапа') === true,
     'ур. Вечный разгон = ' + G.lvl(state, 'tree_tempo'));
   check('скрытых стало меньше', unknownShown() === tree.length - 8, 'скрыто: ' + unknownShown());
-  check('цена узла — в ядрах', /\u25c6/.test(textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy'))),
-    textOf(doc.querySelector('#board .tree-cell .node:not(.unknown) .node-buy')));
+  check('цена узла видна в орбе', /[0-9]/.test(textOf(doc.querySelector('#board .tree-cell .node .orb-price'))),
+    textOf(doc.querySelector('#board .tree-cell .node .orb-price')));
 
   section('5a0. Золотая искра ✦ (активный контент)');
   check('система искры есть', !!G.spark && !!G.registry.mechanic('spark'));
@@ -498,7 +518,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   Object.defineProperty(fakeStage, 'clientWidth', { value: 900, configurable: true });
   Object.defineProperty(fakeStage, 'clientHeight', { value: 520, configurable: true });
   G.ui.app.render(state);   // повторный fit() по новому размеру
-  check('кнопки зума есть (+ − ⤢ ⌖)', zbtns.length === 4, zbtns.map((b) => textOf(b)).join(' '));
+  check('кнопки зума есть (4 шт)', zbtns.length === 4, zbtns.map((b) => b.title).join(' · '));
   const treeMap = doc.querySelector('#board .tree-map');
   const scaleOf = () => {
     const m = /scale\(([\d.]+)\)/.exec(treeMap.style.transform || '');
@@ -515,7 +535,10 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('есть сдвиг панорамы', /translate\(/.test(treeMap.style.transform || ''),
     treeMap.style.transform);
   click(zbtns[2]);                              // «вписать»
-  check('кнопка ⤢ возвращает масштаб', Math.abs(scaleOf() - s0) < 1e-3, 'scale=' + scaleOf().toFixed(3));
+  const mapPx = parseFloat(treeMap.style.width) || 2200;
+  const fitScale = Math.min(900 / mapPx, 520 / mapPx) * 0.6;   /* fit() → минимальный зум */
+  check('кнопка «вся карта» вписывает её', Math.abs(scaleOf() - fitScale) < 1e-3,
+    'scale=' + scaleOf().toFixed(3) + ', ждали ' + fitScale.toFixed(3));
 
   /* приближаем и запоминаем «центрированный» вид */
   click(zbtns[0]);
@@ -523,9 +546,9 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const centeredTransform = treeMap.style.transform;
 
   /* перетаскивание мышью (pointer) */
-  fakeStage.dispatchEvent(new win.PointerEvent('pointerdown', { pointerType: 'mouse', button: 0, clientX: 600, clientY: 400, pointerId: 1, bubbles: true }));
-  fakeStage.dispatchEvent(new win.PointerEvent('pointermove', { pointerType: 'mouse', clientX: 500, clientY: 350, pointerId: 1, bubbles: true }));
-  fakeStage.dispatchEvent(new win.PointerEvent('pointerup', { pointerType: 'mouse', clientX: 500, clientY: 350, pointerId: 1, bubbles: true }));
+  fakeStage.dispatchEvent(ptr('pointerdown', 600, 400, 1));
+  fakeStage.dispatchEvent(ptr('pointermove', 500, 350, 1));
+  fakeStage.dispatchEvent(ptr('pointerup', 500, 350, 1));
   const draggedTransform = treeMap.style.transform;
   check('карту можно тащить мышью', draggedTransform !== centeredTransform,
     centeredTransform + ' → ' + draggedTransform);
@@ -543,19 +566,14 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   stage.dispatchEvent(new win.WheelEvent('wheel', { deltaY: 120, clientX: 400, clientY: 300, bubbles: true, cancelable: true }));
 
   /* щипок двумя пальцами (как на телефоне) */
-  const touch = (x1, y1, x2, y2) => ([
-    { clientX: x1, clientY: y1, identifier: 1 },
-    { clientX: x2, clientY: y2, identifier: 2 }
-  ]);
   const pinchBefore = scaleOf();
-  const evStart = new win.Event('touchstart', { bubbles: true });
-  evStart.touches = touch(320, 300, 380, 300);
-  stage.dispatchEvent(evStart);
-  const evMove = new win.Event('touchmove', { bubbles: true, cancelable: true });
-  evMove.touches = touch(260, 300, 440, 300);   // пальцы разъехались → приблизить
-  stage.dispatchEvent(evMove);
+  stage.dispatchEvent(ptr('pointerdown', 320, 300, 11, 'touch'));
+  stage.dispatchEvent(ptr('pointerdown', 380, 300, 12, 'touch'));
+  stage.dispatchEvent(ptr('pointermove', 260, 300, 11, 'touch'));   // пальцы разъехались → приблизить
+  stage.dispatchEvent(ptr('pointermove', 440, 300, 12, 'touch'));
   check('щипок двумя пальцами приближает', scaleOf() > pinchBefore, pinchBefore.toFixed(3) + ' → ' + scaleOf().toFixed(3));
-  stage.dispatchEvent(new win.Event('touchend', { bubbles: true }));
+  stage.dispatchEvent(ptr('pointerup', 260, 300, 11, 'touch'));
+  stage.dispatchEvent(ptr('pointerup', 440, 300, 12, 'touch'));
   click(zbtns[2]);
 
   section('5a2. Эффекты дерева: частицы у купленных узлов и поток света');
@@ -564,11 +582,11 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.upgrades.buy(state, G.registry.upgrade('tree_tempo'));
   click(dockBtns().find((b) => b.dataset.id === 'tree'));
   G.ui.app.render(state);
-  check('у каждого узла есть слой частиц', doc.querySelectorAll('#board .orb-orbit').length === tree.length,
-    doc.querySelectorAll('#board .orb-orbit').length + ' / ' + tree.length);
-  check('частицы есть у купленного узла',
-    doc.querySelectorAll('#board .node.done .orb-orbit').length > 0,
-    'купленных с частицами: ' + doc.querySelectorAll('#board .node.done .orb-orbit').length);
+  check('у каждого узла есть кольцо-орб', doc.querySelectorAll('#board .node-orb .orb-ring').length === tree.length,
+    doc.querySelectorAll('#board .node-orb .orb-ring').length + ' / ' + tree.length);
+  check('купленный узел помечен классом done',
+    doc.querySelectorAll('#board .node.done').length > 0,
+    'куплено: ' + doc.querySelectorAll('#board .node.done').length);
   check('по связкам течёт свет', doc.querySelectorAll('#board .tline.flow').length >= tree.length - 4,
     'flow-линий: ' + doc.querySelectorAll('#board .tline.flow').length);
   check('купленные связки светятся', doc.querySelectorAll('#board .tline.flow.done').length > 0,
@@ -576,9 +594,10 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('выключение анимаций гасит эффекты', (function () {
     /* jsdom не считает CSS — проверяем, что правила существуют в стилях */
     const css = fs.readFileSync(path.join(ROOT, 'assets/css/style.css'), 'utf8');
-    return /\.no-anim \.orb-orbit/.test(css) && /\.no-anim \.tline\.flow/.test(css) &&
-      /\.no-anim \.tree-map \.node-orb\.can/.test(css);
-  })(), 'правила .no-anim в style.css');
+    return /body\.no-anim\s*\*\s*\{[^}]*animation: none !important/.test(css) &&
+      /.tline.flow.done {[^}]*animation:/.test(css) &&
+      /.node.ready .node-orb {[^}]*animation: orbPulse/.test(css);
+  })(), 'правила .no-anim и анимации дерева в style.css');
 
   section('5a3. Звук (WebAudio, без файлов)');
   check('G.sfx есть', !!G.sfx);

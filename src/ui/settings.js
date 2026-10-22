@@ -200,16 +200,16 @@
           ]),
 
           G.h('div', { class: 'btn-row' }, [
-            G.h('button', { class: 'btn', text: '💾 Сохранить сейчас', onclick: () => {
+            G.h('button', { class: 'btn', text: ' Сохранить сейчас', onclick: () => {
               G.save.saveLocal(state);
               G.ui.toast('Сохранено', 'good');
             } }),
-            G.h('button', { class: 'btn', text: '⬇ Экспорт', onclick: () => {
+            G.h('button', { class: 'btn', text: ' Экспорт', onclick: () => {
               refs.export.value = G.save.exportString(state);
               refs.export.select();
               G.ui.toast('Строка сейва готова — скопируй', 'accent');
             } }),
-            G.h('button', { class: 'btn', text: '⬆ Импорт', onclick: () => {
+            G.h('button', { class: 'btn', text: ' Импорт', onclick: () => {
               const st = G.save.importString(refs.export.value);
               if (!st) { G.ui.toast('Не удалось прочитать сейв', 'warn'); return; }
               G.applyState(st);
@@ -250,7 +250,7 @@
 
           G.h('h3', { class: 'section-title danger', text: 'Опасная зона' }),
           G.h('div', { class: 'btn-row' }, [
-            G.h('button', { class: 'btn danger', text: '🗑 Сбросить всё', onclick: () => {
+            G.h('button', { class: 'btn danger', text: ' Сбросить всё', onclick: () => {
               if (!confirm('Удалить сейв и начать заново?')) return;
               G.save.clearLocal();
               G.applyState(G.newState());
@@ -279,9 +279,9 @@
     const parts = [];
     parts.push(c.getToken() ? (c.state.login ? 'токен OK (' + c.state.login + ')' : 'токен задан') : 'токен не задан');
     parts.push(c.getGistId() ? 'gist: ' + c.getGistId().slice(0, 10) + '…' : 'gist не создан');
-    if (c.state.busy) parts.push('⏳ обмен…');
+    if (c.state.busy) parts.push('обмен…');
     if (c.state.lastMessage) parts.push(c.state.lastMessage);
-    if (c.state.lastError) parts.push('⚠ ' + c.state.lastError);
+    if (c.state.lastError) parts.push(' ' + c.state.lastError);
     refs.cloudStatus.textContent = parts.join(' · ');
     refs.cloudStatus.className = 'cloud-status' + (c.state.lastError ? ' err' : '');
 

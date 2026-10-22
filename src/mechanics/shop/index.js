@@ -6,7 +6,7 @@
 
   G.registry.addUpgrades([
     {
-      id: 'shop_plus', icon: '➕', mech: 'shop', name: 'Жирный плюс', res: 'number',
+      id: 'shop_plus', icon: 'plus', mech: 'shop', name: 'Жирный плюс', res: 'number',
       costD: '0.80 * 1.80 ** lvl', minD: 18, max: 6,
       formula: '500 * lvl', addM: '500 * lvl', fmt: 'num',
       note: 'M_base += 500·lvl',
@@ -20,7 +20,7 @@
       desc: 'Плоский ×2 к M за каждые 2.5 цифры. Дорого, но всегда полезно.'
     },
     {
-      id: 'shop_tempo', icon: '⏱', mech: 'shop', name: 'Хроно-скидка', res: 'number',
+      id: 'shop_tempo', icon: 'clock', mech: 'shop', name: 'Хроно-скидка', res: 'number',
       costD: '1.00 * 1.90 ** lvl', minD: 30, max: 8,
       formula: '0.95 ** lvl', dtMult: '0.95 ** lvl', fmt: 'x',
       note: 'ΔT ×= 0.95^lvl',
@@ -34,10 +34,10 @@
       desc: 'Бонусы всех механик возводятся в степень. Дорого, но масштабируется.'
     },
     {
-      id: 'shop_battery', icon: '🔋', mech: 'shop', name: 'Батарейка', res: 'number',
+      id: 'shop_battery', icon: 'battery', mech: 'shop', name: 'Батарейка', res: 'number',
       costD: '0.30 * 1.80 ** lvl', minD: 8, max: 6,
       formula: '1.5 ** lvl', energyMult: '1.5 ** lvl', fmt: 'x',
-      note: '⚡ ×= 1.5^lvl',
+      note: '⌁ ×= 1.5^lvl',
       desc: 'Больше энергии за те же нули.'
     }
   ]);
@@ -47,7 +47,7 @@
     order: 4,
     name: 'Магазин цифр',
     short: 'Магазин',
-    icon: '🛒',
+    icon: 'cart',
     scope: 'run',
     noBulk: true,          // цены в цифрах — покупка строго по одной
     hint: 'Единственное место, где тратится само число: цена указана в цифрах (D). ' +

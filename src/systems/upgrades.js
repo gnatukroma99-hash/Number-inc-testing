@@ -1,6 +1,6 @@
 /* systems/upgrades.js — покупка и расчёт эффектов. Формулы — только из данных.
    Два типа цены:
-     base/growth/costFormula — обычная цена в ресурсе u.res (⚡, ❖, ...)
+     base/growth/costFormula — обычная цена в ресурсе u.res (⌁, ❖, ...)
      costD — цена в ЦИФРАХ (D): платим частью главного числа N. */
 (function (G) {
   'use strict';

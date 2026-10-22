@@ -45,7 +45,7 @@
           tGain.set('+' + gain + ' ◆');
           tRuns.set(String(state.meta.totalRuns || 0));
           const best = Math.max(state.meta.coresBest || 0, state.res.cores || 0);
-          tBest.set(G.fmt.num(best) + (G.prestige.keepCores(state) ? ' 🔒' : ''));
+          tBest.set(G.fmt.num(best) + (G.prestige.keepCores(state) ? ' · ядра не сгорают' : ''));
           btn.disabled = gain <= 0;
           btn.className = 'prestige-btn' + (gain > 0 ? ' can' : ' cant');
           btn.textContent = gain > 0 ? 'ПЕРЕРОДИТЬСЯ  +' + gain + ' ◆' : 'НУЖНО БОЛЬШЕ ЦИФР';

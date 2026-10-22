@@ -26,7 +26,7 @@
       desc: 'Больше ❖ с каждого простого разряда.'
     },
     {
-      id: 'pm_speed', icon: '⏩', mech: 'primeranks', name: 'Прайм-разгон', res: 'prime',
+      id: 'pm_speed', icon: 'fast', mech: 'primeranks', name: 'Прайм-разгон', res: 'prime',
       base: 2, growth: 2.4, max: 15,
       formula: '0.95 ** lvl', fmt: 'x',
       note: 'ΔT ×= 0.95^lvl',

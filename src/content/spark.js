@@ -42,12 +42,12 @@
         text: '×12 к M на 25 секунд'
       },
       {
-        id: 'tempo', name: 'Хроно', icon: '⏱', color: '#2bb5ff', weight: 4,
+        id: 'tempo', name: 'Хроно', icon: 'clock', color: '#2bb5ff', weight: 4,
         dtMult: 0.45, dur: 20,
         text: 'ΔT ×0.45 на 20 секунд'
       },
       {
-        id: 'energy', name: 'Заряд', icon: '⚡', color: '#8ada6a', weight: 4,
+        id: 'energy', name: 'Заряд', icon: 'bolt', color: '#8ada6a', weight: 4,
         energySec: 420,
         text: '+420 секунд энергии'
       },

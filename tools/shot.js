@@ -4,6 +4,7 @@
    Нужен:  npm i -D puppeteer-core  и установленный Chrome/Edge.
    Зачем: агент видит реальную вёрстку (jsdom её не рисует). */
 'use strict';
+require('./_limit')(300);
 
 const fs = require('fs');
 const path = require('path');
@@ -52,8 +53,9 @@ const PREP = `
   return 'ok';
 })()`;
 
+let browser = null;                       /* закрываем в finally: иначе Chrome висит и tool «зависает» */
 (async () => {
-  const browser = await puppeteer.launch({
+  browser = await puppeteer.launch({
     executablePath: findBrowser(),
     headless: 'new',
     args: ['--allow-file-access-from-files', '--hide-scrollbars', '--force-device-scale-factor=1']
@@ -111,10 +113,16 @@ const PREP = `
   await page.screenshot({ path: path.join(OUT, 'mobile-tree.png'), fullPage: false });
   console.log('  снято: tools/shots/mobile-tree.png');
 
-  /* настройки */
+  /* настройки: сначала выходим из полноэкранного дерева, иначе шапка скрыта */
   await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
-  await page.click('#btn-settings');
-  await new Promise((r) => setTimeout(r, 220));
+  await page.evaluate(() => {
+    const back = Array.from(document.querySelectorAll('#docks .dock')).find((b) => b.dataset.id === 'core');
+    if (back) back.click();
+    const btn = document.getElementById('btn-settings');
+    if (btn) btn.click();                     /* click() работает и для скрытых кнопок */
+    window.G.ui.app.render(window.G.state);
+  });
+  await new Promise((r) => setTimeout(r, 260));
   await page.screenshot({ path: path.join(OUT, 'settings.png') });
   console.log('  снято: tools/shots/settings.png');
 
@@ -126,8 +134,9 @@ const PREP = `
     console.log('\nошибок в консоли нет');
   }
 
-  await browser.close();
 })().catch((e) => {
   console.error('FATAL:', e.message);
   process.exitCode = 1;
+}).finally(async () => {
+  try { if (browser) await browser.close(); } catch (err) { /* уже закрыт */ }
 });

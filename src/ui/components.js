@@ -5,7 +5,7 @@
 
   G.ui = G.ui || {};
 
-  const RES_ICON = { energy: '⚡', prime: '❖', cores: '◆', delta: 'Δ', psi: 'Ψ', omega: 'Ω', crystal: '◈', number: 'D' };
+  const RES_ICON = { energy: '⌁', prime: '❖', cores: '◆', delta: 'Δ', psi: 'Ψ', omega: 'Ω', crystal: '◈', number: 'D' };
   const RES_NAME = { energy: 'энергии', prime: 'ПРАЙМ', cores: 'Ядер', delta: 'Осколков' };
 
   /* иконки-медальоны на карточках апгрейдов (можно переопределить полем u.icon) */
@@ -18,7 +18,7 @@
 
   const MECH_ICON = {
     core: '×', digitsum: 'Σ', primefit: '⧉', primeranks: '❖', analysis: 'Δ',
-    shop: '🛒', sieve: '⌗', mirror: '⧗', tree: '◆'
+    shop: 'cart', sieve: '⌗', mirror: '⧗', tree: '◆'
   };
 
   function fmtEffect(u, val) {
@@ -77,7 +77,7 @@
         return { v: m.v, el: b };
       });
 
-      const buyAll = G.h('button', { class: 'toolbar-btn buy-all', type: 'button', text: '🛒 Купить всё' });
+      const buyAll = G.h('button', { class: 'toolbar-btn buy-all', type: 'button' }, [G.ui.icons.node('cart'), G.h('span', { text: 'Купить всё' })]);
       buyAll.addEventListener('click', () => {
         if (hooks.onBuyAll) hooks.onBuyAll();
       });
@@ -160,7 +160,7 @@
       const costEl = G.h('span', { class: 'upg-cost' });
       const qtyEl = G.h('span', { class: 'upg-qty' });
       const btn = G.h('button', { class: 'upg-buy', type: 'button' }, [costEl, qtyEl]);
-      const icoEl = G.h('div', { class: 'upg-ico', text: u.icon || C.mechIcon(u.mech) });
+      const icoEl = G.h('div', { class: 'upg-ico' }, [G.ui.icons.node(u.icon || C.mechIcon(u.mech))]);
 
       const lvlFill = G.h('i');
       const lvlBar = G.h('div', { class: 'upg-lvlbar' }, [lvlFill]);

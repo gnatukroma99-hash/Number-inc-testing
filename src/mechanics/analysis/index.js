@@ -6,14 +6,14 @@
 
   G.registry.addUpgrades([
     {
-      id: 'bfd', icon: '📊', mech: 'analysis', name: 'Бенфорд не одобряет', res: 'energy',
+      id: 'bfd', icon: 'chart', mech: 'analysis', name: 'Бенфорд не одобряет', res: 'energy',
       base: 800, growth: 2.0, max: 15,
       formula: '1 + 0.5 * lvl * log10(1 + 1 / d1) / log10(2)', fmt: 'x',
       note: 'M ×= 1 + 0.5·lvl·log10(1+1/d1)/log10(2)',
       desc: 'Чем меньше первая цифра, тем больше бонус. Единица — джекпот.'
     },
     {
-      id: 'bfd2', icon: '📈', mech: 'analysis', name: 'Бенфорд II', res: 'energy',
+      id: 'bfd2', icon: 'chartUp', mech: 'analysis', name: 'Бенфорд II', res: 'energy',
       base: 6e4, growth: 3.2, max: 8,
       formula: '1 + 0.8 * lvl * log10(1 + 1 / d1) / log10(2)', fmt: 'x',
       note: 'M ×= 1 + 0.8·lvl·log10(1+1/d1)/log10(2)',

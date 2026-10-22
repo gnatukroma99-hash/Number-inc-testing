@@ -4,7 +4,7 @@
   'use strict';
 
   /* ============ РЕСУРСЫ ============ */
-  G.registry.addResource({ id: 'energy', name: '⚡ Энергия', scope: 'run', value: 0 });
+  G.registry.addResource({ id: 'energy', name: '⌁ Энергия', scope: 'run', value: 0 });
   G.registry.addResource({ id: 'prime', name: '❖ ПРАЙМ', scope: 'tier', value: 0 });
   G.registry.addResource({ id: 'cores', name: '◆ Ядра', scope: 'meta', value: 0 });
 
@@ -17,13 +17,13 @@
       note: 'M_base = 2 + lvl'
     },
     {
-      id: 'speed1', icon: '⏩', mech: 'core', name: 'Разгон', res: 'energy',
+      id: 'speed1', icon: 'fast', mech: 'core', name: 'Разгон', res: 'energy',
       base: 5, growth: 1.65, max: Infinity,
       formula: '0.1 * lvl', fmt: 'pct',
       note: 'ΔT = 60 / (1 + speedBonus)'
     },
     {
-      id: 'energy1', icon: '⚡', mech: 'core', name: 'Поток', res: 'energy',
+      id: 'energy1', icon: 'bolt', mech: 'core', name: 'Поток', res: 'energy',
       base: 40, growth: 1.8, max: Infinity,
       formula: '1.25 ** lvl', fmt: 'x',
       note: 'E = 1 · (1 + D) · 1.25^lvl'
@@ -34,14 +34,14 @@
      Купил один раз — навсегда. Цены растут, поэтому брать их выгодно
      на разных этапах. Компенсируют линейную (а не квадратичную) энергию. */
   G.registry.addUpgrades([
-    { id: 'energy_x2_1', icon: '💥', mech: 'core', name: 'Форсаж I', res: 'energy', base: 150, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
-    { id: 'energy_x2_2', icon: '💥', mech: 'core', name: 'Форсаж II', res: 'energy', base: 900, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
-    { id: 'energy_x2_3', icon: '💥', mech: 'core', name: 'Форсаж III', res: 'energy', base: 5e3, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
-    { id: 'energy_x2_4', icon: '💥', mech: 'core', name: 'Форсаж IV', res: 'energy', base: 3e4, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
-    { id: 'energy_x2_5', icon: '💥', mech: 'core', name: 'Форсаж V', res: 'energy', base: 2e5, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
-    { id: 'energy_x2_6', icon: '💥', mech: 'core', name: 'Форсаж VI', res: 'energy', base: 1.5e6, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
-    { id: 'energy_x2_7', icon: '💥', mech: 'core', name: 'Форсаж VII', res: 'energy', base: 1e7, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' },
-    { id: 'energy_x2_8', icon: '💥', mech: 'core', name: 'Форсаж VIII', res: 'energy', base: 8e7, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⚡ ×2 (разово)' }
+    { id: 'energy_x2_1', icon: 'burst', mech: 'core', name: 'Форсаж I', res: 'energy', base: 150, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⌁ ×2 (разово)' },
+    { id: 'energy_x2_2', icon: 'burst', mech: 'core', name: 'Форсаж II', res: 'energy', base: 900, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⌁ ×2 (разово)' },
+    { id: 'energy_x2_3', icon: 'burst', mech: 'core', name: 'Форсаж III', res: 'energy', base: 5e3, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⌁ ×2 (разово)' },
+    { id: 'energy_x2_4', icon: 'burst', mech: 'core', name: 'Форсаж IV', res: 'energy', base: 3e4, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⌁ ×2 (разово)' },
+    { id: 'energy_x2_5', icon: 'burst', mech: 'core', name: 'Форсаж V', res: 'energy', base: 2e5, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⌁ ×2 (разово)' },
+    { id: 'energy_x2_6', icon: 'burst', mech: 'core', name: 'Форсаж VI', res: 'energy', base: 1.5e6, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⌁ ×2 (разово)' },
+    { id: 'energy_x2_7', icon: 'burst', mech: 'core', name: 'Форсаж VII', res: 'energy', base: 1e7, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⌁ ×2 (разово)' },
+    { id: 'energy_x2_8', icon: 'burst', mech: 'core', name: 'Форсаж VIII', res: 'energy', base: 8e7, growth: 1, max: 1, formula: '2', energyMult: '2', fmt: 'x', note: '⌁ ×2 (разово)' }
   ]);
 
   /* ============ ЭНЕРГИЯ (данные формулы) ============

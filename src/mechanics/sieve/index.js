@@ -40,24 +40,24 @@
     return isFinite(v) && v > 0 ? v : 1;
   }
 
-  /* ---------- апгрейды (⚡ и ❖) ---------- */
+  /* ---------- апгрейды (⌁ и ❖) ---------- */
   G.registry.addUpgrades([
     {
-      id: 'sv_rate', icon: '⏩', mech: 'sieve', name: 'Ход решета', res: 'energy',
+      id: 'sv_rate', icon: 'fast', mech: 'sieve', name: 'Ход решета', res: 'energy',
       base: 5e5, growth: 2.6, max: 15,
       formula: '0.40 * (1 + 0.25 * lvl)', fmt: 'num',
       note: 'скорость = 0.40 · (1 + 0.25·lvl) простых/с',
       desc: 'Сколько чисел просеивается в секунду.'
     },
     {
-      id: 'sv_power', icon: '🎯', mech: 'sieve', name: 'Плотность решета', res: 'energy',
+      id: 'sv_power', icon: 'target', mech: 'sieve', name: 'Плотность решета', res: 'energy',
       base: 2e6, growth: 3.0, max: 12,
       effect(state) { return mult(state); }, fmt: 'x',
       note: 'M ×= 1 + 0.01·найдено·lvl',
       desc: 'Каждое найденное простое даёт больше к M.'
     },
     {
-      id: 'sv_yield', icon: '💎', mech: 'sieve', name: 'Урожай ❖', res: 'prime',
+      id: 'sv_yield', icon: 'gem', mech: 'sieve', name: 'Урожай ❖', res: 'prime',
       base: 2, growth: 2.2, max: 10,
       formula: '2 ** lvl', fmt: 'x',
       note: '❖ за простое ×= 2^lvl',

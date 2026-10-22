@@ -56,7 +56,7 @@
     const dT = G.growth.dt(state);
     const spd = G.timescale.scale(state);
     refs.rate.textContent = '×' + G.fmt.num(M, mode) + ' / ' + (dT < 1 ? dT.toFixed(3) : dT.toFixed(2)) + ' с' +
-      (spd > 1 ? '  ⏩×' + spd : '');
+      (spd > 1 ? '  ≫×' + spd : '');
 
     const r = G.growth.rate(state);
     refs.dps.textContent = G.fmt.num(r, mode) + ' цифр/с';
