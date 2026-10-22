@@ -1,0 +1,25 @@
+# ---- системный мусор ----
+Thumbs.db
+desktop.ini
+.DS_Store
+ehthumbs.db
+
+# ---- редакторы ----
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ---- временное ----
+*.log
+*.tmp
+dist/
+build/
+
+# ---- личное / секретное ----
+*.token
+gh_token*
+.env
+.env.*
+secrets/
