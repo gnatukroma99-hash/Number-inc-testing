@@ -40,11 +40,11 @@
       const c = cfg();
       const best = state.stats.bestD || 0;
       if (best <= 0) return 0;
-      const flat = (c.ratePerSec || 0.0015) * best;
-      /* не больше доли обычного роста: log10(M)/ΔT */
-      const M = G.growth.M(state);
-      const dt = Math.max(0.001, G.growth.dt(state));
-      const organic = Math.log10(Math.max(1, M)) / dt;
+      const flat = (c.ratePerSec || 0.001) * best;
+      /* ВАЖНО: берём ЭФФЕКТИВНЫЙ рост — growth.rate уже учитывает барьеры и невидимый софткап.
+         Раньше здесь был голый log10(M)/ΔT: эхо не видело кап и тащило число до 1e10000.
+         Теперь эхо умирает вместе с обычным ростом. */
+      const organic = Math.max(0, G.growth.rate(state));
       const cap = (c.maxShare || 0.5) * organic;
       const r = Math.min(flat, cap);
       return isFinite(r) && r > 0 ? r : 0;

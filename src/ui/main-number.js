@@ -68,6 +68,9 @@
       const v = state.res[res.id] || 0;
       val.textContent = G.fmt.num(v, mode) +
         (res.id === 'energy' ? ' (+' + G.fmt.num(G.growth.energyRate(state), mode) + '/с)' : '');
+      /* v0.19.0: редкие валюты (Δ, Ω) подсвечиваются, когда их вообще есть */
+      const box = val.closest ? val.closest('.res') : null;
+      if (box && (res.id === 'delta' || res.id === 'omega')) box.classList.toggle('hot', v > 0);
     }
 
     /* индикация барьера */

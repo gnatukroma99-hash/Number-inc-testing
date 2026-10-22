@@ -2398,3 +2398,215 @@ body.no-anim .rift-float.visible, body.no-anim .rift-float.popped { animation: n
 .sign-eff { margin-top: 4px; font: 800 11.5px/1.3 var(--mono); color: var(--accent); }
 .sign-req { margin-top: 6px; font: 700 10px/1.4 var(--mono); color: var(--dim2); }
 @media (max-width: 720px) { .sign-grid { grid-template-columns: 1fr 1fr; } }
+
+/* ---------- навигация по группам досок (v0.18.0) ---------- */
+.dock-groups { display: flex; flex-direction: column; gap: 10px; }
+.dock-group-head {
+  display: flex; align-items: center; gap: 7px;
+  padding: 2px 2px 5px;
+  font: 800 10.5px/1 var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--grp, var(--dim2));
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+  margin-bottom: 6px;
+}
+.dock-group-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--grp, var(--dim2));
+  box-shadow: 0 0 8px var(--grp, var(--dim2));
+}
+.dock-group-hint {
+  margin-left: auto;
+  font: 700 9px/1 var(--mono);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--dim2);
+  opacity: .8;
+}
+.dock-group-items { display: flex; flex-direction: column; gap: 5px; }
+@media (max-width: 720px) {
+  .dock-group-hint { display: none; }
+  .dock-group-items { flex-direction: row; flex-wrap: wrap; }
+  .dock-group-items .dock { flex: 1 1 44%; }
+}
+
+/* ---------- дубликатор ⧉, пакт-дерево ⌁, кристалл Ω (v0.18.0) ---------- */
+.dup-btn, .dup-merge { width: 100%; margin-top: 10px; padding: 14px; font: 800 13.5px/1 var(--mono); }
+.dup-merge { border-color: rgba(201, 160, 255, .5); background: linear-gradient(180deg, rgba(201, 160, 255, .18), transparent); color: #e6d9ff; }
+.dup-btn:disabled, .dup-merge:disabled { opacity: .45; }
+
+.pt-branch { margin-bottom: 14px; }
+.pt-branch-name { font: 800 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--dim2); margin-bottom: 8px; }
+.pt-nodes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.pt-node {
+  padding: 9px 10px; border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(255, 255, 255, .03);
+  display: flex; flex-direction: column; gap: 5px;
+}
+.pt-node.done { border-color: var(--pt, #35e2c0); box-shadow: 0 0 0 1px var(--pt, #35e2c0) inset; }
+.pt-node.blocked { opacity: .4; }
+.pt-name { font: 800 12px/1.2 system-ui, sans-serif; color: #eaf7ff; }
+.pt-note { font: 700 10.5px/1.35 var(--mono); color: var(--dim2); flex: 1; }
+.pt-buy { padding: 8px 6px; font: 800 11px/1 var(--mono); width: 100%; }
+.pt-buy:disabled { opacity: .5; }
+
+.om-card {
+  padding: 11px 13px; border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(255, 255, 255, .03);
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 12px;
+  margin-bottom: 8px;
+}
+.om-card.done { border-color: rgba(255, 209, 102, .5); }
+.om-name { font: 800 13px/1.2 system-ui, sans-serif; color: #ffe6a8; }
+.om-text { grid-column: 1; font: 700 11.5px/1.4 var(--mono); color: var(--dim); }
+.om-buy { grid-column: 2; grid-row: 1 / span 2; align-self: center; padding: 10px 14px; font: 800 12px/1 var(--mono); }
+@media (max-width: 720px) {
+  .pt-nodes { grid-template-columns: 1fr 1fr; }
+  .om-buy { grid-row: auto; grid-column: 1; }
+}
+
+/* ================= v0.19.0 — UI PASS: движение и глубина =================
+   Правила скилла .agents/skills/game-ui-motion: токены → кривые → вход stagger →
+   hover/press → тосты → модалки → reduced-motion. Только transform/opacity в цикле. */
+:root {
+  --t-fast: 120ms;
+  --t-base: 200ms;
+  --t-slow: 320ms;
+  --t-enter: 420ms;
+  --e-out: cubic-bezier(.22, 1, .36, 1);
+  --e-in: cubic-bezier(.4, 0, 1, 1);
+  --e-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --e-inout: cubic-bezier(.65, 0, .35, 1);
+  --lift: 0 18px 40px rgba(0, 0, 0, .5);
+  --glow-accent: 0 0 0 1px rgba(53, 226, 192, .45), 0 0 26px rgba(53, 226, 192, .18);
+  --glow-gold: 0 0 0 1px rgba(255, 209, 102, .5), 0 0 26px rgba(255, 209, 102, .2);
+}
+
+/* --- вход доски: stagger 40 мс, суммарно ≤ 420 мс --- */
+.board-content.anim-in .board-body > * {
+  animation: uiEnterUp var(--t-enter) var(--e-out) both;
+}
+.board-content.anim-in .board-body > *:nth-child(1) { animation-delay: 0ms; }
+.board-content.anim-in .board-body > *:nth-child(2) { animation-delay: 40ms; }
+.board-content.anim-in .board-body > *:nth-child(3) { animation-delay: 80ms; }
+.board-content.anim-in .board-body > *:nth-child(4) { animation-delay: 120ms; }
+.board-content.anim-in .board-body > *:nth-child(5) { animation-delay: 160ms; }
+.board-content.anim-in .board-body > *:nth-child(n+6) { animation-delay: 200ms; }
+@keyframes uiEnterUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- карточки: подъём и рамка при наведении (GPU-только) --- */
+.upg, .tile, .ch-card, .pact-card, .sign-card, .om-card, .pt-node, .glyph-card, .spark-card {
+  transition: transform var(--t-fast) var(--e-out),
+              border-color var(--t-fast) linear,
+              box-shadow var(--t-fast) linear;
+}
+@media (hover: hover) {
+  .upg:hover, .ch-card:hover, .pact-card:hover, .sign-card:hover,
+  .om-card:hover, .pt-node:hover, .glyph-card:hover, .spark-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(53, 226, 192, .38);
+    box-shadow: var(--lift);
+  }
+  .sign-card.locked:hover, .pt-node.blocked:hover { transform: none; box-shadow: none; border-color: inherit; }
+}
+
+/* --- кнопки: нажатие, свечение, «дорогая» покупка --- */
+.btn, .upg-buy, .dock, .tree-zoom-btn, .slot-share, .pt-buy, .om-buy {
+  transition: transform var(--t-fast) var(--e-out),
+              filter var(--t-fast) linear,
+              border-color var(--t-fast) linear,
+              background-color var(--t-fast) linear;
+}
+.btn:not(:disabled):active, .upg-buy.can:active, .slot-share:active,
+.pt-buy:not(:disabled):active, .om-buy:not(:disabled):active, .dock:active {
+  transform: scale(.97);
+}
+.upg-buy.can { box-shadow: inset 0 0 0 1px rgba(53, 226, 192, .18); }
+.upg-buy.bought { animation: uiBought var(--t-slow) var(--e-out); }
+@keyframes uiBought {
+  0% { box-shadow: 0 0 0 0 rgba(138, 218, 106, .55); }
+  100% { box-shadow: 0 0 0 14px rgba(138, 218, 106, 0); }
+}
+
+/* ripple на больших кнопках (класс ставит ui app.js) */
+.ui-ripple {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 255, 255, .35), transparent 70%);
+  transform: scale(0); opacity: .9;
+  animation: uiRipple 480ms var(--e-out) forwards;
+}
+@keyframes uiRipple { to { transform: scale(2.4); opacity: 0; } }
+.btn, .bb-btn, .chrono-btn, .dup-btn, .dup-merge, .echo-btn { position: relative; overflow: hidden; }
+
+/* --- доки: активный «пилюльный» индикатор и вход групп --- */
+.dock { position: relative; }
+.dock.active::after {
+  content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 3px;
+  background: var(--mech, var(--accent));
+  box-shadow: 0 0 12px var(--mech, var(--accent));
+  animation: uiBar var(--t-base) var(--e-out);
+}
+@keyframes uiBar { from { transform: scaleY(.2); opacity: 0 } to { transform: none; opacity: 1 } }
+.dock-groups > .dock-group { animation: uiEnterUp var(--t-slow) var(--e-out) both; }
+.dock-groups > .dock-group:nth-child(2) { animation-delay: 60ms; }
+.dock-groups > .dock-group:nth-child(3) { animation-delay: 120ms; }
+.dock-groups > .dock-group:nth-child(n+4) { animation-delay: 180ms; }
+
+/* --- ресурсы в шапке: подсветка, когда появился Δ/Ω --- */
+.res .res-val { transition: color var(--t-base) linear; }
+.res.hot .res-val { color: var(--accent); text-shadow: 0 0 12px rgba(53, 226, 192, .35); }
+
+/* --- тосты: пружина внутрь, быстрый выход --- */
+.toast { transition: opacity 180ms linear, transform 180ms var(--e-in); }
+.toast.show { animation: uiToastIn 280ms var(--e-spring) both; }
+@keyframes uiToastIn {
+  from { opacity: 0; transform: translateY(16px) scale(.96); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- модалка: backdrop + панель пружиной --- */
+.modal-backdrop, .settings-backdrop { animation: uiFade 200ms linear both; }
+@keyframes uiFade { from { opacity: 0 } to { opacity: 1 } }
+.modal, .settings { animation: uiModalIn 280ms var(--e-out) both; }
+@keyframes uiModalIn {
+  from { opacity: 0; transform: translateY(12px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- плитки: мягкий bump без «дёрганья» раскладки --- */
+.tile-val.bump { animation: uiBump 220ms var(--e-out); }
+@keyframes uiBump { 50% { transform: scale(1.05); } }
+
+/* --- полосы прогресса: один элемент, поэтому width с linear ок --- */
+.bar-fill { transition: width 200ms linear; }
+
+/* --- главное число: вспышка при росте (класс ставит app.js) --- */
+.hero-number.grow { animation: uiHeroGrow 320ms var(--e-out); }
+@keyframes uiHeroGrow {
+  0% { text-shadow: 0 0 0 rgba(53, 226, 192, 0); }
+  40% { text-shadow: 0 0 22px rgba(53, 226, 192, .5); }
+  100% { text-shadow: 0 0 0 rgba(53, 226, 192, 0); }
+}
+
+/* --- reduced-motion: гасим всё, включая пульсы --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* v0.19.0: модалка — пружина на карточку, а не на подложку */
+.modal .modal-card { animation: uiModalIn 300ms var(--e-out) both; }
+.modal-card .section, .modal-card .field-row { animation: uiEnterUp 320ms var(--e-out) both; }
+.modal-card .section:nth-child(2) { animation-delay: 40ms; }
+.modal-card .section:nth-child(3) { animation-delay: 80ms; }
+.modal-card .section:nth-child(n+4) { animation-delay: 120ms; }
+body.no-anim .ui-ripple { display: none; }

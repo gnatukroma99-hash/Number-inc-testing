@@ -49,6 +49,8 @@
       power = G.growth.upgProduct(state, 'sparkPower');
       double = G.growth.upgSum(state, 'sparkDouble') > 0;
     }
+    /* правило мира «Частые искры» из Кристалла Ω */
+    if (G.omega && G.omega.sparkGapMult) gap *= G.omega.sparkGapMult(state);
     if (!isFinite(gap) || gap <= 0) gap = 1;
     if (!isFinite(power) || power <= 0) power = 1;
     return { life: life, gap: gap, power: power, double: double };

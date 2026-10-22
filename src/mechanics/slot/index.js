@@ -23,7 +23,9 @@
   }
   function pity(state) {
     const add = G.growth.upgSum(state, 'slotPityAdd') || 0;
-    return Math.max(5, Math.round(cfg().pity + add));
+    const base = Math.max(5, Math.round(cfg().pity + add));
+    /* правило мира «Мягкий автомат» из Кристалла Ω */
+    return G.omega && G.omega.slotPity ? G.omega.slotPity(state, base) : base;
   }
   /* множитель ТОЛЬКО для джекпота: обычные выплаты не растим, иначе EV > 1 и автомат
      начинает печатать энергию (проверяется тестом на Монте-Карло) */

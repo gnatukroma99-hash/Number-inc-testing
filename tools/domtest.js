@@ -1573,6 +1573,124 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     return withT2 > before;
   })());
 
+  section('5m. Дубликатор ⧉, Пакт-дерево ⌁, Кристалл Ω + фикс эха и групп доков');
+
+  /* --- дубликатор --- */
+  state.N = G.BN.fromLog10(120); state.D = 120;
+  state.res.delta = 500;
+  state.mech.duplicator = null;
+  const mPlain = G.growth.M(state);
+  check('дубликатор покупается за Δ', G.duplicator.buy(state) === true &&
+    state.res.delta === 500 - G.content.duplicator.cost, 'Δ ' + state.res.delta);
+  check('пока тень копится — M слабее', Math.abs(G.growth.M(state) / mPlain - G.content.duplicator.multWhileShadow) < 1e-9,
+    'M ×' + (G.growth.M(state) / mPlain).toFixed(2));
+  const shadow0 = G.duplicator.shadow(state);
+  G.duplicator.tick(state, 10);
+  check('тень растёт по времени', G.duplicator.shadow(state) > shadow0,
+    shadow0.toFixed(2) + ' → ' + G.duplicator.shadow(state).toFixed(2) + ' цифр');
+  for (let i = 0; i < 100; i++) G.duplicator.tick(state, 10);
+  check('тень упирается в кап', G.duplicator.shadow(state) <= G.content.duplicator.capDigits + 1e-9,
+    'кап ' + G.duplicator.shadow(state).toFixed(1) + ' / ' + G.content.duplicator.capDigits);
+  const dBeforeMerge = G.growth.D(state);
+  const shadowBefore = G.duplicator.shadow(state);
+  const dupAdded = G.duplicator.merge(state);
+  check('слияние вливает тень ×2 в число',
+    Math.abs(dupAdded - shadowBefore * G.content.duplicator.mergeShare) < 1e-6 &&
+    G.growth.D(state) > dBeforeMerge + shadowBefore,
+    'D ' + dBeforeMerge.toFixed(1) + ' → ' + G.growth.D(state).toFixed(1));
+  check('после слияния ΔT медленнее', Math.abs(G.duplicator.dtMult(state) - G.content.duplicator.penaltyDt) < 1e-9 &&
+    G.duplicator.penalty(state) > 0,
+    'ΔT ×' + G.duplicator.dtMult(state) + ', штраф ' + G.duplicator.penalty(state).toFixed(0) + ' с');
+  G.duplicator.toggle(state);
+  const shadowOff = G.duplicator.shadow(state);
+  G.duplicator.tick(state, 10);
+  check('выключенная тень не копится', G.duplicator.shadow(state) === shadowOff);
+
+  /* --- пакт-дерево --- */
+  const pt = G.registry.upgradesOf('pacttree');
+  check('в пакт-дереве 20 узлов', pt.length === 20, pt.length + ' шт');
+  check('4 ветви по 5 узлов', (G.content.pacttree.branches || []).length === 4 &&
+    G.content.pacttree.branches.every((b) => pt.filter((u) => u.branch === b.id).length === 5),
+    G.content.pacttree.branches.map((b) => b.id + ':' + pt.filter((u) => u.branch === b.id).length).join(' '));
+  check('есть взаимоисключающие пары', pt.filter((u) => (u.excludes || []).length).length >= 8,
+    pt.filter((u) => (u.excludes || []).length).length + ' узлов с развилкой');
+  for (const u of pt) state.upg[u.id] = 0;
+  state.res.delta = 500;
+  const forkA = G.registry.upgrade('pt_g2a');
+  const forkB = G.registry.upgrade('pt_g2b');
+  state.upg.pt_g1 = 1;
+  check('узел развилки покупается', G.pacttree.buy(state, forkA) === 1, 'ур. ' + G.lvl(state, forkA.id));
+  check('сосед по развилке закрыт', G.pacttree.isBlocked(state, forkB.id) === true &&
+    G.pacttree.buy(state, forkB) === 0, 'закрыто: ' + G.pacttree.blockedBy(state, forkB));
+  check('купленный узел даёт эффект', G.growth.upgProduct(state, 'Mmult') > 1,
+    'Mmult ×' + G.growth.upgProduct(state, 'Mmult').toFixed(2));
+  state.upg.pt_g2a = 0;
+  check('после снятия узла сосед снова доступен', G.pacttree.canBuy(state, forkB) === true);
+
+  /* --- кристалл Ω --- */
+  state.mech.omega = null;
+  state.stats.bestD = Math.max(state.stats.bestD || 0, 400);
+  const omRate = G.omega.rate(state);
+  check('Ω копится со временем', omRate > 0 && G.omega.tick(state, 60) > 0,
+    omRate.toFixed(4) + ' Ω/с');
+  G.omega.data(state).omega = 50;
+  const coreBeforeOmega = G.prestige.gain(state);
+  check('правило «Ядерный закон» покупается за Ω',
+    G.omega.buy(state, 'w_core') === true && G.omega.has(state, 'w_core'),
+    'Ω осталось ' + G.omega.balance(state).toFixed(1));
+  check('Ω-правило повышает ◆ за P1', G.prestige.gain(state) > coreBeforeOmega * 1.2,
+    '◆ ' + coreBeforeOmega + ' → ' + G.prestige.gain(state) + ' (аддитивная часть ×1.5 не облагается)');
+  check('правило «Мягкий автомат» меняет гарант', (function () {
+    const before = G.slot.pity(state);
+    G.omega.buy(state, 'w_pity');
+    return G.slot.pity(state) <= 5 && G.slot.pity(state) < before;
+  })(), 'гарант ' + G.slot.pity(state));
+  check('правило «Частые искры» ускоряет спавн', (function () {
+    G.omega.buy(state, 'w_spark');
+    return G.omega.sparkGapMult(state) === 0.5 && G.spark.bonus(state).gap < 1;
+  })(), 'gap ×' + G.omega.sparkGapMult(state));
+  check('правило «Глубокое сжатие» усиливает хроно', (function () {
+    G.omega.buy(state, 'w_chrono');
+    state.mech.chrono = null;
+    state.res.delta = 999;
+    G.chrono.start(state);
+    return G.chrono.timeScale(state) >= 5;
+  })(), '×' + G.chrono.timeScale(state));
+  state.mech.chrono = null;
+
+  /* --- эхо не должно тащить число сквозь капы --- */
+  state.mech.echo = null;
+  state.res.delta = 999;
+  G.echo.buy(state);
+  state.N = G.BN.fromLog10(120); state.D = 120;
+  state.meta.passedBarriers = [];
+  const effRate = G.growth.rate(state);
+  check('скорость эха ограничена эффективным ростом (с учётом капов)',
+    G.echo.rate(state) <= (G.content.echo.maxShare * effRate) + 1e-9,
+    'эхо ' + G.echo.rate(state).toFixed(4) + ' при росте ' + effRate.toFixed(3));
+  /* у стены эффективный рост меньше — и эхо тоже */
+  state.N = G.BN.fromLog10(316); state.D = 316;
+  const atWall = G.echo.rate(state);
+  state.N = G.BN.fromLog10(120); state.D = 120;
+  const awayFromWall = G.echo.rate(state);
+  check('за стеной эхо почти нулевое (не пробивает капы)', atWall < awayFromWall * 0.9,
+    'у стены ' + atWall.toFixed(4) + ' vs ' + awayFromWall.toFixed(4));
+  G.echo.toggle(state);
+
+  /* --- группы доков --- */
+  const groupList = G.content.groups || [];
+  click(Array.from(doc.querySelectorAll('#docks .dock')).find((b) => b.dataset.id === 'core'));
+  G.ui.docks.refresh(state);
+  G.ui.app.render(state);
+  check('доки разложены по группам', doc.querySelectorAll('#docks .dock-group').length === groupList.length,
+    doc.querySelectorAll('#docks .dock-group').length + ' групп');
+  check('все доски попали в группы',
+    doc.querySelectorAll('#docks .dock-group .dock').length === doc.querySelectorAll('#docks .dock').length,
+    doc.querySelectorAll('#docks .dock').length + ' доков');
+  check('у группы есть заголовок и цвет',
+    doc.querySelectorAll('#docks .dock-group-name').length === groupList.length &&
+    (groupList[0].name.length > 0), groupList.map((g) => g.name).join(' · '));
+
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
   G.debug.setD(120);

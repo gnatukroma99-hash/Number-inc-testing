@@ -80,6 +80,37 @@
     return 'заблокировано';
   }
 
+  /* какие механики в какой группе (данные — content/groups.js) */
+  function groups() {
+    const all = docks();
+    const byId = {};
+    for (const d of all) byId[d.id] = d;
+    const out = [];
+    const used = {};
+    for (const g of (G.content.groups || [])) {
+      const list = (g.mechs || []).map((id) => byId[id]).filter(Boolean);
+      list.forEach((d) => { used[d.id] = true; });
+      if (list.length) out.push({ g: g, list: list });
+    }
+    const rest = all.filter((d) => !used[d.id]);
+    if (rest.length) out.push({ g: { id: 'other', name: 'Прочее', color: '#7d94a6' }, list: rest });
+    return out;
+  }
+
+  function mkDock(d) {
+    const badge = G.h('span', { class: 'dock-badge' });
+    const btn = G.h('button', { class: 'dock', dataset: { id: d.id }, title: d.name || '' }, [
+      G.h('span', { class: 'dock-bar' }),
+      G.h('span', { class: 'dock-icon' }, [G.ui.icons.node(d.icon || 'diamond')]),
+      G.h('span', { class: 'dock-text', text: d.short || d.name }),
+      badge
+    ]);
+    btn.style.setProperty('--mech', C().mechColor(d.id));
+    btn.addEventListener('click', () => select(d.id));
+    buttons[d.id] = { el: btn, badge: badge, def: d };
+    return btn;
+  }
+
   function build() {
     G.dom.clear(navEl);
     buttons = {};
@@ -90,19 +121,21 @@
       G.h('div', { class: 'docks-ver', text: 'v' + (G.VERSION || '?') })
     ]));
 
-    for (const d of docks()) {
-      const badge = G.h('span', { class: 'dock-badge' });
-      const btn = G.h('button', { class: 'dock', dataset: { id: d.id }, title: d.name || '' }, [
-        G.h('span', { class: 'dock-bar' }),
-        G.h('span', { class: 'dock-icon' }, [G.ui.icons.node(d.icon || 'diamond')]),
-        G.h('span', { class: 'dock-text', text: d.short || d.name }),
-        badge
+    /* группы вместо одного длинного списка: забег → мета → ярус 2 */
+    navEl.appendChild(G.h('div', { class: 'dock-groups' }, groups().map((block) => {
+      const head = G.h('div', { class: 'dock-group-head' }, [
+        G.h('span', { class: 'dock-group-dot' }),
+        G.h('span', { class: 'dock-group-name', text: block.g.name }),
+        G.h('span', { class: 'dock-group-hint', text: block.g.hint || '' })
       ]);
-      btn.style.setProperty('--mech', C().mechColor(d.id));
-      btn.addEventListener('click', () => select(d.id));
-      navEl.appendChild(btn);
-      buttons[d.id] = { el: btn, badge: badge, def: d };
-    }
+      head.style.setProperty('--grp', block.g.color || '#7d94a6');
+      return G.h('div', { class: 'dock-group', dataset: { group: block.g.id } }, [
+        head,
+        G.h('div', { class: 'dock-group-items' }, block.list.map(mkDock))
+      ]);
+    })));
+
+    for (const k in buttons) buttons[k].el.classList.toggle('active', k === activeId);
   }
 
   function select(id) {

@@ -39,7 +39,10 @@
 
     /* общий хук движка: во сколько раз ускоряем мир */
     timeScale(state) {
-      return Ch.left(state) > 0 ? (cfg().scale || 3) : 1;
+      if (Ch.left(state) <= 0) return 1;
+      const base = cfg().scale || 3;
+      /* правило мира «Глубокое сжатие» из Кристалла Ω */
+      return G.omega && G.omega.chronoScale ? G.omega.chronoScale(state, base) : base;
     },
 
     restart(state) {

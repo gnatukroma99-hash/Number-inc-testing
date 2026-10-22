@@ -90,6 +90,14 @@
       { id: 'a_sign', icon: '✧', name: 'Созвездие', desc: 'Выбрать знак',
         cond: 'sign >= 1' },
 
+      /* --- Ярус 2: дубликатор, пакт-дерево, Ω (v0.18.0) --- */
+      { id: 'a_dup', icon: '⧉', name: 'Тень', desc: 'Слить тень в число',
+        cond: 'dupMerges >= 1' },
+      { id: 'a_pactnode', icon: '⌁', name: 'Пакт', desc: 'Выбрать развилку пакт-дерева',
+        cond: 'pactForks >= 1' },
+      { id: 'a_omega', icon: 'Ω', name: 'Правило мира', desc: 'Купить правило за Ω',
+        cond: 'omegaRules >= 1' },
+
       { id: 'a_hour', icon: 'clock', name: 'Час в игре', desc: 'Час суммарного времени',
         cond: 'playtime >= 3600' },
       { id: 'a_collector', icon: 'trophy', name: 'Коллекционер', desc: 'Открыть 12 достижений',
