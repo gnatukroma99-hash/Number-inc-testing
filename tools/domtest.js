@@ -783,7 +783,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const sd = G.slot.data(state);
   sd.share = 0.5;
   state.res.energy = 1000;
-  G.slot.setRng(() => 0.15);                     /* 1,1,1 — три в ряд */
+  G.slot.setRng(() => 0.25);                     /* 2,2,2 — три в ряд (не совпадает с ведущей 1) */
   let sp = G.slot.spin(state);
   check('три в ряд платят ×20', sp && sp.rule === 'triple' && sp.payout === sp.stake * 20,
     sp && sp.digits.join('') + ' → ' + sp.name + ' (' + sp.payout + ')');
@@ -829,8 +829,8 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.ui.app.render(state);
   check('доска: три барабана', doc.querySelectorAll('#board .slot-reel').length === 3);
   check('доска: доли ставки из данных',
-    doc.querySelectorAll('#board .slot-share').length === G.content.slot.shares.length,
-    doc.querySelectorAll('#board .slot-share').length + ' шт');
+    doc.querySelectorAll('#board .slot-share:not(.slot-res)').length === G.content.slot.shares.length,
+    doc.querySelectorAll('#board .slot-share:not(.slot-res)').length + ' шт');
   check('доска: таблица выплат = правила',
     doc.querySelectorAll('#board .slot-row').length === G.slot.rules().length,
     doc.querySelectorAll('#board .slot-row').length + ' / ' + G.slot.rules().length);
@@ -923,7 +923,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   slotEff.cd = 0; slotEff.share = 0.1;
   slotEff.cold = 0;
   state.res.energy = 1e5;
-  G.slot.setRng(() => 0.15);                       /* 1,1,1 → «Три в ряд» */
+  G.slot.setRng(() => 0.25);                       /* 2,2,2 → «Три в ряд» (без резонанса) */
   let slotRes = G.slot.spin(state);
   check('обычная выплата узлами не растёт', slotRes.payout === slotRes.stake * 20,
     '×20 = ' + slotRes.payout);
@@ -956,6 +956,89 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     mcSpins === 30000 && mcOut / mcIn < 1,
     'возврат энергии ' + (mcOut / mcIn * 100).toFixed(1) + '% за ' + mcSpins +
     ' прокруток, джекпотов ' + mcJack);
+  G.slot.setRng(null);
+
+  section('5e1. Ставки ❖/◆ и резонанс с мантиссой (v0.12.9)');
+  check('ресурсы для ставки — данные',
+    (G.content.slot.stakes || []).join(',') === 'energy,prime,cores',
+    (G.content.slot.stakes || []).join(','));
+
+  state.mech.slot = null;
+  state.res.energy = 1000; state.res.prime = 800; state.res.cores = 0;
+  const stD = G.slot.data(state);
+  stD.share = 0.5; stD.stakeRes = 'prime';
+  G.slot.setRng(() => 0.25);                       /* 2,2,2 → ×20 без резонанса */
+  let stSpin = G.slot.spin(state);
+  check('ставка ❖: тратится ПРАЙМ, энергия не тронута',
+    stSpin.res === 'prime' && state.res.prime === 800 - 400 + 8000 && state.res.energy === 1000,
+    '❖ ' + state.res.prime + ', ⌁ ' + state.res.energy);
+
+  state.mech.slot = null;
+  state.res.energy = 0; state.res.prime = 0; state.res.cores = 400;
+  const cdD = G.slot.data(state);
+  cdD.share = 0.5; cdD.stakeRes = 'cores';
+  G.slot.setRng(() => 0.05);                       /* 0,0,0 → тройка */
+  stSpin = G.slot.spin(state);
+  check('ставка ◆: тратятся ядра', stSpin.res === 'cores' && stSpin.stake === 200,
+    'ставка ' + stSpin.stake + ' ◆, стало ' + state.res.cores);
+
+  /* резонанс: триплет = первая цифра твоего числа */
+  state.mech.slot = null;
+  state.N = G.BN.fromLog10(5.5); state.D = 5.5;
+  state.res.energy = 1e5; state.res.cores = 0;
+  const rsD = G.slot.data(state);
+  rsD.share = 0.1; rsD.stakeRes = 'energy';
+  const leadNow = G.slot.leadDigit(state);
+  check('ведущая цифра читается из мантиссы', leadNow >= 0 && leadNow <= 9, 'цифра ' + leadNow);
+  G.slot.setRng(() => (leadNow + 0.5) / 10);        /* триплet = ведущая цифра */
+  const rsSpin = G.slot.spin(state);
+  check('резонанс: триплет = первая цифра числа',
+    rsSpin.reson === true && rsSpin.digits.join('') === String(leadNow).repeat(3),
+    rsSpin.digits.join('') + ' при первой цифре ' + leadNow);
+  check('резонанс платит ×2 и даёт ◆',
+    rsSpin.payout === rsSpin.stake * 20 * ((G.content.slot.resonance || {}).payMult || 2) &&
+    (state.res.cores || 0) >= ((G.content.slot.resonance || {}).cores || 1),
+    'выплата ' + rsSpin.payout + ', ◆ ' + state.res.cores);
+  check('счётчик резонансов растёт', G.slot.data(state).resonances === 1);
+
+  /* достижения автомата (переменные механики попадают в условия через m.vars) */
+  const slotAch = G.achievements.list().filter((a) => a.id.indexOf('a_slot') === 0);
+  check('5 достижений автомата в данных', slotAch.length === 5,
+    slotAch.map((a) => a.id).join(','));
+  const achVars = G.achievements.vars(state);
+  check('переменные автомата видны в достижениях',
+    achVars.slotSpins > 0 && achVars.slotReso >= 1 && typeof achVars.slotJacks === 'number',
+    'slotSpins=' + achVars.slotSpins + ', slotReso=' + achVars.slotReso);
+
+  state.res.energy = 1e5; state.res.cores = 0;
+  const jdD = G.slot.data(state);
+  jdD.cd = 0; jdD.share = 0.05;
+  G.slot.setRng(() => 0.75);                        /* 777 — джекпот */
+  G.slot.spin(state);
+  /* гарант */
+  jdD.cd = 0; jdD.cold = G.slot.pity(state) - 1;
+  G.slot.setRng(rngSeq([0.15, 0.35, 0.55]));        /* 1,3,5 → гарант ×2 */
+  G.slot.spin(state);
+  /* серия из 5 выигрышей */
+  G.slot.setRng(() => 0.25);
+  for (let i = 0; i < 6; i++) { jdD.cd = 0; state.res.energy = 1e5; G.slot.spin(state); }
+  G.achievements.check(state);
+  check('достижения автомата открываются',
+    G.achievements.has(state, 'a_slot1') && G.achievements.has(state, 'a_slot_jack') &&
+    G.achievements.has(state, 'a_slot_reso') && G.achievements.has(state, 'a_slot_pity') &&
+    G.achievements.has(state, 'a_slot_streak'),
+    slotAch.filter((a) => G.achievements.has(state, a.id)).map((a) => a.id).join(','));
+
+  /* доска: выбор ресурса (нужен открытый автомат → D ≥ 6) */
+  state.N = G.BN.fromLog10(12); state.D = 12;
+  click(dockBtns().find((b) => b.dataset.id === 'slot'));
+  G.ui.app.render(state);
+  check('доска: кнопки ресурсов по данным',
+    doc.querySelectorAll('#board .slot-res').length === (G.content.slot.stakes || []).length,
+    doc.querySelectorAll('#board .slot-res').length + ' шт');
+  click(Array.from(doc.querySelectorAll('#board .slot-res')).pop());
+  check('переключение ресурса ставки', G.slot.stakeRes(state) === 'cores',
+    'ставим ' + G.slot.stakeRes(state));
   G.slot.setRng(null);
 
   section('6. Перерождение кликом');

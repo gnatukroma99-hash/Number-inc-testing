@@ -34,7 +34,7 @@
       let tree = 0;
       for (const u of G.registry.upgradesOf('tree')) if (G.lvl(state, u.id) > 0) tree++;
       const mirror = state.mech && state.mech.mirror;
-      return {
+      const out = {
         D: G.growth.D(state),
         bestD: state.stats.bestD || 0,
         cores: state.res.cores || 0,
@@ -48,6 +48,16 @@
         playtime: state.stats.playtime || 0,
         achievements: unlockedList(state).length
       };
+      /* механики сами отдают свои переменные для условий (движок не знает их названий):
+         у механики может быть vars(state) — его поля просто добавляются в скоуп. */
+      for (const m of G.registry.mechanics()) {
+        if (typeof m.vars !== 'function') continue;
+        /* без проверки isUnlocked: у закрытой механики счётчики = 0, а условия
+           достижений не должны падать с ReferenceError (так и было до фикса) */
+        const extra = m.vars(state);
+        if (extra) Object.assign(out, extra);
+      }
+      return out;
     },
 
     /* проверить все условия; открыть новые; вернуть массив новых */

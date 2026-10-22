@@ -25,6 +25,19 @@
       const outcome = G.h('div', { class: 'slot-outcome', text: 'готов к прокрутке' });
       const machine = G.h('div', { class: 'slot-machine' }, [reels, outcome]);
 
+      /* чем ставим: ⌁ энергия / ❖ ПРАЙМ / ◆ ядра (данные: content.slot.stakes) */
+      const resBtns = (CFG.stakes || ['energy']).map((id) => {
+        const b = G.h('button', { class: 'slot-share slot-res', type: 'button' },
+          [G.h('span', { text: (C.RES_ICON && C.RES_ICON[id]) || id })]);
+        b.addEventListener('click', () => {
+          const d = G.slot.data(G.state);
+          d.stakeRes = id;
+          paintShares();
+        });
+        return { id: id, el: b };
+      });
+      const resRow = G.h('div', { class: 'slot-shares slot-res-row' }, resBtns.map((b) => b.el));
+
       /* доли ставки */
       const shareBtns = CFG.shares.map((s) => {
         const b = G.h('button', { class: 'slot-share', type: 'button', text: Math.round(s * 100) + '%' });
@@ -55,9 +68,14 @@
           reelDigits[i].textContent = String(res.digits[i]);
         }
         outcome.textContent = res.name + ' · ×' + res.mult +
-          (res.pity ? ' (гарант)' : '') + ' · ' + G.fmt.num(res.payout) + ' ⌁';
+          (res.pity ? ' (гарант)' : '') +
+          (res.reson ? ' · РЕЗОНАНС ×' + ((CFG.resonance && CFG.resonance.payMult) || 2) : '') +
+          ' · ' + G.fmt.num(res.payout) + ' ' + ((C.RES_ICON && C.RES_ICON[res.res]) || '');
         outcome.className = 'slot-outcome ' + (res.mult > 0 ? 'win' : 'lose') +
-          (res.rule === 'jack' ? ' jack' : '');
+          (res.rule === 'jack' ? ' jack' : '') + (res.reson ? ' reson' : '');
+        if (res.reson) {
+          G.ui.toast('⌾ РЕЗОНАНС: барабаны собрали первую цифру твоего числа (' + res.lead + ')', 'good', 3500);
+        }
         if (res.rule === 'jack') {
           G.ui.toast('⌾ ДЖЕКПОТ 777: +' + CFG.jackpot.cores + ' ◆ и M ×' +
             CFG.jackpot.mult + ' на ' + CFG.jackpot.dur + ' с', 'good', 4000);
@@ -73,6 +91,10 @@
         G.h('span', { class: 'slot-row-mult', text: '×' + o.mult })
       ]));
       const table = G.h('div', { class: 'slot-table' }, oddsRows);
+      const resonNote = G.h('div', { class: 'slot-note', text:
+        'РЕЗОНАНС: если триплет совпал с первой цифрой твоего числа — выплата ×' +
+        ((CFG.resonance && CFG.resonance.payMult) || 2) + ' и +' +
+        ((CFG.resonance && CFG.resonance.cores) || 0) + ' ◆.' });
 
       const historyEl = G.h('div', { class: 'slot-history' });
 
@@ -80,17 +102,20 @@
         G.h('p', { class: 'board-hint', text: mech.hint }),
         C.grid([tStake.el, tCold.el, tJack.el, tBest.el]),
         machine,
+        resRow,
         shareRow,
         spinBtn,
         bar.el,
-        C.section('Выплаты', [table]),
+        C.section('Выплаты', [table, resonNote]),
         C.section('Последние прокрутки', [historyEl])
       ]);
       root.appendChild(el);
 
       function paintShares() {
-        const cur = G.slot.data(G.state).share;
-        shareBtns.forEach((b) => b.el.classList.toggle('on', b.s === cur));
+        const d = G.slot.data(G.state);
+        const cur = G.slot.stakeRes(G.state);
+        shareBtns.forEach((b) => b.el.classList.toggle('on', b.s === d.share));
+        resBtns.forEach((b) => b.el.classList.toggle('on', b.id === cur));
       }
 
       let historySig = null;
@@ -119,16 +144,17 @@
         update(state) {
           const d = G.slot.data(state);
           const stake = G.slot.stake(state);
-          tStake.set(G.fmt.num(stake) + ' ⌁');
-          tCold.set(String(d.cold) + ' / ' + CFG.pity);
-          tJack.set(String(d.jackpots));
-          tBest.set(G.fmt.num(d.best) + ' ⌁');
+          const resId = G.slot.stakeRes(state);
+          tStake.set(G.fmt.num(stake) + ' ' + ((C.RES_ICON && C.RES_ICON[resId]) || ''));
+          tCold.set(String(d.cold) + ' / ' + G.slot.pity(state));
+          tJack.set(String(d.jackpots || 0));
+          tBest.set(G.fmt.num(d.best) + ' ' + ((C.RES_ICON && C.RES_ICON[resId]) || ''));
 
           const ready = G.slot.ready(state);
           spinBtn.disabled = !ready;
-          bar.set(d.cd > 0 ? 1 - d.cd / CFG.gap : 1,
-            d.buff > 0 ? 'M ×' + CFG.jackpot.mult + ' · ' + Math.ceil(d.buff) + ' с'
-              : (ready ? 'готов' : 'нужна энергия ⌁'));
+          bar.set(d.cd > 0 ? 1 - d.cd / G.slot.gap(state) : 1,
+            d.buff > 0 ? 'M ×' + G.slot.jackMult(state) + ' · ' + Math.ceil(d.buff) + ' с'
+              : (ready ? 'готов' : 'нужна ставка: ' + (C.RES_NAME && C.RES_NAME[resId] || resId)));
           paintShares();
           paintHistory(false);
         }

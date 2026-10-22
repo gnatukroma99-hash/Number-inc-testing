@@ -50,6 +50,18 @@
       { id: 'a_mirror', icon: '⧗', name: 'Полное зеркало', desc: 'Поймать 7 совпавших пар в мантиссе',
         cond: 'mirrors >= 7' },
 
+      /* --- автомат ⌾ (v0.12.9) --- */
+      { id: 'a_slot1', icon: 'slot', name: 'Руки чешутся', desc: 'Прокрутить барабаны первый раз',
+        cond: 'slotSpins >= 1' },
+      { id: 'a_slot_jack', icon: 'slot', name: '777', desc: 'Сорвать джекпот автомата',
+        cond: 'slotJacks >= 1' },
+      { id: 'a_slot_reso', icon: '◆', name: 'Резонанс', desc: 'Собрать триплет, равный первой цифре числа',
+        cond: 'slotReso >= 1' },
+      { id: 'a_slot_pity', icon: '★', name: 'Всё равно заплатит', desc: 'Дожить до гаранта ×2',
+        cond: 'slotPities >= 1' },
+      { id: 'a_slot_streak', icon: 'sparkle', name: 'Горячая рука', desc: '5 выигрышей подряд',
+        cond: 'slotStreak >= 5' },
+
       { id: 'a_hour', icon: 'clock', name: 'Час в игре', desc: 'Час суммарного времени',
         cond: 'playtime >= 3600' },
       { id: 'a_collector', icon: 'trophy', name: 'Коллекционер', desc: 'Открыть 12 достижений',

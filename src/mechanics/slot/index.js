@@ -37,6 +37,19 @@
     return cfg().jackpot.cores + (G.growth.upgSum(state, 'slotCoreAdd') || 0);
   }
 
+  /* каким ресурсом ставим: ⌁ энергия / ❖ ПРАЙМ / ◆ Ядра (данные: cfg().stakes) */
+  function stakeRes(state) {
+    const d = S.data(state);
+    const list = cfg().stakes || ['energy'];
+    return list.indexOf(d.stakeRes) >= 0 ? d.stakeRes : list[0];
+  }
+
+  /* первая цифра мантиссы — для резонанса (машина играет на твоё число) */
+  function leadDigit(state) {
+    const digs = G.BN && G.BN.digits ? G.BN.digits(state.N) : null;
+    return digs && digs.length ? digs[0] : -1;
+  }
+
   function pick(digits) {
     const list = rules();
     for (let i = 0; i < list.length; i++) if (list[i].test(digits)) return list[i];
@@ -80,16 +93,20 @@
       const m = state.mech || (state.mech = {});
       if (!m.slot) {
         m.slot = {
-          share: 0.25, cd: 0, cold: 0, spins: 0, wins: 0, jackpots: 0,
-          best: 0, buff: 0, last: null, history: []
+          share: 0.25, stakeRes: 'energy', cd: 0, cold: 0,
+          spins: 0, wins: 0, jackpots: 0, pities: 0, resonances: 0,
+          streak: 0, bestStreak: 0, best: 0, buff: 0, last: null, history: []
         };
       }
       return m.slot;
     },
 
+    stakeRes: stakeRes,
+    leadDigit: leadDigit,
+
     stake(state) {
       const d = S.data(state);
-      const have = state.res.energy || 0;
+      const have = state.res[stakeRes(state)] || 0;
       const s = Math.floor(have * d.share);
       return isFinite(s) && s > 0 ? s : 0;
     },
@@ -137,9 +154,17 @@
       const isPity = rule.mult <= 0 && d.cold + 1 >= pityLimit;
       if (isPity) rule = S.rule('pair') || rule;
 
+      /* РЕЗОНАНС: триплет совпал с первой цифрой твоего числа — выплата ×2 и +◆ */
+      const lead = leadDigit(state);
+      const triple = digits[0] === digits[1] && digits[1] === digits[2];
+      const reson = triple && lead >= 0 && digits[0] === lead && rule.mult > 0;
+      const resonCfg = cfg().resonance || {};
+
+      const res = stakeRes(state);
       const payK = rule.buff ? jackPay(state) : 1;
-      const payout = stake * (rule.mult || 0) * payK;
-      state.res.energy = Math.max(0, (state.res.energy || 0) - stake + payout);
+      const payout = stake * (rule.mult || 0) * payK * (reson ? (resonCfg.payMult || 1) : 1);
+      state.res[res] = Math.max(0, (state.res[res] || 0) - stake + payout);
+      if (reson && resonCfg.cores) state.res.cores = (state.res.cores || 0) + resonCfg.cores;
 
       d.spins++;
       d.cd = gap(state);
@@ -150,16 +175,22 @@
       }
       if (rule.buff) d.buff = cfg().jackpot.dur;
       if (rule.id === 'jack') d.jackpots++;
+      if (isPity) d.pities = (d.pities || 0) + 1;
+      if (reson) d.resonances = (d.resonances || 0) + 1;
       if (payout > 0) {
         d.wins++;
         d.cold = 0;
+        d.streak = (d.streak || 0) + 1;
+        if (d.streak > (d.bestStreak || 0)) d.bestStreak = d.streak;
         if (payout > d.best) d.best = payout;
       } else {
         d.cold++;
+        d.streak = 0;
       }
       d.last = {
         digits: digits, rule: rule.id, name: rule.name, mult: rule.mult,
-        stake: stake, payout: payout, pity: isPity, payK: payK
+        stake: stake, payout: payout, pity: isPity, payK: payK,
+        res: res, reson: reson, lead: lead
       };
       d.history.unshift(rule.id);
       if (d.history.length > 8) d.history.length = 8;
@@ -210,6 +241,19 @@
 
     onReset(state) {
       S.restart(state);
+    },
+
+    /* переменные для условий достижений (systems/achievements собирает их у всех механик) */
+    vars(state) {
+      const d = S.data(state);
+      return {
+        slotSpins: d.spins || 0,
+        slotJacks: d.jackpots || 0,
+        slotReso: d.resonances || 0,
+        slotPities: d.pities || 0,
+        slotStreak: d.bestStreak || 0,
+        slotCold: d.cold || 0
+      };
     },
 
     status(state) {

@@ -2256,3 +2256,9 @@ body.no-anim .slot-digit.roll, body.no-anim .slot-spin.hit { animation: none !im
   .slot-row { grid-template-columns: 1fr auto; }
   .slot-row-note { display: none; }
 }
+
+/* автомат ⌾: выбор ресурса ставки и резонанс (v0.12.9) */
+.slot-res-row { margin-top: 8px; }
+.slot-share.slot-res { flex: 0 1 auto; min-width: 54px; font-size: 15px; padding: 8px 12px; }
+.slot-outcome.reson { color: #c9a0ff; text-shadow: 0 0 12px rgba(201, 160, 255, .5); }
+.slot-note { margin-top: 8px; font-size: 11.5px; line-height: 1.45; color: var(--dim); }
