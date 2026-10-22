@@ -26,7 +26,8 @@
       for (const f of ['formula', 'costFormula', 'costD', 'addM', 'powM', 'dtMult', 'energyMult',
         'Mmult', 'spanMult', 'taperMult', 'coreGainMult', 'coreGainAdd', 'coreGainPerNode',
         'autoStepMult', 'shopCostMult', 'primeGainMult',
-        'sparkLife', 'sparkGap', 'sparkPower', 'sparkDouble']) {
+        'sparkLife', 'sparkGap', 'sparkPower', 'sparkDouble',
+        'slotGapMult', 'slotPityAdd', 'slotJackPay', 'slotJackAdd', 'slotCoreAdd']) {
         if (u[f]) G.formula.precompile(u[f]);
       }
       return u;

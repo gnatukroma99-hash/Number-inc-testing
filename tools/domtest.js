@@ -301,8 +301,11 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
 
   section('5. Дерево ◆ (узлы, предки, цена в ядрах)');
   const tree = G.registry.upgradesOf('tree');
-  check('узлов в дереве', tree.length === 36, tree.length + ' шт');
-  check('ветви дерева', (G.content.tree.branches || []).length === 7,
+  const brList = G.content.tree.branches || [];
+  const rootsInTree = tree.filter((u) => !u.requires || !u.requires.length).length;
+  check('узлов в дереве', tree.length >= 36 && rootsInTree === brList.length,
+    tree.length + ' узлов, корней ' + rootsInTree + ' = ветвей ' + brList.length);
+  check('ветви дерева', brList.length >= 7,
     (G.content.tree.branches || []).map((t) => t.id).join(','));
   const deep = tree.filter((u) => u.tier === 't3');
   check('ярус III не дешевле 60 ◆', deep.length >= 4 &&
@@ -347,7 +350,8 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const map = doc.querySelector('#board .tree-map');
   check('карта дерева отрисована', !!map);
   const spokes = doc.querySelectorAll('#board .tree-rings .tray');
-  check('7 лучей-ветвей от хаба', spokes.length === 7, spokes.length + ' шт');
+  const branchCount = G.content.tree.branches.length;
+  check(branchCount + ' лучей-ветвей от хаба', spokes.length === branchCount, spokes.length + ' шт');
   const cells = Array.from(doc.querySelectorAll('#board .tree-cell'));
   check('клеток по числу узлов', cells.length === tree.length, cells.length + ' / ' + tree.length);
   check('кольца глубины нарисованы', doc.querySelectorAll('#board .tree-rings .tring').length >= 4,
@@ -368,15 +372,15 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   /* чистое дерево: ни одного купленного узла */
   for (const u of tree) state.upg[u.id] = 0;
   G.ui.app.render(state);
-  check('на старте видно только 7 корней ветвей', unknownShown() === tree.length - 7,
+  check('на старте видно только корни ветвей', unknownShown() === tree.length - rootsInTree,
     'скрыто: ' + unknownShown() + ' из ' + tree.length);
   check('2-й узел ветви скрыт', realShown('Слом софткапа') === false);
   check('корень ветви виден', realShown('Вечный разгон') === true);
   const hiddenBtn = Array.from(doc.querySelectorAll('#board .node.unknown .node-orb'))
     .filter((b) => b.closest('.node').style.display !== 'none');
-  check('у скрытого узла нет имени/цены', hiddenBtn.length === tree.length - 7 &&
+  check('у скрытого узла нет имени/цены', hiddenBtn.length === tree.length - rootsInTree &&
     !/[0-9]/.test(textOf(hiddenBtn[0])),
-    'кнопок: ' + hiddenBtn.length + ' из ' + (tree.length - 7) + ', текст: «' + textOf(hiddenBtn[0]) + '»');
+    'кнопок: ' + hiddenBtn.length + ' из ' + (tree.length - rootsInTree) + ', текст: «' + textOf(hiddenBtn[0]) + '»');
 
   /* покупаем корень ветви → следующий узел проявляется */
   state.res.cores = 1e6;
@@ -387,7 +391,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.ui.app.render(state);
   check('после покупки корня 2-й узел проявился', realShown('Слом софткапа') === true,
     'ур. Вечный разгон = ' + G.lvl(state, 'tree_tempo'));
-  check('скрытых стало меньше', unknownShown() === tree.length - 8, 'скрыто: ' + unknownShown());
+  check('скрытых стало меньше', unknownShown() === tree.length - rootsInTree - 1, 'скрыто: ' + unknownShown());
   check('цена узла видна в орбе', /[0-9]/.test(textOf(doc.querySelector('#board .tree-cell .node .orb-price'))),
     textOf(doc.querySelector('#board .tree-cell .node .orb-price')));
 
@@ -881,6 +885,78 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     check('тап покупает на доске ' + id, lvlSum() > before,
       'уровней: ' + before + ' → ' + lvlSum());
   }
+
+  section('5e. Ветвь дерева «Автомат» (узлы усиливают автомат)');
+  state.N = G.BN.fromLog10(12); state.D = 12;
+  const slotBranch = G.registry.upgradesOf('tree').filter((u) => u.branch === 'slot');
+  check('в дереве 5 узлов ветви «Автомат»', slotBranch.length === 5,
+    slotBranch.map((u) => u.id).join(','));
+  check('ветвь «Автомат» есть в данных дерева',
+    G.content.tree.branches.some((b) => b.id === 'slot'));
+  check('цепочка узлов сквозная (requires внутри ветви)', slotBranch.every((u) => !u.requires ||
+    u.requires.every((id) => G.registry.upgrade(id) && G.registry.upgrade(id).branch === 'slot')),
+    slotBranch.map((u) => (u.requires || []).join('+')).join(' → '));
+
+  for (const u of slotBranch) state.upg[u.id] = 0;
+  state.mech.slot = null;
+  state.res.energy = 1e6;
+  const gap0 = G.slot.gap(state);
+  check('база: пауза 1.10 с, гарант 20, M×3, ◆2',
+    Math.abs(gap0 - 1.1) < 1e-9 && G.slot.pity(state) === 20 &&
+    G.slot.jackMult(state) === 3 && G.slot.jackCores(state) === 2 && G.slot.jackPay(state) === 1,
+    'пауза ' + gap0.toFixed(2) + ', гарант ' + G.slot.pity(state));
+
+  state.upg.tree_slotgap = 3;
+  check('узел «Быстрый барабан» укорачивает паузу',
+    Math.abs(G.slot.gap(state) - 1.1 * Math.pow(0.88, 3)) < 1e-9,
+    'пауза ' + G.slot.gap(state).toFixed(2) + ' с');
+  state.upg.tree_slotpity = 5;
+  check('узел «Короткая засуха» сокращает гарант', G.slot.pity(state) === 10,
+    'гарант ' + G.slot.pity(state));
+  state.upg.tree_slotjack = 4; state.upg.tree_slotcore = 3; state.upg.tree_slotjackpay = 4;
+  check('узел «Жар джекпота»: M ×5', G.slot.jackMult(state) === 5, 'M ×' + G.slot.jackMult(state));
+  check('узел «Ядро из автомата»: 5 ◆', G.slot.jackCores(state) === 5, '◆' + G.slot.jackCores(state));
+  check('узел «Щедрый джекпот»: только для 777', G.slot.jackPay(state) === 2,
+    'множитель джекпота ×' + G.slot.jackPay(state));
+
+  const slotEff = G.slot.data(state);
+  slotEff.cd = 0; slotEff.share = 0.1;
+  slotEff.cold = 0;
+  state.res.energy = 1e5;
+  G.slot.setRng(() => 0.15);                       /* 1,1,1 → «Три в ряд» */
+  let slotRes = G.slot.spin(state);
+  check('обычная выплата узлами не растёт', slotRes.payout === slotRes.stake * 20,
+    '×20 = ' + slotRes.payout);
+  slotEff.cd = 0;
+  state.res.energy = 1e5;
+  G.slot.setRng(() => 0.75);                       /* 7,7,7 → джекпот */
+  slotRes = G.slot.spin(state);
+  check('джекпот ×50 × «Щедрый джекпот» 2 = ×100', slotRes.payout === slotRes.stake * 100,
+    '×' + (slotRes.payout / slotRes.stake));
+
+  /* узлы не должны превратить сток в печать энергии: Монте-Карло на 30 000 прокруток */
+  let mcSeed = 987654321;
+  G.slot.setRng(() => { mcSeed = (mcSeed * 1103515245 + 12345) % 2147483648; return mcSeed / 2147483648; });
+  state.mech.slot = null;
+  const mcD = G.slot.data(state);
+  mcD.share = 0.25;
+  let mcIn = 0, mcOut = 0, mcJack = 0, mcSpins = 0;
+  for (let i = 0; i < 30000; i++) {
+    state.res.energy = 1e6;
+    mcD.cd = 0;
+    const stake = G.slot.stake(state);
+    const r2 = G.slot.spin(state);
+    if (!r2) break;
+    mcSpins++;
+    mcIn += stake;
+    mcOut += r2.payout;
+    if (r2.rule === 'jack') mcJack++;
+  }
+  check('с выкупленной ветвью автомат всё ещё сток (EV < 1)',
+    mcSpins === 30000 && mcOut / mcIn < 1,
+    'возврат энергии ' + (mcOut / mcIn * 100).toFixed(1) + '% за ' + mcSpins +
+    ' прокруток, джекпотов ' + mcJack);
+  G.slot.setRng(null);
 
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));

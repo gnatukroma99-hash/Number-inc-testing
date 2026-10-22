@@ -18,7 +18,7 @@
   G.content = G.content || {};
   G.content.tree = {
     res: 'cores',
-    hint: '◆ Ядра тратятся только здесь. Семь ветвей: каждая — своя цепочка. ' +
+    hint: '◆ Ядра тратятся только здесь. Восемь ветвей: каждая — своя цепочка. ' +
           'Следующий узел ветви виден только после покупки предыдущего.',
     branches: [
       { id: 'start', name: 'Рывок', icon: 'rocket', color: '#8ada6a', note: 'старт забега сильнее', angle: -141 },
@@ -27,7 +27,8 @@
       { id: 'income', name: 'Доход', icon: '❖', color: '#6ee7f9', note: 'энергия, ❖, цены', angle: 13 },
       { id: 'auto', name: 'Автоматизация', icon: 'robot', color: '#ff9de2', note: 'авто и механики', angle: 64 },
       { id: 'spark', name: 'Искра', icon: '✦', color: '#ffd166', note: 'ловить искры выгоднее', angle: 116 },
-      { id: 'cores', name: 'Ядра', icon: '◆', color: '#ffb14d', note: 'больше ◆ за перерождение', angle: 167 }
+      { id: 'cores', name: 'Ядра', icon: '◆', color: '#ffb14d', note: 'больше ◆ за перерождение', angle: 167 },
+      { id: 'slot', name: 'Автомат', icon: 'slot', color: '#ffd166', note: 'автомат крутится чаще и платит больше', angle: 219 }
     ],
     tiers: [
       { id: 't1', name: 'I' },
@@ -366,6 +367,52 @@
       requires: ['tree_prime2'],
       note: '⌁ ×= 4^lvl',
       desc: 'Вершина ветви дохода.'
+    },
+
+    /* ================= ветвь «Автомат» (v0.12.8) ================= */
+    {
+      id: 'tree_slotgap', mech: 'tree', branch: 'slot', depth: 0, lane: 2, tier: 't1',
+      scope: 'meta', res: 'cores', icon: 'slot',
+      name: 'Быстрый барабан', base: 25, growth: 1.85, max: 6,
+      formula: '1 / (0.88 ** lvl)', fmt: 'x', slotGapMult: '0.88 ** lvl',
+      note: 'пауза автомата ×= 0.88^lvl (не ниже 0.25 с)',
+      desc: 'Крутить можно чаще: перезарядка короче.'
+    },
+    {
+      id: 'tree_slotpity', mech: 'tree', branch: 'slot', depth: 1, lane: 2, tier: 't2',
+      scope: 'meta', res: 'cores', icon: 'slot',
+      name: 'Короткая засуха', base: 80, growth: 1.95, max: 5,
+      formula: 'lvl', fmt: 'num', slotPityAdd: '-2 * lvl',
+      requires: ['tree_slotgap'],
+      note: 'гарант ×2 наступает на 2·lvl пустых раньше',
+      desc: 'Холодная серия заканчивается быстрее.'
+    },
+    {
+      id: 'tree_slotjackpay', mech: 'tree', branch: 'slot', depth: 2, lane: 2, tier: 't2',
+      scope: 'meta', res: 'cores', icon: 'slot',
+      name: 'Щедрый джекпот', base: 170, growth: 2.00, max: 4,
+      formula: '1 + 0.25 * lvl', fmt: 'x', slotJackPay: '1 + 0.25 * lvl',
+      requires: ['tree_slotpity'],
+      note: 'выплата джекпота 777 ×= 1 + 0.25·lvl (только джекпот)',
+      desc: 'Обычные выплаты не растут — растёт только тот, что 777.'
+    },
+    {
+      id: 'tree_slotjack', mech: 'tree', branch: 'slot', depth: 3, lane: 2, tier: 't3',
+      scope: 'meta', res: 'cores', icon: 'slot',
+      name: 'Жар джекпота', base: 400, growth: 2.05, max: 4,
+      formula: '0.5 * lvl', fmt: 'x', slotJackAdd: '0.5 * lvl',
+      requires: ['tree_slotjackpay'],
+      note: 'M за джекпот 777: +0.5·lvl (база ×3)',
+      desc: 'Джекпот усиливает забег сильнее.'
+    },
+    {
+      id: 'tree_slotcore', mech: 'tree', branch: 'slot', depth: 4, lane: 2, tier: 't3',
+      scope: 'meta', res: 'cores', icon: 'core',
+      name: 'Ядро из автомата', base: 750, growth: 2.20, max: 3,
+      formula: 'lvl', fmt: 'num', slotCoreAdd: 'lvl',
+      requires: ['tree_slotjack'],
+      note: '◆ за джекпот += lvl (база 2)',
+      desc: 'Вершина ветви: автомат возвращает ядра.'
     }
   ]);
 })(window.G = window.G || {});
