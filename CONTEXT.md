@@ -11,7 +11,7 @@
 
 ## 0. Быстрый старт (TL;DR)
 
-- **Версия: v0.12.4** (`VERSION`, `G.VERSION` в `src/systems/state.js`, `?v=0.12.4` в `index.html`,
+- **Версия: v0.12.5** (`VERSION`, `G.VERSION` в `src/systems/state.js`, `?v=0.12.5` в `index.html`,
   `package.json`, `package-lock.json` — всё синхронно, проверяется `tools/checkall.js`).
   Бамп одной командой: `node tools/bump.js [patch|minor|major|x.y.z]` — правит все 5 мест сразу.
 - **Репозиторий:** `https://github.com/gnatukroma99-hash/Number-inc-testing` (ветка `main`).
@@ -20,7 +20,7 @@
   - чтобы выпустить следующую версию: `PUBLISH.bat` (одна кнопка) **или** `node tools/bump.js` +
     `git commit/tag/push` — агент с доступом к git делает это сам (AGENTS §5.1).
 - **GitHub Pages:** `https://gnatukroma99-hash.github.io/Number-inc-testing/`
-  (на сайте должна быть 0.12.4 — проверить в ⚙ → Настройки; после каждого пуша нужен Ctrl+F5).
+  (на сайте должна быть 0.12.5 — проверить в ⚙ → Настройки; после каждого пуша нужен Ctrl+F5).
 - **Инструменты агента:** Git 2.56, Node v26.10.0, `bash`, интернет,
   **jsdom** (UI-тесты) и **puppeteer-core + локальный Chrome/Edge** (скриншоты). Перед первым
   прогоном в новой копии: `npm i`.
@@ -51,13 +51,18 @@
 
 ```bash
 npm i                    # один раз: jsdom + puppeteer-core (node_modules/ в .gitignore)
-node tools/checkall.js   # синтаксис, версии, ?v=, подключение скриптов, нет ^ / ESM
-node tools/domtest.js    # РЕАЛЬНЫЙ UI в jsdom: цикл, доски, клики, дерево, P1, сейв, зум
-node tools/shot.js       # скриншоты в headless Chrome/Edge → tools/shots/*.png (смотреть глазами)
+node tools/verify.js     # ВСЕ проверки ПАРАЛЛЕЛЬНО + один отчёт (71 с вместо 88 с)
+node tools/verify.js fast   # без bench, ~15 с (правки, не трогающие баланс)
+node tools/checkall.js   # отдельно: синтаксис, версии, ?v=, подключение скриптов, нет ^ / ESM
+node tools/domtest.js    # отдельно: РЕАЛЬНЫЙ UI в jsdom (169 проверок)
+node tools/shot.js       # скриншоты в headless Chrome/Edge → tools/shots/*.png (локально)
 node tools/bench.js 1 300  # реальный код + P1, время до 1e308 (первый прогон ≥ 60 мин!)
 node tools/sim.js 160 900  # баланс по формулам (без DOM)
 ```
-npm-скрипты: `npm run check`, `npm run dom`, `npm run shots`, `npm run bench`, `npm run sim`, `npm test`.
+Долгий `bench` не ждём: `node tools/verify.js > .verify/verify.log 2>&1 &` — и делаем следующую
+часть, потом читаем `.verify/verify.log` (AGENTS §1.6.7).
+npm-скрипты: `npm run verify`, `npm run verify:fast`, `npm run check`, `npm run dom`,
+`npm run shots`, `npm run bench`, `npm run sim`, `npm test` (= verify).
 
 ---
 
@@ -124,14 +129,15 @@ D  = log10(N)                                   (метрика прогресс
 my adblock/
 ├── CONTEXT.md              ← этот файл
 ├── AGENTS.md               ← правила агента, процесс, версионирование, правило баланса
-├── README.md               ← лицо репозитория (v0.12.4) + бейдж CI
-├── VERSION                 ← 0.12.4
-├── index.html              ← запуск игры (file:// или Pages); у скриптов ?v=0.12.4
+├── README.md               ← лицо репозитория (v0.12.5) + бейдж CI
+├── VERSION                 ← 0.12.5
+├── index.html              ← запуск игры (file:// или Pages); у скриптов ?v=0.12.5
 ├── package.json            ← только инструменты (jsdom, puppeteer-core) + npm-скрипты
 ├── PUBLISH.bat / PULL.bat  ← одна кнопка: релиз (бамп+тесты+пуш) / забрать пуши
 ├── PUBLISH_SETUP.bat / PUSH_VERSION.bat / GIT_STATUS.bat / MOVE_TO_GAME.bat  ← старые, работают
 ├── .github/workflows/ci.yml ← CI: checkall → domtest → sim → bench на пуш/PR
 ├── tools/bump.js           ← версия одной командой (5 мест сразу)
+├── tools/verify.js         ← все проверки параллельно + один отчёт (.verify/*.log)
 ├── assets/css/style.css    ← вся вёрстка (тёмный космос, дерево-созвездие, карточки)
 ├── docs/{ТЗ,ARCHITECTURE,MECHANICS,CHANGELOG,GIT}.md
 ├── src/core/
@@ -497,7 +503,7 @@ spanMult из дерева — кэшем). Плюс панорама дерев
 ```
 git status — рабочая копия ЧИСТАЯ
 последний коммит: e59666c «v0.12.2: update», теги до v0.12.2
-Pages должен отдавать 0.12.4 после пуша (проверять в ⚙ → Настройки, после пушей — Ctrl+F5)
+Pages должен отдавать 0.12.5 после пуша (проверять в ⚙ → Настройки, после пушей — Ctrl+F5)
 ```
 ### Сессия №10 — v0.12.3: CI + версия одной кнопкой
 - **CI:** `.github/workflows/ci.yml` — на пуш в `main` и в PR гоняются `checkall` → `domtest` →
@@ -513,6 +519,14 @@ Pages должен отдавать 0.12.4 после пуша (проверят
   (`git pull --rebase --autostash`) и показать текущую версию.
 - Проверки: `checkall` OK · `domtest` ВСЁ ОК (158, exit 0) · `bench 1 300` — 82.2 мин, exit 0 ·
   `sim 160 900` — 77.7 мин. Правка баланса не потребовалась.
+
+### Сессия №12 — v0.12.5: проверки параллельно
+- **`tools/verify.js`**: checkall + domtest + sim + bench в параллель, один отчёт, логи в `.verify/`.
+  Замер: **71 с против 88 с** последовательно. `verify.js fast` — без bench (~15 с).
+- **Проваленная попытка оптимизации** (важно не повторять): `core/formula.js` без `with` давал ×33
+  на микробенче, но реальный `bench` ухудшился **68 → 105 с** → откатано. Оптимизации скорости
+  принимаем только по реальному `bench`.
+- AGENTS §1.6.7 — «не ждать bench впустую»: фоновый запуск + заняться следующей частью.
 
 ### Сессия №11 — v0.12.4: на телефоне дерево снова покупается
 - **Баг:** лист узла на таче открывался, кнопка активна, но тап не покупал. В обработчике было

@@ -14,7 +14,7 @@
 
 Онлайн-версия (если включён GitHub Pages): `https://<твой-логин>.github.io/<репозиторий>/`
 
-## Что уже есть (v0.12.4)
+## Что уже есть (v0.12.5)
 
 | Система | Статус |
 |---|---|
@@ -70,6 +70,7 @@ src/ui/             главное число, доки, доски, настр�
 tools/sim.js        симулятор баланса по формулам (node)
 tools/bench.js      прогон реального кода src/ + перерождения (node)
 tools/bump.js       версия одной командой: VERSION · G.VERSION · ?v= · package*.json
+tools/verify.js     все проверки параллельно + один отчёт (checkall/domtest/sim/bench)
 .github/workflows/  ci.yml — GitHub Actions: checkall → domtest → sim → bench
 PUBLISH.bat         одна кнопка на релиз (бамп + тесты + коммит + тег + пуш), PULL.bat — забрать
 docs/               ТЗ, ARCHITECTURE, MECHANICS, CHANGELOG, GIT
