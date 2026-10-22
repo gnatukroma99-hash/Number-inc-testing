@@ -889,8 +889,9 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   section('5e. Ветвь дерева «Автомат» (узлы усиливают автомат)');
   state.N = G.BN.fromLog10(12); state.D = 12;
   const slotBranch = G.registry.upgradesOf('tree').filter((u) => u.branch === 'slot');
-  check('в дереве 5 узлов ветви «Автомат»', slotBranch.length === 5,
-    slotBranch.map((u) => u.id).join(','));
+  check('в ветви «Автомат» 5 узлов + ярус IV', slotBranch.length === 6 &&
+    slotBranch.some((u) => u.tier === 't4'),
+    slotBranch.map((u) => u.id + (u.tier === 't4' ? '(IV)' : '')).join(','));
   check('ветвь «Автомат» есть в данных дерева',
     G.content.tree.branches.some((b) => b.id === 'slot'));
   check('цепочка узлов сквозная (requires внутри ветви)', slotBranch.every((u) => !u.requires ||
@@ -1040,6 +1041,62 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('переключение ресурса ставки', G.slot.stakeRes(state) === 'cores',
     'ставим ' + G.slot.stakeRes(state));
   G.slot.setRng(null);
+
+  section('5f. Ярус IV дерева (5000+ ◆)');
+  const t4 = G.registry.upgradesOf('tree').filter((u) => u.tier === 't4');
+  check('ярус IV: 6 узлов', t4.length === 6, t4.map((u) => u.id).join(','));
+  check('ярус IV: цены 5000+ ◆', t4.every((u) => u.base >= 5000),
+    t4.map((u) => u.base).join(' · '));
+  check('ярус IV: предок всегда из своей ветви', t4.every((u) => (u.requires || []).every((id) => {
+    const p = G.registry.upgrade(id);
+    return p && p.branch === u.branch;
+  })));
+  check('ярус IV есть в данных дерева', (G.content.tree.tiers || []).some((t) => t.id === 't4'));
+
+  /* эффекты читаются теми же свипами движка — проверяем каждый узел */
+  for (const u of G.registry.upgradesOf('tree')) state.upg[u.id] = 0;
+  const dtBefore = G.growth.dt(state);
+  const mBefore4 = G.growth.M(state);
+  const eBefore = G.growth.energyRate(state);
+  const sparkBefore = G.growth.upgProduct(state, 'sparkPower');
+  state.upg.tree_tempo3 = 4;
+  check('«Разгон III» укорачивает ΔT', G.growth.dt(state) < dtBefore,
+    dtBefore.toFixed(2) + ' → ' + G.growth.dt(state).toFixed(2) + ' с');
+  state.upg.tree_mult5 = 2;
+  check('«Гигант» множит M', Math.abs(G.growth.M(state) / mBefore4 - 25) < 1e-6,
+    'M ×' + (G.growth.M(state) / mBefore4).toFixed(1));
+  state.upg.tree_income5 = 2;
+  check('«Гипердоход» множит ⌁', Math.abs(G.growth.energyRate(state) / eBefore - 100) < 1e-6,
+    '⌁ ×' + (G.growth.energyRate(state) / eBefore).toFixed(0));
+  state.upg.tree_spark5 = 2;
+  check('«Вечная искра» усиливает искру',
+    Math.abs(G.growth.upgProduct(state, 'sparkPower') / sparkBefore - Math.pow(1.6, 2)) < 1e-6,
+    'sparkPower ×' + (G.growth.upgProduct(state, 'sparkPower') / sparkBefore).toFixed(2));
+  state.upg.tree_cores5 = 3;
+  check('«Реактор ядер» поднимает добычу ◆',
+    Math.abs(G.growth.upgProduct(state, 'coreGainMult') - Math.pow(1.4, 3)) < 1e-6,
+    'coreGainMult ×' + G.growth.upgProduct(state, 'coreGainMult').toFixed(2));
+  for (const u of G.registry.upgradesOf('tree')) state.upg[u.id] = 0;
+  state.upg.tree_slotjack = 4; state.upg.tree_slot5 = 3;
+  check('«Джекпот-шторм» усиливает джекпот', G.slot.jackMult(state) === 3 + 2 + 3,
+    'M за джекпот ×' + G.slot.jackMult(state));
+  state.upg.tree_slotjack = 0; state.upg.tree_slot5 = 0;
+
+  /* ярус IV скрыт, пока не куплен конец ветви — и появляется после */
+  for (const u of G.registry.upgradesOf('tree')) state.upg[u.id] = 0;
+  state.N = G.BN.fromLog10(12); state.D = 12; state.res.cores = 1e9;
+  click(dockBtns().find((b) => b.dataset.id === 'tree'));
+  G.ui.app.render(state);
+  check('ярус IV скрыт без предка', realShown('Разгон III') === false);
+  state.upg.tree_tempo2 = 1;
+  G.ui.app.render(state);
+  check('ярус IV виден после покупки конца ветви', realShown('Разгон III') === true);
+  const t4Cell = Array.from(doc.querySelectorAll('#board .tree-cell .node'))
+    .find((n) => textOf(n.querySelector('.node-name')) === 'Разгон III');
+  click(t4Cell && t4Cell.querySelector('.node-orb'));
+  check('узел яруса IV покупается за ◆', G.lvl(state, 'tree_tempo3') === 1,
+    'ур. ' + G.lvl(state, 'tree_tempo3'));
+  for (const u of G.registry.upgradesOf('tree')) state.upg[u.id] = 0;
 
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));

@@ -27,7 +27,7 @@
   const HOLD_DELAY = 380;     /* зажатие на узле → повторные покупки */
   const HOLD_EVERY = 150;
 
-  const TIER_LABEL = { t1: 'I', t2: 'II', t3: 'III' };
+  const TIER_LABEL = { t1: 'I', t2: 'II', t3: 'III', t4: 'IV' };
 
   function svgEl(tag, attrs) {
     const el = document.createElementNS('http://www.w3.org/2000/svg', tag);

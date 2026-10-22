@@ -33,7 +33,8 @@
     tiers: [
       { id: 't1', name: 'I' },
       { id: 't2', name: 'II' },
-      { id: 't3', name: 'III' }
+      { id: 't3', name: 'III' },
+      { id: 't4', name: 'IV' }
     ]
   };
 
@@ -413,6 +414,62 @@
       requires: ['tree_slotjack'],
       note: '◆ за джекпот += lvl (база 2)',
       desc: 'Вершина ветви: автомат возвращает ядра.'
+    },
+
+    /* ================= ЯРУС IV (v0.13.0): 5000+ ◆, продолжение ветвей ================= */
+    {
+      id: 'tree_tempo3', mech: 'tree', branch: 'tempo', depth: 6, lane: -1, tier: 't4',
+      scope: 'meta', res: 'cores', icon: 'fast',
+      name: 'Разгон III', base: 5000, growth: 2.30, max: 4,
+      formula: '1 / (0.94 ** lvl)', fmt: 'x', dtMult: '0.94 ** lvl',
+      requires: ['tree_tempo2'],
+      note: 'ΔT ×= 0.94^lvl',
+      desc: 'Ярус IV: забег разгоняется до предела.'
+    },
+    {
+      id: 'tree_mult5', mech: 'tree', branch: 'mult', depth: 6, lane: -0.5, tier: 't4',
+      scope: 'meta', res: 'cores', icon: '◈',
+      name: 'Гигант', base: 7000, growth: 2.40, max: 4,
+      formula: '5 ** lvl', fmt: 'x', Mmult: '5 ** lvl',
+      requires: ['tree_base2'],
+      note: 'M ×= 5^lvl',
+      desc: 'Ярус IV: плоский множитель, который видно на табло.'
+    },
+    {
+      id: 'tree_cores5', mech: 'tree', branch: 'cores', depth: 7, lane: 0.5, tier: 't4',
+      scope: 'meta', res: 'cores', icon: '◆',
+      name: 'Реактор ядер', base: 6500, growth: 2.35, max: 4,
+      formula: '1.40 ** lvl', fmt: 'x', coreGainMult: '1.40 ** lvl',
+      requires: ['tree_corekeep'],
+      note: '◆ за перерождение ×= 1.40^lvl',
+      desc: 'Ярус IV: следующий перезапуск приносит в разы больше.'
+    },
+    {
+      id: 'tree_spark5', mech: 'tree', branch: 'spark', depth: 4, lane: 1.5, tier: 't4',
+      scope: 'meta', res: 'cores', icon: '✦',
+      name: 'Вечная искра', base: 5000, growth: 2.25, max: 4,
+      formula: '1.60 ** lvl', fmt: 'x', sparkPower: '1.60 ** lvl',
+      requires: ['tree_sparkdouble'],
+      note: 'сила искры ×= 1.6^lvl',
+      desc: 'Ярус IV: одна пойманная искра стоит десяти.'
+    },
+    {
+      id: 'tree_income5', mech: 'tree', branch: 'income', depth: 5, lane: 0.5, tier: 't4',
+      scope: 'meta', res: 'cores', icon: 'bolt',
+      name: 'Гипердоход', base: 9000, growth: 2.45, max: 4,
+      formula: '10 ** lvl', fmt: 'x', energyMult: '10 ** lvl',
+      requires: ['tree_energy3'],
+      note: '⌁ ×= 10^lvl',
+      desc: 'Ярус IV: энергия льётся рекой — и в автомат тоже.'
+    },
+    {
+      id: 'tree_slot5', mech: 'tree', branch: 'slot', depth: 5, lane: 2, tier: 't4',
+      scope: 'meta', res: 'cores', icon: 'slot',
+      name: 'Джекпот-шторм', base: 5500, growth: 2.30, max: 3,
+      formula: '1 * lvl', fmt: 'num', slotJackAdd: '1 * lvl',
+      requires: ['tree_slotcore'],
+      note: 'M за джекпот += 1·lvl (база ×3, ветвь даёт ещё +2)',
+      desc: 'Ярус IV: джекпот 777 включает почти вечный разгон.'
     }
   ]);
 })(window.G = window.G || {});
