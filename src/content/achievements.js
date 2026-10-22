@@ -72,6 +72,16 @@
       { id: 'a_glyphres', icon: '✦', name: 'Резонанс глифов', desc: 'Глиф совпал с первой цифрой числа',
         cond: 'glyphReson >= 1' },
 
+      /* --- Ярус 2: испытания, сделки, эхо (v0.15.0) --- */
+      { id: 'a_ch1', icon: '⚑', name: 'Первое испытание', desc: 'Пройти испытание с запретом',
+        cond: 'challenges >= 1' },
+      { id: 'a_ch5', icon: 'trophy', name: 'Все испытания', desc: 'Пройти все 5 испытаний',
+        cond: 'challenges >= 5' },
+      { id: 'a_pact', icon: '✍', name: 'Сделка с собой', desc: 'Принять сделку с проклятием',
+        cond: 'pact >= 1' },
+      { id: 'a_echo', icon: '⟲', name: 'Эхо числа', desc: 'Включить эхо',
+        cond: 'echoOn >= 1' },
+
       { id: 'a_hour', icon: 'clock', name: 'Час в игре', desc: 'Час суммарного времени',
         cond: 'playtime >= 3600' },
       { id: 'a_collector', icon: 'trophy', name: 'Коллекционер', desc: 'Открыть 12 достижений',

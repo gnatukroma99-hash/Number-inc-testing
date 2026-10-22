@@ -10,6 +10,11 @@
   const MIN_DT_MULT = 0.02; // предел множителя интервала
   const MAX_SUBSTEPS = 400; // защита от фриза при огромном dt (×100 и т.п.)
 
+  /* механика отключена испытанием? (G.challenges — данные, движок спрашивает только да/нет) */
+  function blocked(state, id) {
+    return !!(G.challenges && typeof G.challenges.blocked === 'function' && G.challenges.blocked(state, id));
+  }
+
   const W = {
     /* все переменные для строк-формул */
     vars(state) {
@@ -60,6 +65,7 @@
       let bonus = 0.10 * G.lvl(state, 'speed1');
       for (const m of G.registry.mechanics()) {
         if (m.isUnlocked && !m.isUnlocked(state)) continue;
+        if (blocked(state, m.id)) continue;
         if (typeof m.speedBonus === 'function') bonus += m.speedBonus(state) || 0;
       }
       return bonus;
@@ -69,6 +75,7 @@
       let mult = W.upgProduct(state, 'dtMult');
       for (const m of G.registry.mechanics()) {
         if (m.isUnlocked && !m.isUnlocked(state)) continue;
+        if (blocked(state, m.id)) continue;
         if (typeof m.dtMult === 'function') mult *= (m.dtMult(state) || 1);
       }
       if (!isFinite(mult) || mult <= 0) return 1;
@@ -89,6 +96,7 @@
       let mech = 1;
       for (const m of G.registry.mechanics()) {
         if (m.isUnlocked && !m.isUnlocked(state)) continue;
+        if (blocked(state, m.id)) continue;
         if (typeof m.mult === 'function') {
           const v = m.mult(state);
           if (isFinite(v) && v > 0) mech *= v;
@@ -187,6 +195,7 @@
       /* механики могут усилить/ослабить добычу ⌁ (общий хук, имён механик движок не знает) */
       for (const m of G.registry.mechanics()) {
         if (m.isUnlocked && !m.isUnlocked(state)) continue;
+        if (blocked(state, m.id)) continue;
         if (typeof m.energyMult !== 'function') continue;
         const k = m.energyMult(state);
         if (isFinite(k) && k > 0) e *= k;

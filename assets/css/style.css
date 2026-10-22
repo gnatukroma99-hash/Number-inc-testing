@@ -2312,3 +2312,43 @@ body.no-anim .slot-digit.roll, body.no-anim .slot-spin.hit { animation: none !im
   .glyph-slots { grid-template-columns: 1fr; }
   .bb-cols { grid-template-columns: 1fr; }
 }
+
+/* ---------- Ярус 2: испытания ⚑, сделки ✍, эхо ⟲ (v0.15.0) ---------- */
+.ch-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(255, 255, 255, .03);
+  margin-bottom: 8px;
+}
+.ch-card.active { border-color: #ff9de2; box-shadow: 0 0 0 1px #ff9de2 inset; }
+.ch-card.done { opacity: .75; border-color: rgba(138, 218, 106, .5); }
+.ch-name { font: 800 13px/1.2 system-ui, sans-serif; color: #eaf7ff; }
+.ch-meta { grid-column: 1; font: 700 10.5px/1.4 var(--mono); color: var(--dim2); }
+.ch-reward { grid-column: 1; font: 700 11.5px/1.4 var(--mono); color: var(--accent); }
+.ch-btn { grid-column: 2; grid-row: 1 / span 3; align-self: center; padding: 10px 12px; font: 800 12px/1 var(--mono); }
+
+.pact-active { padding: 10px 12px; border-radius: 11px; background: rgba(255, 255, 255, .03); }
+.pact-offers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pact-card {
+  padding: 11px 12px; border-radius: 12px;
+  border: 1px solid rgba(255, 209, 102, .28);
+  background: linear-gradient(180deg, rgba(255, 209, 102, .07), transparent);
+}
+.pact-name { font: 800 13px/1.2 system-ui, sans-serif; color: #ffe6a8; }
+.pact-text { margin-top: 4px; font: 700 11px/1.4 var(--mono); color: var(--dim); }
+.pact-k { margin-top: 5px; font: 700 10.5px/1 var(--mono); color: var(--dim2); }
+.pact-take { width: 100%; margin-top: 9px; padding: 9px; font: 800 12px/1 var(--mono); }
+.pact-reroll { width: 100%; margin-top: 10px; padding: 12px; font: 800 13px/1 var(--mono); }
+.pact-drop { width: 100%; margin-top: 8px; padding: 10px; font: 800 12px/1 var(--mono); }
+.pact-empty { font-size: 12px; color: var(--dim2); }
+
+.echo-btn { width: 100%; margin-top: 12px; padding: 15px; font: 800 14px/1 var(--mono); }
+.echo-note { font-size: 11.5px; line-height: 1.5; color: var(--dim); }
+@media (max-width: 720px) {
+  .pact-offers { grid-template-columns: 1fr; }
+  .ch-btn { grid-row: auto; grid-column: 1; }
+}

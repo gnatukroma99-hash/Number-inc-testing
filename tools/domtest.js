@@ -1250,6 +1250,137 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('кнопка БУМА срабатывает', state.res.delta > deltaBeforeBang && (state.meta.bangs || 0) >= 2,
     'Δ ' + deltaBeforeBang + ' → ' + state.res.delta + ', бУМов ' + state.meta.bangs);
 
+  section('5i. Испытания ⚑ (запрет за постоянную награду)');
+  state.N = G.BN.fromLog10(12); state.D = 12;
+  state.res.delta = 300; state.res.energy = 0; state.res.prime = 0;
+  state.meta.challenge = null; state.meta.challenges = [];
+  state.mech.challenges = null;
+  const chList = G.challenges.list();
+  check('испытаний в данных 5', chList.length === 5, chList.map((c) => c.id).join(','));
+  check('вход требует Δ', (function () {
+    state.res.delta = 1;
+    const no = G.challenges.canStart(state, 'ch_nosum');
+    state.res.delta = 300;
+    return no === false && G.challenges.canStart(state, 'ch_nosum') === true;
+  })());
+
+  const dtFree = G.growth.dt(state);
+  const dChBefore = state.res.delta;
+  G.challenges.start(state, 'ch_slow');               /* ΔT ×2 */
+  check('вход списывает Δ', state.res.delta === dChBefore - 6, 'Δ ' + dChBefore + ' → ' + state.res.delta);
+  check('испытание активно', (G.challenges.active(state) || {}).id === 'ch_slow');
+  check('запрет ΔT действует', Math.abs(G.growth.dt(state) / dtFree - 2) < 1e-9,
+    'ΔT ×' + (G.growth.dt(state) / dtFree).toFixed(2));
+  G.challenges.stop(state);
+  check('выход снимает запрет', Math.abs(G.growth.dt(state) - dtFree) < 1e-9);
+
+  /* blocked() — общий механизм: движок спрашивает и пропускает механики */
+  state.res.delta = 300; state.mech.glyphs = null;
+  const gset = G.glyphs.data(state);
+  gset.slots[0] = { id: 77, digit: 0, rarity: 'legend', profile: 'greed' };
+  const mFreeAll = G.growth.M(state);
+  const realBlocked = G.challenges.blocked;
+  G.challenges.blocked = (st, id) => id === 'glyphs';
+  const mBlockedGlyph = G.growth.M(state);
+  G.challenges.blocked = realBlocked;
+  check('движок уважает blocked(): механика выпадает из M', mBlockedGlyph < mFreeAll,
+    'M ' + mBlockedGlyph.toFixed(1) + ' < ' + mFreeAll.toFixed(1));
+
+  /* прохождение испытания: доходим до цели */
+  state.res.delta = 300;
+  G.challenges.start(state, 'ch_nosum');
+  check('заблокирована сумма цифр', G.challenges.blocked(state, 'digitsum'));
+  check('цель ещё не достигнута', G.challenges.progress(state) < 1);
+  state.N = G.BN.fromLog10(45); state.D = 45;
+  const passed = G.challenges.check(state);
+  check('испытание зачтено при достижении цели', !!passed &&
+    G.challenges.done(state).indexOf('ch_nosum') >= 0, JSON.stringify(G.challenges.done(state)));
+  check('активное сброшено, забег схлопнут', G.challenges.active(state) === null &&
+    G.growth.D(state) < 1, 'D=' + G.growth.D(state).toFixed(2));
+  check('награда осталась навсегда (M ×1.25)', Math.abs(G.challenges.mult(state) - 1.25) < 1e-9,
+    'M ×' + G.challenges.mult(state));
+  check('запрет снят после прохождения', !G.challenges.blocked(state, 'digitsum'));
+  G.resetScopes(state, ['run']);
+  check('награда переживает перерождение', G.challenges.done(state).indexOf('ch_nosum') >= 0);
+
+  section('5j. Сделки ✍ и Эхо ⟲');
+  state.N = G.BN.fromLog10(12); state.D = 12;
+  state.res.delta = 200;
+  let pSeed = 99;
+  G.pacts.setRng(() => { pSeed = (pSeed * 1103515245 + 12345) % 2147483648; return pSeed / 2147483648; });
+  state.mech.pacts = null;
+  const dPactBefore = state.res.delta;
+  const offers = G.pacts.reroll(state);
+  check('реролл даёт 3 предложения и берёт Δ',
+    offers.length === G.content.pacts.offers && state.res.delta === dPactBefore - G.content.pacts.rerollCost,
+    offers.length + ' шт, Δ ' + dPactBefore + ' → ' + state.res.delta);
+  check('у предложения есть сила', offers.every((o) => o.k >= 0.85 && o.k <= 1.15),
+    offers.map((o) => o.k).join(' · '));
+
+  const mBeforePact = G.growth.M(state);
+  const tookPact = G.pacts.accept(state, 0);
+  const eff = G.pacts.effects(state);
+  check('сделка принята и что-то меняет', !!tookPact &&
+    (Math.abs(eff.M - 1) > 1e-9 || Math.abs(eff.energy - 1) > 1e-9 || Math.abs(eff.dt - 1) > 1e-9),
+    (G.pacts.find(tookPact.tpl) || {}).name + ' → M ×' + eff.M.toFixed(2) + ', ⌁ ×' + eff.energy.toFixed(2));
+  check('сделка доходит до движка', Math.abs(G.growth.M(state) - mBeforePact * eff.M) < Math.abs(mBeforePact) * 1e-9,
+    'M ' + mBeforePact.toFixed(1) + ' → ' + G.growth.M(state).toFixed(1));
+  const mAfterOne = G.pacts.effects(state).M;
+  G.pacts.reroll(state, true);
+  G.pacts.accept(state, 0);
+  check('новая сделка заменяет старую, а не суммируется',
+    Math.abs(G.pacts.effects(state).M - mAfterOne * mAfterOne) > 1e-6 || G.pacts.data(state).taken === 2,
+    'принято сделок: ' + G.pacts.data(state).taken);
+  G.pacts.drop(state);
+  check('отказ снимает эффекты', Math.abs(G.pacts.effects(state).M - 1) < 1e-9);
+
+  /* эхо */
+  state.res.delta = 200;
+  state.mech.echo = null;
+  state.stats.bestD = 120;
+  const dEchoBefore = state.res.delta;
+  check('эхо покупается за Δ', G.echo.buy(state) === true && state.res.delta === dEchoBefore - G.content.echo.cost,
+    'Δ ' + dEchoBefore + ' → ' + state.res.delta);
+  check('эхо сразу включено', G.echo.isOn(state));
+  const echoRate = G.echo.rate(state);
+  const organic = Math.log10(G.growth.M(state)) / G.growth.dt(state);
+  check('скорость эха положительная и не больше половины обычного роста',
+    echoRate > 0 && echoRate <= (G.content.echo.maxShare * organic) + 1e-9,
+    echoRate.toFixed(3) + ' цифр/с (обычный рост ' + organic.toFixed(3) + ')');
+  const dBeforeTick = G.growth.D(state);
+  G.echo.tick(state, 1);
+  check('эхо реально двигает D', G.growth.D(state) > dBeforeTick,
+    dBeforeTick.toFixed(2) + ' → ' + G.growth.D(state).toFixed(2));
+  check('включённое эхо замедляет ΔT',
+    Math.abs(G.registry.mechanic('echo').dtMult(state) - G.content.echo.dtMult) < 1e-9,
+    'ΔT ×' + G.registry.mechanic('echo').dtMult(state));
+  G.echo.toggle(state);
+  check('выключенное эхо ничего не даёт', G.echo.rate(state) === 0 &&
+    G.registry.mechanic('echo').dtMult(state) === 1);
+  G.echo.toggle(state);
+
+  /* доски */
+  for (const id of ['challenges', 'pacts', 'echo']) {
+    click(dockBtns().find((b) => b.dataset.id === id));
+    G.ui.app.render(state);
+    check('доска ' + id + ' открылась', !!doc.querySelector('#board .board-body'),
+      doc.querySelectorAll('#board .board-body').length + ' блоков');
+  }
+  state.res.delta = 300;
+  click(dockBtns().find((b) => b.dataset.id === 'challenges'));
+  G.ui.app.render(state);
+  check('доска испытаний: 5 карточек', doc.querySelectorAll('#board .ch-card').length === 5,
+    doc.querySelectorAll('#board .ch-card').length + ' шт');
+  const chBtn = Array.from(doc.querySelectorAll('#board .ch-card:not(.done) .ch-btn'))
+    .find((b) => !b.disabled);
+  const deltaCh = state.res.delta;
+  click(chBtn);
+  check('кнопка «начать» запускает испытание тапом',
+    !!G.challenges.active(state) && state.res.delta < deltaCh,
+    'активно: ' + (G.challenges.active(state) || {}).id);
+  G.challenges.stop(state);
+  G.pacts.setRng(null);
+
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
   G.debug.setD(120);
