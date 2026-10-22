@@ -105,6 +105,9 @@ if (!rows.length) {
   console.log('----------------------------------------------------');
   console.log('Первый прогон: ' + first.toFixed(1) + ' мин ' +
     (first >= 60 ? 'OK (>= 60)' : 'ПРОБЛЕМА (< 60!)'));
+  /* AGENTS §1.4.1: первый забег — не быстрее 60 минут. Раньше это видел
+     только человек в выводе; теперь это ещё и код возврата — для CI. */
+  if (first < 60) process.exitCode = 1;
   if (rows.length > 1) {
     console.log('Ускорение: ' + rows.slice(1).map((r) => '#' + r.run + ' ' + r.minutes.toFixed(1) + ' мин').join(' · '));
   }

@@ -1,5 +1,7 @@
 # ЧИСЛО — number incremental
 
+[![CI](https://github.com/gnatukroma99-hash/Number-inc-testing/actions/workflows/ci.yml/badge.svg)](https://github.com/gnatukroma99-hash/Number-inc-testing/actions/workflows/ci.yml)
+
 Браузерный **идл-инкрементал** про число, которое растёт само. Каждые `ΔT` секунд `N = N × M`.
 Твои цифры — это не просто счёт: **значащие цифры** мантиссы и **порядок величины** дают бонусы
 (сумма цифр, простые цифры, цифровой корень, паттерны, простые разряды).
@@ -12,7 +14,7 @@
 
 Онлайн-версия (если включён GitHub Pages): `https://<твой-логин>.github.io/<репозиторий>/`
 
-## Что уже есть (v0.12.2)
+## Что уже есть (v0.12.3)
 
 | Система | Статус |
 |---|---|
@@ -44,6 +46,8 @@
 | Автосейв, экспорт/импорт, оффлайн (50 %, до 8 ч) | ✅ |
 | **Облачные сейвы — приватный GitHub Gist** + автосинхронизация | ✅ |
 | **Режим разработчика** — ускорение всей игры ×1…×100 в настройках | ✅ |
+| **CI на GitHub Actions** — checkall → domtest → sim → bench на каждый пуш; бейдж выше | ✅ |
+| **Одна кнопка на релиз** — `PUBLISH.bat`: бамп версии → тесты → коммит → тег → пуш | ✅ |
 | БОЛЬШОЙ БУМ, Ярус 2, ещё ~14 механик Яруса 1 | 🚧 в плане |
 
 ## Управление
@@ -65,6 +69,9 @@ src/mechanics/      по папке на механику (index.js + board.js):
 src/ui/             главное число, доки, доски, настройки, тосты
 tools/sim.js        симулятор баланса по формулам (node)
 tools/bench.js      прогон реального кода src/ + перерождения (node)
+tools/bump.js       версия одной командой: VERSION · G.VERSION · ?v= · package*.json
+.github/workflows/  ci.yml — GitHub Actions: checkall → domtest → sim → bench
+PUBLISH.bat         одна кнопка на релиз (бамп + тесты + коммит + тег + пуш), PULL.bat — забрать
 docs/               ТЗ, ARCHITECTURE, MECHANICS, CHANGELOG, GIT
 ```
 

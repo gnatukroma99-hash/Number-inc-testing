@@ -1,0 +1,65 @@
+# .github/workflows/ci.yml — проверки «ЧИСЛА» на каждый пуш и PR.
+# Что гоняется (в том же порядке, что требует AGENTS §1.4.1 / CONTEXT §0):
+#   checkall → domtest (jsdom) → sim (баланс) → bench (1e308 за >= 60 мин)
+# shot.js (скриншоты) в CI не запускается: ему нужен настоящий Chrome,
+# он остаётся локальным инструментом агента.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# новый пуш в ту же ветку отменяет прошлый прогон — не тратим минуты на устаревшее
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: checkall + domtest + sim + bench
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # puppeteer-core в devDependencies не скачивает браузер — установка дешёвая
+      - name: npm ci
+        run: npm ci --no-audit --no-fund
+
+      # синтаксис, версии, ?v=, подключения скриптов, нет ESM и ^
+      - name: checkall — версии и подключения
+        run: node tools/checkall.js
+        env:
+          TOOL_LIMIT: 120
+
+      # реальный UI в jsdom: цикл, доски, клики, дерево, P1, сейв, зум
+      - name: domtest — UI в jsdom
+        run: node tools/domtest.js
+        env:
+          TOOL_LIMIT: 300
+          # перф-порог domtest (мс/кадр). Локально 4 мс; на общих раннерах
+          # он шумит, поэтому в CI проверяем только грубые регрессии (>10x).
+          PERF_MS: 40
+
+      # баланс по формулам: печатает кривую D(t) и время до 1e308
+      - name: sim — баланс
+        run: node tools/sim.js 160 900
+        env:
+          TOOL_LIMIT: 120
+
+      # реальный код src/ + перерождения; падает, если 1e308 не за 60+ мин
+      - name: bench — время до 1e308
+        run: node tools/bench.js 1 300
+        env:
+          TOOL_LIMIT: 600

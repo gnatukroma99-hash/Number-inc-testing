@@ -18,6 +18,9 @@ const { JSDOM, VirtualConsole } = require('jsdom');
 
 const ROOT = path.join(__dirname, '..');
 const VERBOSE = process.argv.indexOf('--verbose') >= 0;
+/* порог производительности render(), мс/кадр. В CI общие раннеры шумят,
+   поэтому там он поднимается переменной окружения PERF_MS (см. .github). */
+const PERF_MS = Number(process.env.PERF_MS || 0) || 4;
 
 /* ---------- отчёт ---------- */
 let fails = 0;
@@ -745,7 +748,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   }
   const rMs = (Date.now() - t0) / 300;
   check('render() без ошибок', errors.length === 0, errors.join(' | '));
-  check('render() быстрый (< 4 мс/кадр)', rMs < 4, rMs.toFixed(2) + ' мс/кадр');
+  check('render() быстрый (< ' + PERF_MS + ' мс/кадр)', rMs < PERF_MS, rMs.toFixed(2) + ' мс/кадр');
 
   section('9. Мусор в DOM');
   const bad = scanBadText(doc);

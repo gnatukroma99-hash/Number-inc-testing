@@ -11,14 +11,16 @@
 
 ## 0. Быстрый старт (TL;DR)
 
-- **Версия: v0.12.2** (`VERSION`, `G.VERSION` в `src/systems/state.js`, `?v=0.12.2` в `index.html`,
+- **Версия: v0.12.3** (`VERSION`, `G.VERSION` в `src/systems/state.js`, `?v=0.12.3` в `index.html`,
   `package.json`, `package-lock.json` — всё синхронно, проверяется `tools/checkall.js`).
+  Бамп одной командой: `node tools/bump.js [patch|minor|major|x.y.z]` — правит все 5 мест сразу.
 - **Репозиторий:** `https://github.com/gnatukroma99-hash/Number-inc-testing` (ветка `main`).
-  - закоммичено: **`f1ea9cb v0.12.1: update`** (до него `9b7b3e2 v0.12.0`, `2cb… v0.11.0`…);
-  - теги есть до **v0.12.1**; **незакоммичено — v0.12.2** (ждёт `PUSH_VERSION.bat`).
-  - чтобы выпустить следующую версию: бамп версий → `PUSH_VERSION.bat`.
+  - закоммичено: **`v0.12.2: update`** (`e59666c`); теги есть до **v0.12.2**;
+    **незакоммичено — v0.12.3** (CI + автопубликация), ждёт пуша.
+  - чтобы выпустить следующую версию: `PUBLISH.bat` (одна кнопка) **или** `node tools/bump.js` +
+    `git commit/tag/push` — агент с доступом к git делает это сам (AGENTS §5.1).
 - **GitHub Pages:** `https://gnatukroma99-hash.github.io/Number-inc-testing/`
-  (на сайте должна быть 0.12.2 — проверить в ⚙ → Настройки; после каждого пуша нужен Ctrl+F5).
+  (на сайте должна быть 0.12.3 — проверить в ⚙ → Настройки; после каждого пуша нужен Ctrl+F5).
 - **Инструменты агента:** Git 2.56, Node v26.10.0, `bash`, интернет,
   **jsdom** (UI-тесты) и **puppeteer-core + локальный Chrome/Edge** (скриншоты). Перед первым
   прогоном в новой копии: `npm i`.
@@ -122,11 +124,14 @@ D  = log10(N)                                   (метрика прогресс
 my adblock/
 ├── CONTEXT.md              ← этот файл
 ├── AGENTS.md               ← правила агента, процесс, версионирование, правило баланса
-├── README.md               ← лицо репозитория (v0.12.2)
-├── VERSION                 ← 0.8.2
-├── index.html              ← запуск игры (file:// или Pages); у скриптов ?v=0.8.2
+├── README.md               ← лицо репозитория (v0.12.3) + бейдж CI
+├── VERSION                 ← 0.12.3
+├── index.html              ← запуск игры (file:// или Pages); у скриптов ?v=0.12.3
 ├── package.json            ← только инструменты (jsdom, puppeteer-core) + npm-скрипты
-├── PUBLISH_SETUP.bat / PUSH_VERSION.bat / GIT_STATUS.bat / MOVE_TO_GAME.bat
+├── PUBLISH.bat / PULL.bat  ← одна кнопка: релиз (бамп+тесты+пуш) / забрать пуши
+├── PUBLISH_SETUP.bat / PUSH_VERSION.bat / GIT_STATUS.bat / MOVE_TO_GAME.bat  ← старые, работают
+├── .github/workflows/ci.yml ← CI: checkall → domtest → sim → bench на пуш/PR
+├── tools/bump.js           ← версия одной командой (5 мест сразу)
 ├── assets/css/style.css    ← вся вёрстка (тёмный космос, дерево-созвездие, карточки)
 ├── docs/{ТЗ,ARCHITECTURE,MECHANICS,CHANGELOG,GIT}.md
 ├── src/core/
@@ -420,9 +425,14 @@ spanMult из дерева — кэшем). Плюс панорама дерев
 
 ## 9. GitHub Pages / публикация
 
-- Публикация: `PUSH_VERSION.bat` (первый раз — `PUBLISH_SETUP.bat`), состояние — `GIT_STATUS.bat`.
-- Порядок выпуска версии: `VERSION` → `G.VERSION` в `state.js` → `?v=<версия>` у **всех** скриптов
-  и CSS в `index.html` → `package.json` → `docs/CHANGELOG.md` → `CONTEXT.md` → `.bat`.
+- Публикация — одной кнопкой: **`PUBLISH.bat`** (бамп версии → `checkall` → `domtest` → `bench` →
+  коммит `vX.Y.Z: update` → тег → пуш + теги). `PUBLISH.bat keep` — без бампа, `fast` — без тестов.
+  Забрать чужие пуши — `PULL.bat`; состояние — `GIT_STATUS.bat`; первый раз — `PUBLISH_SETUP.bat`.
+- **CI:** `.github/workflows/ci.yml` — на каждый пуш в `main` и в PR GitHub гоняет
+  `checkall` → `domtest` (с `PERF_MS=40`) → `sim` → `bench`; `bench` падает с кодом 1, если первый забег
+  быстрее 60 мин. Бейдж статуса — в `README.md`, лог — вкладка Actions.
+- Порядок выпуска версии: `node tools/bump.js` (VERSION · `G.VERSION` в `state.js` · все `?v=` в
+  `index.html` · `package.json` · `package-lock.json`) → `docs/CHANGELOG.md` → `CONTEXT.md` → `.bat`.
   Нарушение `?v=` = старый JS из кэша Pages.
 - **Агент git-команды не запускает** — всегда просит нажать `.bat`.
 - «Нет анимации/старой версии на сайте» = кэш браузера: **Ctrl+F5** / DevTools → Disable cache;
@@ -482,17 +492,29 @@ spanMult из дерева — кэшем). Плюс панорама дерев
 
 ---
 
-## 13. Состояние репозитория на конец сессии №8
+## 13. Состояние репозитория на конец сессии №10
 
 ```
 git status — рабочая копия ЧИСТАЯ
-последний коммит: f1ea9cb «v0.12.1: update», тег v0.12.1 (есть теги до v0.12.1)
-Pages должен отдавать 0.12.1 (проверять в ⚙ → Настройки, после пушей — Ctrl+F5)
+последний коммит: e59666c «v0.12.2: update», теги до v0.12.2
+Pages должен отдавать 0.12.3 после пуша (проверять в ⚙ → Настройки, после пушей — Ctrl+F5)
 ```
-Проверки на момент коммита: `checkall` OK (55 скриптов) · `domtest` 158/158 · `shot` 14 скриншотов,
-0 ошибок · `bench` 82.2 / 61.6 / 49.7 мин · `sim` 77.7 мин.
+### Сессия №10 — v0.12.3: CI + версия одной кнопкой
+- **CI:** `.github/workflows/ci.yml` — на пуш в `main` и в PR гоняются `checkall` → `domtest` →
+  `sim` → `bench` (Node 22, `npm ci` с кэшем, `concurrency: cancel-in-progress`, лимит 20 мин).
+  `shot.js` в CI нет — нужен настоящий Chrome. Бейдж — в `README.md`.
+- `tools/domtest.js`: перф-порог `render()` стал переменной `PERF_MS` (по умолчанию 4 мс/кадр,
+  в CI 40). Без этого CI был бы флаки: на медленной машине тест уже падал (5.9 мс/кадр).
+- `tools/bench.js`: `if (first < 60) process.exitCode = 1` — правило «первый забег ≥ 60 мин»
+  теперь ловится кодом возврата, а не глазами (проверено: подмена порога → exit 1).
+- **`tools/bump.js`** — версия в 5 местах одной командой (`patch`/`minor`/`major`/`x.y.z`).
+- **`PUBLISH.bat`** — одна кнопка на релиз (бамп → тесты → коммит `vX.Y.Z: update` → тег → пуш);
+  `keep` — без бампа, `fast` — без тестов. **`PULL.bat`** — забрать пуши
+  (`git pull --rebase --autostash`) и показать текущую версию.
+- Проверки: `checkall` OK · `domtest` ВСЁ ОК (158, exit 0) · `bench 1 300` — 82.2 мин, exit 0 ·
+  `sim 160 900` — 77.7 мин. Правка баланса не потребовалась.
 
-### Сессия №9 — v0.12.2 (не закоммичено, ждёт `PUSH_VERSION.bat`)
+### Сессия №9 — v0.12.2 (закоммичено, тег v0.12.2): дерево и инструменты
 - Доделаны недоделки по дереву: в `tools/domtest.js` появилась функция `ptr()` — теперь реально
   проверяются **перетаскивание карты мышью**, **щипок двумя пальцами**, колесо, кнопки ⌖/вся-карта.
 - Починены 3 падавших теста: `с предком узел доступен` (сброс уже выкупленного `tree_softcap`),
@@ -504,11 +526,12 @@ Pages должен отдавать 0.12.1 (проверять в ⚙ → Нас
 - Проверки: `checkall` OK · `domtest` **ВСЁ ОК** (0 провалов) · `shot` 14 шт, 0 ошибок ·
   `bench 1 300` — **1e308 за 82.2 мин** · `sim 160 900` — **77.7 мин**.
 
-### Что делать при выпуске следующей версии1. Код → проверить (`checkall` → `domtest` → `shot` → `bench` → `sim`).
-2. Бамп: `VERSION`, `G.VERSION` в `src/systems/state.js`, `?v=` у **всех** скриптов и CSS в
-   `index.html`, `package.json`, `package-lock.json`.
+### Что делать при выпуске следующей версии
+1. Код → проверить (`checkall` → `domtest` → `shot` → `bench` → `sim`).
+2. Бамп: **`node tools/bump.js`** (один раз вместо пяти ручных правок; `patch`/`minor`/`major`/`x.y.z`).
 3. `docs/CHANGELOG.md`, `CONTEXT.md`, `README.md`.
-4. Пользователь нажимает `PUSH_VERSION.bat` (агент git не запускает).
+4. Пуш: агент с доступом к git пушит сам; иначе — пользователь нажимает **`PUBLISH.bat`**
+   (он сам бампает, тестирует, коммитит, тегает и пушит).
 
 ---
 
@@ -519,5 +542,9 @@ Pages должен отдавать 0.12.1 (проверять в ⚙ → Нас
 - **После каждой обновы:** `checkall` → `domtest` → `shot` → `bench 1 300` → `sim`
   (для крупных правок баланса/тиков — `bench 3 300`, чтобы видеть забеги 2–3).
   Первый прогон до 1e308 **не меньше 60 минут**; апгрейды должны давать заметный буст.
-- В конце сессии обновлять этот файл, `docs/CHANGELOG.md`, `VERSION`, `G.VERSION`, `?v=`, `package.json`.
-- Git-команды запускает пользователь через `.bat`; агент только проверяет состояние.
+- В конце сессии обновлять этот файл, `docs/CHANGELOG.md`, `VERSION`, `G.VERSION`, `?v=`, `package.json`
+  (или просто `node tools/bump.js`).
+- **Пуш — часть работы, а не отдельный шаг:** агент, у которого есть доступ к git, публикует сам
+  (AGENTS §5.1); пользователь получает `PULL.bat` и играет.
+- `PUBLISH_SETUP.bat`, `PUSH_VERSION.bat`, `GIT_STATUS.bat`, `MOVE_TO_GAME.bat` — старые скрипты,
+  не удалять (работают), но новый путь — `PUBLISH.bat` / `PULL.bat` / `tools/bump.js`.
