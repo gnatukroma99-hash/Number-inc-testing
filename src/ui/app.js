@@ -25,6 +25,7 @@
       G.ui.mainNumber.applySettings(state);
       G.ui.docks.init(state);
       if (G.ui.spark) G.ui.spark.mount();
+      if (G.ui.rift) G.ui.rift.mount();
 
       document.getElementById('btn-settings').addEventListener('click', () => {
         if (G.ui.settings.isOpen()) G.ui.settings.close();
@@ -51,6 +52,7 @@
     render(state) {
       G.ui.mainNumber.update(state);
       if (G.ui.spark) G.ui.spark.update(state);
+      if (G.ui.rift) G.ui.rift.update(state);
       G.ui.docks.update(state);
       if (G.ui.settings.isOpen()) {
         /* лёгкое обновление превью формата */

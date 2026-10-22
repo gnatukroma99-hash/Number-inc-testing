@@ -1381,6 +1381,123 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.challenges.stop(state);
   G.pacts.setRng(null);
 
+  section('5k. Хроно ⏱, Разлом ⌁⃠, Созвездия ✧ (активный Ярус 2)');
+  state.N = G.BN.fromLog10(12); state.D = 12;
+  state.res.delta = 300;
+
+  /* --- хроно --- */
+  state.mech.chrono = null;
+  check('хроно готово при достатке Δ', G.chrono.ready(state) === true);
+  const chDeltaBefore = state.res.delta;
+  const chLeft = G.chrono.start(state);
+  check('сжатие списывает Δ и запускается',
+    chLeft === G.content.chrono.duration && state.res.delta === chDeltaBefore - G.content.chrono.cost,
+    'Δ ' + chDeltaBefore + ' → ' + state.res.delta + ', ' + chLeft + ' с');
+  check('во время сжатия мир быстрее', G.registry.mechanic('chrono').timeScale(state) === G.content.chrono.scale,
+    '×' + G.registry.mechanic('chrono').timeScale(state));
+  check('timescale движка учитывает хроно',
+    Math.abs(G.timescale.mechScale(state) - G.content.chrono.scale) < 1e-9 &&
+    Math.abs(G.timescale.apply(state, 1) - G.content.chrono.scale) < 1e-9,
+    'dt 1 с → ' + G.timescale.apply(state, 1).toFixed(2) + ' с');
+  check('на перезарядке пуск невозможен', (function () {
+    state.res.delta = 9999;
+    const no = G.chrono.start(state);
+    return no === null && G.chrono.ready(state) === false;
+  })(), 'cd ' + Math.ceil(G.chrono.cooldown(state)) + ' с');
+  G.chrono.tick(state, G.chrono.cooldown(state) + 1);
+  check('после перезарядки снова можно', G.chrono.ready(state) === true &&
+    G.registry.mechanic('chrono').timeScale(state) === 1);
+
+  /* --- разлом --- */
+  state.mech.rift = null;
+  let rSeed = 555;
+  G.rift.setRng(() => { rSeed = (rSeed * 1103515245 + 12345) % 2147483648; return rSeed / 2147483648; });
+  const riftData = G.rift.data(state);
+  check('разлом ждёт своего часа', G.rift.visible(state) === false && riftData.nextIn > 0,
+    'через ' + Math.ceil(riftData.nextIn) + ' с');
+  G.rift.tick(state, riftData.nextIn + 0.1);
+  check('разлом открывается по таймеру', G.rift.visible(state) === true &&
+    Math.abs(G.rift.left(state) - G.content.rift.life) < 0.2, 'живёт ' + G.rift.left(state).toFixed(1) + ' с');
+  const mRiftFree = G.rift.mult(state);
+  check('разлом удваивает M и ⌁', mRiftFree === G.content.rift.mult &&
+    G.rift.energyMult(state) === G.content.rift.energyMult, 'M ×' + mRiftFree);
+  check('эффект доходит до движка', (function () {
+    const realRift = G.rift.visible;
+    G.rift.visible = () => true;
+    const withRift = G.growth.M(state);
+    G.rift.visible = () => false;
+    const noRift = G.growth.M(state);
+    G.rift.visible = realRift;
+    return withRift / noRift > 1.5;
+  })(), 'M с разломом больше ×' + G.content.rift.mult);
+  const leftBeforeTap = G.rift.left(state);
+  const added = G.rift.catchRift(state);
+  check('тап продлевает разлом', added > 0 && G.rift.left(state) > leftBeforeTap,
+    leftBeforeTap.toFixed(1) + ' → ' + G.rift.left(state).toFixed(1) + ' с');
+  for (let i = 0; i < 20; i++) G.rift.catchRift(state);
+  check('продление ограничено сверху', G.rift.left(state) <= G.content.rift.maxLife + 1e-9,
+    'макс ' + G.rift.left(state).toFixed(1) + ' с');
+  G.rift.tick(state, G.rift.left(state) + 0.1);
+  check('разлом закрывается сам', G.rift.visible(state) === false && G.rift.mult(state) === 1);
+  G.rift.setRng(null);
+
+  /* --- созвездия --- */
+  /* в этом прогоне достижения уже открыты: для проверки «закрыт/открыт» чистим коллекцию */
+  G.achievements.reset(state);
+  state.meta.sign = null;
+  const signs = G.constellations.list();
+  check('созвездий в данных 6', signs.length === 6, signs.map((s) => s.id).join(','));
+  check('знаки закрыты без достижений', G.constellations.active(state) === null &&
+    G.constellations.unlocked(state)[signs[0].id] === false);
+  check('нельзя выбрать закрытый знак', G.constellations.choose(state, signs[0].id) === null);
+  /* открываем нужные достижения условиями и проверяем выбор */
+  const signScales = G.constellations.find('c_scales');
+  for (const id of signScales.requires) {
+    if (!G.achievements.has(state, id)) state.meta.achievements.push(id);
+  }
+  check('знак открылся по связке достижений', G.constellations.unlocked(state)[signScales.id] === true);
+  const mSignBefore = G.growth.M(state);
+  const picked = G.constellations.choose(state, signScales.id);
+  check('знак выбирается', !!picked && G.constellations.active(state).id === signScales.id);
+  check('эффект знака доходит до M', Math.abs(G.growth.M(state) / mSignBefore - 1.15) < 1e-6,
+    'M ×' + (G.growth.M(state) / mSignBefore).toFixed(2));
+  check('знак живёт в мете (переживает перерождение)', (function () {
+    G.resetScopes(state, ['run']);
+    return (state.meta.sign || null) === signScales.id;
+  })());
+  G.constellations.clear(state);
+  check('знак можно снять', G.constellations.active(state) === null);
+  /* регресс движка: раньше одна механика с Infinity обнуляла ВСЕ остальные в M */
+  G.achievements.reset(state);
+  for (const id of signScales.requires) if (!G.achievements.has(state, id)) state.meta.achievements.push(id);
+  G.constellations.choose(state, signScales.id);
+  const goodM = G.growth.M(state);
+  const victim = G.registry.mechanic('spark');
+  const oldMult = victim.mult;
+  victim.mult = () => Infinity;
+  const withBad = G.growth.M(state);
+  victim.mult = oldMult;
+  check('одна плохая механика не обнуляет остальные (фикс growth.M)',
+    withBad >= goodM * 0.999, 'M с Infinity-механикой = ' + withBad.toFixed(2) + ', без неё ' + goodM.toFixed(2));
+  G.constellations.clear(state);
+
+  /* доски */
+  for (const id of ['chrono', 'rift', 'constellations']) {
+    click(dockBtns().find((b) => b.dataset.id === id));
+    G.ui.app.render(state);
+    check('доска ' + id + ' открылась', !!doc.querySelector('#board .board-body'));
+  }
+  check('доска созвездий: 6 карточек', doc.querySelectorAll('#board .sign-card').length === 6,
+    doc.querySelectorAll('#board .sign-card').length + ' шт');
+  state.res.delta = 300; state.mech.chrono = null;
+  click(dockBtns().find((b) => b.dataset.id === 'chrono'));
+  G.ui.app.render(state);
+  const chronoBtn = doc.querySelector('#board .chrono-btn');
+  const deltaChrono = state.res.delta;
+  click(chronoBtn);
+  check('кнопка сжатия работает тапом', G.chrono.left(state) > 0 && state.res.delta < deltaChrono,
+    'Δ ' + deltaChrono + ' → ' + state.res.delta);
+
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
   G.debug.setD(120);

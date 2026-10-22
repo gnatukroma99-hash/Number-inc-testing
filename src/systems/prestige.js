@@ -20,7 +20,15 @@
       let mult = G.growth.upgProduct(state, 'coreGainMult');
       if (!isFinite(mult) || mult <= 0) mult = 1;
       const add = G.growth.upgSum(state, 'coreGainAdd');
-      let total = Math.floor(base * mult + (isFinite(add) ? add : 0));
+      /* множители от механик (созвездия «Дракон» и будущие) — общий хук coreGainMult */
+      let mechK = 1;
+      for (const m of G.registry.mechanics()) {
+        if (m.isUnlocked && !m.isUnlocked(state)) continue;
+        if (typeof m.coreGainMult !== 'function') continue;
+        const k = m.coreGainMult(state);
+        if (isFinite(k) && k > 0) mechK *= k;
+      }
+      let total = Math.floor(base * mult * mechK + (isFinite(add) ? add : 0));
       /* «Узловая награда»: +◆ за каждый купленный узел дерева */
       const perNode = G.growth.upgSum(state, 'coreGainPerNode');
       if (perNode > 0) total += Math.floor(P.treeNodes(state) * perNode);

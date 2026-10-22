@@ -23,7 +23,15 @@
       let mult = G.growth.upgProduct(state, 'deltaGainMult');
       if (!isFinite(mult) || mult <= 0) mult = 1;
       const add = G.growth.upgSum(state, 'deltaGainAdd');
-      const total = Math.floor(base * mult + (isFinite(add) ? add : 0));
+      /* × от механик (созвездие «Орион») — общий хук deltaGainMult */
+      let mechK = 1;
+      for (const m of G.registry.mechanics()) {
+        if (m.isUnlocked && !m.isUnlocked(state)) continue;
+        if (typeof m.deltaGainMult !== 'function') continue;
+        const k = m.deltaGainMult(state);
+        if (isFinite(k) && k > 0) mechK *= k;
+      }
+      const total = Math.floor(base * mult * mechK + (isFinite(add) ? add : 0));
       return total > 0 ? total : 0;
     },
 

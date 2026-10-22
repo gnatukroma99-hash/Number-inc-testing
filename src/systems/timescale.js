@@ -26,9 +26,21 @@
       return T.clamp(s.devSpeed);
     },
 
+    /* ускорение от механик (Хроно и любые будущие): общий хук timeScale, имён движок не знает */
+    mechScale(state) {
+      let k = 1;
+      for (const m of G.registry.mechanics()) {
+        if (m.isUnlocked && !m.isUnlocked(state)) continue;
+        if (typeof m.timeScale !== 'function') continue;
+        const v = m.timeScale(state);
+        if (isFinite(v) && v > 0) k *= v;
+      }
+      return isFinite(k) && k > 0 ? k : 1;
+    },
+
     /* применить к шагу времени (dt уже ограничен вызывающим кодом) */
     apply(state, dt) {
-      const k = T.scale(state);
+      const k = T.scale(state) * T.mechScale(state);
       return k === 1 ? dt : dt * k;
     }
   };

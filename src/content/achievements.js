@@ -82,6 +82,14 @@
       { id: 'a_echo', icon: '⟲', name: 'Эхо числа', desc: 'Включить эхо',
         cond: 'echoOn >= 1' },
 
+      /* --- Ярус 2: хроно, разлом, созвездия (v0.16.0) --- */
+      { id: 'a_chrono', icon: '⏱', name: 'Сжатие', desc: 'Включить хроно',
+        cond: 'chronoUsed >= 1' },
+      { id: 'a_rift', icon: '⌁', name: 'Разлом', desc: 'Продлить разлом',
+        cond: 'riftCaught >= 1' },
+      { id: 'a_sign', icon: '✧', name: 'Созвездие', desc: 'Выбрать знак',
+        cond: 'sign >= 1' },
+
       { id: 'a_hour', icon: 'clock', name: 'Час в игре', desc: 'Час суммарного времени',
         cond: 'playtime >= 3600' },
       { id: 'a_collector', icon: 'trophy', name: 'Коллекционер', desc: 'Открыть 12 достижений',
