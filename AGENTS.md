@@ -215,7 +215,7 @@
 | `game/docs/GIT.md` | публикация версий на GitHub | при смене схемы версий |
 | `.agents/skills/` | скиллы pi: `ponytail` (ленивый режим: минимальный дифф), `-review`, `-audit`, `-debt`, `-gain`, `-help`; плюс стянутые из `Aver005/agent-skills`: `ui-design`, `frontend-design`, `web-design-guidelines`, `responsive-design`, `code-review`, `refactor`, `changelog-automation` (см. `.agents/skills/SKILLS-SOURCES.md`) | при обновлении скиллов |
 
-> Пока `MOVE_TO_GAME.bat` не запущен — пути без `game/` (всё в корне).
+> Пути без `game/` — всё в корне репозитория (игра в ветке `main`, адблокер — ветка `adblock`, бот — ветка `bot`).
 
 > **Скилл `ponytail`** (MIT, dietary-ponytail v5.3.2, `PONYTAIL-LICENSE` рядом) — вызывается
 > по `/skill:ponytail` или словами «ponytail / be lazy». Команд `/ponytail lite|full|ultra` нет

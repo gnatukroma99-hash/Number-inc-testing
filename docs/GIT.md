@@ -11,7 +11,7 @@
 Нажми `Win + X` → **Терминал** (или PowerShell), затем построчно вставь:
 
 ```powershell
-cd "C:\Users\HomePC\Desktop\my adblock"
+cd "C:\Users\HomePC\Desktop\Number-inc-testing"
 git --version
 git config --global user.name "Твой Ник"
 git config --global user.email "твой@email"
@@ -62,9 +62,6 @@ git push -u origin main
 Settings → Pages → Source: **Deploy from a branch** → Branch: **main** / **root** → Save.
 
 Игра откроется по адресу `https://<username>.github.io/<repo>/`
-
-⚠️ Если ты запускал `MOVE_TO_GAME.bat`, `index.html` лежит в `game/` — тогда адрес
-`https://<username>.github.io/<repo>/game/`. Проще **не** переносить в `game/`, пока не настроен Pages.
 
 ⚠️ GitHub Pages **не поддерживает `localStorage` одинаково** — сейв работает, но облачный Gist лучше проверять локально.
 
