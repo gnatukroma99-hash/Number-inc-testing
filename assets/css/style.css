@@ -3121,3 +3121,11 @@ body.menu-open { overflow: hidden; }
   .dock-group-items.open .dock { flex: 0 0 auto; }
   #docks { max-height: none; overflow: visible; }
 }
+
+/* v0.23.1: на телефоне крошка остаётся, а чипы соседних досок скрыты —
+   их роль выполняет ряд доков выше (иначе два одинаковых ряда) */
+@media (max-width: 760px) {
+  .board-head-bar { padding: 6px 10px; }
+  .bh-chips { display: none; }
+  .bh-crumb { font-size: 10px; }
+}
