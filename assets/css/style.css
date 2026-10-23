@@ -3424,3 +3424,10 @@ body.no-anim.fx-chrono::after { display: none; }
 @media (max-width: 620px) {
   .pattern-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
 }
+
+/* v0.27.0: на полноэкранных картах (деревья) док событий не должен наезжать на зум */
+body.board-full .fx-dock { bottom: 190px; }
+@media (max-width: 760px) {
+  body.board-full .fx-dock { bottom: 8px; }
+  body.board-full .tree-zoom { bottom: 76px; }
+}
