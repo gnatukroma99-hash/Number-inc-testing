@@ -25,7 +25,7 @@ const OUT = path.join(__dirname, 'shots');
 const BOARDS = process.argv.slice(2).length
   ? process.argv.slice(2)
   : ['core', 'combo', 'digitsum', 'analysis', 'shop', 'primeranks', 'sieve', 'mirror', 'patterns', 'slot', 'prestige', 'tree',
-    'bigbang', 'glyphs', 'challenges', 'pacts', 'duplicator', 'pacttree', 'echo', 'chrono', 'rift', 'constellations',
+    'bigbang', 'glyphs', 'challenges', 'pacts', 'duplicator', 'pacttree', 'echo', 'chrono', 'rift', 'constellations', 'cracks',
     'breakthrough', 'psitree', 'omega', 'turn', 'turntree', 'achievements'];
 
 function findBrowser() {
@@ -88,6 +88,8 @@ const PREP = `
   if (s.mech.duplicator) { s.mech.duplicator = { bought: true, on: true, shadow: 12.4, penalty: 0, merges: 2, best: 20 }; }
   if (s.mech.rift) { s.mech.rift = { left: 11, nextIn: 0, opened: 3, caught: 7, bestLeft: 30 }; }
   if (s.mech.challenges) { s.meta.challenges = ['ch_nosum']; }
+  /* трещина ⟁ — видимая на кадре (осколок в случайной точке экрана) */
+  s.mech.cracks = { nextIn: 0, left: 8.4, broken: 9, best: 9, spawns: 9, seed: 0.42 };
   /* Ярус 3: стена 1e1000 снята — чтобы снять ПРОБОЙ и Ψ-дерево, и были Ψ на покупки */
   s.meta.passedBarriers.push('wall_1000');
   s.res.psi = 60;

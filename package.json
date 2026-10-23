@@ -1,6 +1,6 @@
 {
   "name": "chislo-number-incremental",
-  "version": "0.32.0",
+  "version": "0.33.0",
   "private": true,
   "description": "ЧИСЛО — браузерный идл-инкрементал. Сама игра работает из file:// без сборки; package.json нужен только для инструментов агента.",
   "scripts": {

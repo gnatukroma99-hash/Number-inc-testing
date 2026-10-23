@@ -2429,7 +2429,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const menuCardIds = () => Array.from(doc.querySelectorAll('.menu-card')).map((c) => c.dataset.id);
   const uniqCards = () => new Set(menuCardIds()).size;   /* есть повторы из «Закреплённых»/«Недавних» */
   const allCards = uniqCards();
-  check('в меню все доски', allCards === 30, allCards + ' уникальных карточек (29 механик + «Рост»)');
+  check('в меню все доски', allCards === 31, allCards + ' уникальных карточек (30 механик + «Рост»)');
 
   setSearch('дерев');
   const foundIds = menuCardIds();
@@ -2511,6 +2511,82 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('поиск и закрепление без ошибок в логе', errors.length === 0, errors.join(' | '));
 
   section('5w. Паттерны мантиссы — узоры ловятся сами (v0.27.0)');
+  section('5w0. Трещины ⟁ — актив Яруса 3 (v0.33.0)');
+  check('данные трещин есть', !!G.content.cracks && G.content.cracks.minD === 1000);
+  state.meta.passedBarriers = ['wall_308'];
+  state.meta.breaks = 0;
+  state.res.psi = 0;
+  state.N = G.BN.fromLog10(50); state.D = 50;
+  state.mech.cracks = null;
+  check('без ПРОБОЯ трещин нет', G.cracks.open(state) === false, 'D=50');
+  state.meta.passedBarriers = ['wall_308', 'wall_1000'];
+  state.meta.breaks = 1;
+  state.mech.cracks = { nextIn: 0.1, left: 0, broken: 0, best: 0, spawns: 0, seed: 0 };
+  check('после ПРОБОЯ трещины открываются', G.cracks.open(state) === true);
+  G.cracks.tick(state, 0.2);
+  check('трещина спавнится по таймеру', G.cracks.visible(state) === true &&
+    G.cracks.left(state) > 1, 'жизнь ' + G.cracks.left(state).toFixed(1) + ' с');
+  const crackSpan0 = G.cracks.spanMult(state);
+  const crackPsi0 = state.res.psi || 0;
+  const crackReward = G.cracks.crack(state);
+  check('тап по трещине даёт Ψ', crackReward > 0 && state.res.psi > crackPsi0,
+    'Ψ ' + crackPsi0.toFixed(1) + ' → ' + state.res.psi.toFixed(2));
+  check('трещина ломается один раз', G.cracks.visible(state) === false && G.cracks.crack(state) === 0);
+  check('сломанная трещина расширяет плоскость навсегда',
+    G.cracks.spanMult(state) > crackSpan0 && G.growth.upgProduct(state, 'spanMult') >= 1,
+    'span ×' + G.cracks.spanMult(state).toFixed(4));
+  check('span от трещин доходит до движка', (function () {
+    const before = (function () {
+      const d = G.cracks.data(state);
+      const saved = d.broken;
+      d.broken = 0;
+      for (const m of G.registry.mechanics()) { /* прогрев */ }
+      const v = G.cracks.spanMult(state);
+      d.broken = saved;
+      return v;
+    })();
+    return before === 1 && G.cracks.spanMult(state) > 1;
+  })());
+  check('апгрейд «Ψ из трещины» работает', (function () {
+    state.res.psi = 100;
+    const before = G.cracks.reward(state);
+    const u = G.registry.upgrade('cr_give');
+    state.upg.cr_give = 0;
+    if (!G.upgrades.buy(state, u)) return false;
+    return G.cracks.reward(state) > before;
+  })(), 'Ψ за трещину ' + G.cracks.reward(state).toFixed(2));
+  check('апгрейд «Частые трещины» сокращает паузу', (function () {
+    const before = G.cracks.gap(state);
+    state.upg.cr_rate = 2;
+    const after = G.cracks.gap(state);
+    state.upg.cr_rate = 0;
+    return after < before;
+  })());
+  check('трещины не сбрасываются перерождением', (function () {
+    const keep = G.cracks.broken(state);
+    G.resetScopes(state, ['run']);
+    return G.cracks.broken(state) === keep;
+  })(), 'сломано ' + G.cracks.broken(state));
+  check('достижение «Первая трещина» открывается', (function () {
+    state.meta.achievements = (state.meta.achievements || []).filter((id) => id !== 'a_crack1');
+    G.achievements.check(state);
+    return G.achievements.has(state, 'a_crack1');
+  })());
+  check('плавающий осколок появляется при открытой трещине', (function () {
+    G.cracks.data(state).left = 6;
+    state.mech.cracks.seed = 0.77;
+    G.ui.cracks.update(state);
+    const el = doc.querySelector('.crack-float');
+    return !!el && el.classList.contains('visible') && /Ψ/.test(el.textContent);
+  })(), doc.querySelector('.crack-float') ? doc.querySelector('.crack-float').textContent : 'нет элемента');
+  check('тап по осколку ломает трещину', (function () {
+    const el = doc.querySelector('.crack-float');
+    if (!el) return false;
+    const before = G.cracks.broken(state);
+    click(el);
+    return G.cracks.broken(state) === before + 1;
+  })());
+
   const patCfg = G.content.patterns;
   check('типов узоров в данных', (patCfg.types || []).length === 5, (patCfg.types || []).map((t) => t.id).join(','));
   check('у доски паттернов есть цвет и ярус',

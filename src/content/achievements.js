@@ -111,6 +111,12 @@
       { id: 'a_wall1000', icon: 'brick', name: 'Тысяча', desc: 'Дойти до 1000 цифр', cond: 'wall1000 >= 1' },
       { id: 'a_ch9', icon: 'trophy', name: 'Девять кругов', desc: 'Пройти 9 испытаний', cond: 'challenges >= 9' },
 
+      /* --- Ярус 3: трещины ⟁ (v0.33.0) --- */
+      { id: 'a_crack1', icon: 'brick', name: 'Первая трещина', desc: 'Сломать трещину ⟁',
+        cond: 'cracks >= 1' },
+      { id: 'a_crack25', icon: 'burst', name: 'Стеклодув', desc: 'Сломать 25 трещин ⟁',
+        cond: 'cracks >= 25' },
+
       /* --- Ярус 4: ОБОРОТ ⧜ и дерево ⧜ (v0.32.0) --- */
       { id: 'a_d10000', icon: 'brick', name: 'Порядок', desc: 'Дойти до 10 000 цифр',
         cond: 'D >= 10000' },

@@ -3802,3 +3802,240 @@ body.no-anim .theme-bloom .tree-hub::after,
 body.no-anim .theme-bloom .hub-core,
 body.no-anim .theme-bloom .node.ready .node-orb,
 body.no-anim .theme-bloom .tree-parallax::after { animation: none !important; }
+
+/* ================= v0.33.0 — ТРЕЩИНЫ ⟁ =================
+   Направление: «стекло под напряжением». Не круглая кнопка, а осколок с неровным
+   силуэтом (clip-path), светящимся швом и разлётом на три части при ударе.
+   Цвет — раскалённый янтарь на холодном стекле: единственный тёплый акцент в Ярусе 3. */
+
+.crack-float {
+  position: fixed;
+  z-index: 60;
+  width: 104px;
+  height: 104px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(var(--tilt, 0deg)) scale(.72);
+  transition: opacity .18s ease-out, transform .18s cubic-bezier(.2, 1.5, .4, 1);
+  filter: drop-shadow(0 10px 26px rgba(0, 0, 0, .55));
+  -webkit-tap-highlight-color: transparent;
+}
+.crack-float.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) rotate(var(--tilt, 0deg)) scale(1);
+}
+.crack-float:focus-visible { outline: 2px solid #ffb066; outline-offset: 4px; }
+
+/* сам осколок: неровный многоугольник + подсветка изнутри */
+.crack-shard {
+  position: absolute;
+  inset: 0;
+  display: block;
+  clip-path: polygon(50% 0%, 82% 14%, 100% 46%, 92% 74%, 66% 100%, 34% 94%, 6% 70%, 0% 38%, 18% 12%);
+  background:
+    radial-gradient(120% 90% at 62% 18%, rgba(255, 214, 150, .55) 0%, rgba(255, 150, 70, .16) 38%, transparent 62%),
+    linear-gradient(160deg, rgba(255, 176, 102, .30) 0%, rgba(120, 70, 40, .18) 42%, rgba(24, 18, 14, .72) 100%),
+    rgba(14, 12, 11, .86);
+  box-shadow: inset 0 0 26px rgba(255, 150, 70, .28), inset 0 0 60px rgba(0, 0, 0, .8);
+  animation: crackBreath 2.9s ease-in-out infinite;
+  transition: filter .16s;
+}
+/* тонкий светящийся контур повторяет силуэт (clip-path не умеет border) */
+.crack-shard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(
+    50% 2%, 81% 16%, 98% 46%, 90% 73%, 66% 97%, 35% 92%, 8% 69%, 2% 38%, 19% 14%,
+    50% 2%, 50% 6%, 22% 17%, 6% 39%, 11% 67%, 36% 88%, 65% 93%, 87% 72%, 94% 47%, 78% 19%, 50% 6%
+  );
+  background: linear-gradient(150deg, rgba(255, 205, 140, .95), rgba(255, 136, 64, .45) 55%, rgba(255, 210, 150, .8));
+  opacity: .85;
+}
+/* шов: две тонкие трещины, пересекающие осколок */
+.crack-seam {
+  position: absolute;
+  z-index: 2;
+  left: 8%;
+  top: 52%;
+  width: 84%;
+  height: 1.5px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent 4%, #fff6e6 22%, #ffb066 58%, rgba(255, 176, 102, 0) 96%);
+  transform: rotate(-27deg);
+  filter: drop-shadow(0 0 5px rgba(255, 200, 150, 1));
+  opacity: 1;
+}
+.crack-seam::after {
+  content: '';
+  position: absolute;
+  left: 34%;
+  top: -16px;
+  width: 44%;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, #fff2dc, transparent);
+  transform: rotate(58deg);
+  filter: drop-shadow(0 0 4px rgba(255, 205, 160, .95));
+}
+/* блик, ползущий по стеклу */
+.crack-glint {
+  position: absolute;
+  left: -30%;
+  top: -10%;
+  width: 60%;
+  height: 130%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .30), transparent);
+  transform: rotate(14deg);
+  animation: crackGlint 4.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.crack-label {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: -16px;
+  transform: translateX(-50%);
+  padding: 3px 9px 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 176, 102, .45);
+  background: rgba(18, 12, 8, .88);
+  font: 800 10.5px/1 var(--mono, monospace);
+  letter-spacing: .06em;
+  color: #ffd2a3;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .55);
+}
+/* таймер жизни трещины: тонкая линия, ползёт справа налево */
+.crack-timer {
+  position: absolute;
+  z-index: 3;
+  left: 16%;
+  right: 16%;
+  bottom: 11px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #ffcf99, #ff7a3c);
+  transform-origin: left center;
+  box-shadow: 0 0 8px rgba(255, 150, 70, .7);
+}
+
+/* удар: осколок раскалывается на три части */
+.crack-pieces { position: absolute; inset: 0; pointer-events: none; }
+.crack-piece {
+  position: absolute;
+  inset: 0;
+  display: block;
+  opacity: 0;
+  background: linear-gradient(160deg, rgba(255, 190, 130, .9), rgba(120, 60, 30, .5));
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+.crack-piece.p1 { clip-path: polygon(50% 0%, 100% 34%, 46% 62%); }
+.crack-piece.p2 { clip-path: polygon(100% 34%, 92% 74%, 46% 62%); }
+.crack-piece.p3 { clip-path: polygon(46% 62%, 92% 74%, 66% 100%); }
+.crack-float.shatter .crack-shard { opacity: 0; transition: opacity .1s; }
+.crack-float.shatter .crack-piece { animation: crackPiece .52s ease-out forwards; }
+.crack-float.shatter .p1 { animation-delay: 0s; }
+.crack-float.shatter .p2 { animation-delay: .04s; }
+.crack-float.shatter .p3 { animation-delay: .08s; }
+.crack-float.shatter .crack-label,
+.crack-float.shatter .crack-timer { opacity: 0; transition: opacity .12s; }
+
+@keyframes crackBreath {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50% { filter: brightness(1.16) saturate(1.12); }
+}
+@keyframes crackGlint {
+  0%, 62%, 100% { transform: translateX(0) rotate(14deg); opacity: 0; }
+  70% { opacity: .9; }
+  86% { transform: translateX(190%) rotate(14deg); opacity: 0; }
+}
+@keyframes crackPiece {
+  0% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translate3d(var(--dx, 0), var(--dy, 0), 0) rotate(var(--dr, 20deg)) scale(.8); }
+}
+.crack-piece.p1 { --dx: -26px; --dy: -22px; --dr: -28deg; }
+.crack-piece.p2 { --dx: 24px; --dy: -12px; --dr: 22deg; }
+.crack-piece.p3 { --dx: 8px; --dy: 26px; --dr: 34deg; }
+
+/* последние секунды — трещина «мигает» */
+.crack-float.fading .crack-shard { animation: crackBreath 2.9s ease-in-out infinite, crackBlink .85s steps(2, end) infinite; }
+@keyframes crackBlink { 50% { filter: brightness(.72) saturate(.85); } }
+
+@media (max-width: 720px) {
+  .crack-float { width: 84px; height: 84px; }
+  .crack-label { font-size: 9.5px; bottom: -4px; }
+}
+
+/* ---------- доска «Трещины»: плита с трещинами ---------- */
+.crack-hero {
+  position: relative;
+  flex: 0 0 auto;          /* .board-body — flex-колонка с height:100%: без этого плита сжималась */
+  min-height: 132px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 14px 0 16px;
+  padding: 18px 20px;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 150, 70, .28);
+  background:
+    linear-gradient(118deg, rgba(255, 150, 70, .10) 0%, transparent 38%),
+    repeating-linear-gradient(64deg, rgba(255, 255, 255, .05) 0 1px, transparent 1px 46px),
+    rgba(12, 10, 9, .55);
+}
+.crack-hero.open { border-color: rgba(255, 170, 90, .62); box-shadow: 0 0 34px rgba(255, 140, 60, .16) inset; }
+/* «осколок» на фоне плиты */
+.crack-hero-shard {
+  position: absolute;
+  right: -40px;
+  top: -60px;
+  width: 240px;
+  height: 240px;
+  pointer-events: none;
+  clip-path: polygon(52% 4%, 88% 26%, 96% 62%, 74% 92%, 38% 98%, 10% 74%, 4% 36%, 26% 10%);
+  background: linear-gradient(150deg, rgba(255, 180, 110, .16), transparent 62%);
+  opacity: .8;
+}
+.crack-hero-body { position: relative; z-index: 1; min-width: 0; flex: 1 1 auto; }
+.crack-hero-num {
+  font: 800 46px/1 var(--mono, monospace);
+  letter-spacing: -.02em;
+  color: #ffd2a3;
+  text-shadow: 0 0 26px rgba(255, 150, 70, .55);
+}
+.crack-hero-sub {
+  margin-top: 2px;
+  font: 800 10px/1 var(--mono, monospace);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: rgba(255, 210, 170, .62);
+}
+.crack-hero-when {
+  margin-top: 10px;
+  font: 700 12.5px/1.35 var(--sans, sans-serif);
+  color: var(--dim, #9aa6b2);
+}
+.crack-hero-line {
+  margin-top: 10px;
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, .07);
+}
+.crack-hero-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff7a3c, #ffcf99);
+  box-shadow: 0 0 12px rgba(255, 150, 70, .6);
+  transition: width .25s linear;
+}
+body.no-anim .crack-shard,
+body.no-anim .crack-glint,
+body.no-anim .crack-float.fading .crack-shard { animation: none !important; }
