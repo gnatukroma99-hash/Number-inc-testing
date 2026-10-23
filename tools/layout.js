@@ -89,9 +89,12 @@ function measure() {
 
   if (items) {
     out.itemDocks = items.querySelectorAll('.dock').length;
+    const prev = items.style.scrollBehavior;
+    items.style.scrollBehavior = 'auto';      /* иначе smooth анимирует и scrollLeft читается нулём */
     items.scrollLeft = 9999;
     out.itemsScrollWorks = items.scrollLeft > 4;
     out.itemsScrollLeft = items.scrollLeft;
+    items.style.scrollBehavior = prev;
 
     const docks = items.querySelectorAll('.dock');
     if (docks.length) {
@@ -101,8 +104,11 @@ function measure() {
     }
   }
   if (pills) {
+    const prev2 = pills.style.scrollBehavior;
+    pills.style.scrollBehavior = 'auto';
     pills.scrollLeft = 9999;
     out.pillsScrollWorks = pills.scrollLeft > 4;
+    pills.style.scrollBehavior = prev2;
   }
   out.cssRules = { total: 0, hasMinWidthRule: false, hasItemsOpen: false };
   try {
