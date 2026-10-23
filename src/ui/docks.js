@@ -121,32 +121,46 @@
       G.h('div', { class: 'docks-ver', text: 'v' + (G.VERSION || '?') })
     ]));
 
-    /* группы как «слои» (как в RCGI): в рейле видна только активная,
-       остальные свернуты в пилюли. Полный список — в меню ☰ «Все доски». */
-    navEl.appendChild(G.h('div', { class: 'dock-groups' }, groups().map((block) => {
+    const blocks = groups();
+    const activeGroupId = (function () {
+      const cur = activeId || 'core';
+      const hit = blocks.find((bl) => bl.list.some((x) => x.id === cur));
+      return hit ? hit.g.id : (blocks[0] && blocks[0].g.id);
+    })();
+
+    /* 1) пилюли-«слои» — всегда все, отдельной строкой (на телефоне прокручиваются) */
+    const pills = blocks.map((block) => {
       const list = block.list;
-      const opened = list.some((x) => x.id === (activeId || 'core'));
-      const pill = G.h('button', { class: 'dock-pill' + (opened ? ' open' : ''), type: 'button' }, [
+      const on = block.g.id === activeGroupId;
+      const pill = G.h('button', { class: 'dock-pill' + (on ? ' open' : ''), type: 'button', dataset: { group: block.g.id } }, [
         G.h('span', { class: 'dock-pill-dot' }),
         G.h('span', { class: 'dock-pill-name', text: block.g.name }),
         G.h('span', { class: 'dock-pill-count', text: String(list.filter(isAvailable).length) + '/' + list.length })
       ]);
       pill.style.setProperty('--grp', block.g.color || '#7d94a6');
       pill.addEventListener('click', () => {
-        if (opened) return;
+        if (block.g.id === activeGroupId) return;
         const first = list.find(isAvailable) || list[0];
         if (first) select(first.id);
       });
-      const group = G.h('div', {
-        class: 'dock-group' + (opened ? ' open' : ''),
+      return pill;
+    });
+
+    /* 2) контейнер досок: внутри — блок на каждую группу, виден только активный.
+       Все доки остаются в DOM (бейджи, тесты, делегированный клик). */
+    const items = blocks.map((block) => {
+      const wrap = G.h('div', {
+        class: 'dock-group-items' + (block.g.id === activeGroupId ? ' open' : ''),
         dataset: { group: block.g.id }
-      }, [
-        pill,
-        G.h('div', { class: 'dock-group-items' }, list.map(mkDock))
-      ]);
-      group.style.setProperty('--grp', block.g.color || '#7d94a6');
-      return group;
-    })));
+      }, block.list.map(mkDock));
+      wrap.style.setProperty('--grp', block.g.color || '#7d94a6');
+      return wrap;
+    });
+
+    navEl.appendChild(G.h('div', { class: 'dock-groups' }, [
+      G.h('div', { class: 'dock-pills' }, pills),
+      G.h('div', { class: 'dock-items' }, items)
+    ]));
 
     for (const k in buttons) buttons[k].el.classList.toggle('active', k === activeId);
   }
@@ -215,14 +229,14 @@
       content.appendChild(G.h('div', { class: 'empty', text: 'У этой механики пока нет доски' }));
     }
     for (const k in buttons) buttons[k].el.classList.toggle('active', k === id);
-    /* раскрываем пилюлю той группы, где лежит выбранная доска */
+    /* переключаем активный блок досок и его пилюлю */
     const curGroup = (G.content.groups || []).find((g) => (g.mechs || []).indexOf(id) >= 0);
     if (curGroup) {
-      for (const gEl of navEl.querySelectorAll('.dock-group')) {
-        const on = gEl.dataset.group === curGroup.id;
-        gEl.classList.toggle('open', on);
-        const pillEl = gEl.querySelector('.dock-pill');
-        if (pillEl) pillEl.classList.toggle('open', on);
+      for (const el of navEl.querySelectorAll('.dock-group-items')) {
+        el.classList.toggle('open', el.dataset.group === curGroup.id);
+      }
+      for (const el of navEl.querySelectorAll('.dock-pill')) {
+        el.classList.toggle('open', el.dataset.group === curGroup.id);
       }
     }
     if (activeToolbar) activeToolbar.update(state);

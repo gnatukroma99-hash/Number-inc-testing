@@ -1682,10 +1682,10 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   click(Array.from(doc.querySelectorAll('#docks .dock')).find((b) => b.dataset.id === 'core'));
   G.ui.docks.refresh(state);
   G.ui.app.render(state);
-  check('доки разложены по группам', doc.querySelectorAll('#docks .dock-group').length === groupList.length,
-    doc.querySelectorAll('#docks .dock-group').length + ' групп');
+  check('доки разложены по группам', doc.querySelectorAll('#docks .dock-group-items').length === groupList.length,
+    doc.querySelectorAll('#docks .dock-group-items').length + ' блоков');
   check('все доски попали в группы',
-    doc.querySelectorAll('#docks .dock-group .dock').length === doc.querySelectorAll('#docks .dock').length,
+    doc.querySelectorAll('#docks .dock-group-items .dock').length === doc.querySelectorAll('#docks .dock').length,
     doc.querySelectorAll('#docks .dock').length + ' доков');
   check('у группы есть пилюля и цвет',
     doc.querySelectorAll('#docks .dock-pill').length === groupList.length &&
@@ -1792,11 +1792,13 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const cssAll = fs.readFileSync(path.join(ROOT, 'assets/css/style.css'), 'utf8');
   check('пилюли-«слои» в рейле', doc.querySelectorAll('#docks .dock-pill').length === (G.content.groups || []).length,
     doc.querySelectorAll('#docks .dock-pill').length + ' пилюль');
-  check('раскрыта только активная группа', doc.querySelectorAll('#docks .dock-group.open').length === 1);
-  check('свернутые группы прячут свои доки', /\.dock-group:not\(\.open\) \.dock-group-items \{ display: none/.test(cssAll));
+  check('раскрыта только активная группа досок', doc.querySelectorAll('#docks .dock-group-items.open').length === 1);
+  check('свернутые слои прячут свои доки', /\.dock-group-items \{ display: none/.test(cssAll) &&
+    /\.dock-group-items\.open \{ display: flex/.test(cssAll));
   check('доска не схлопывается (min-height: 0)', /#board\s*\{\s*min-height:\s*0/s.test(cssAll));
-  check('на мобиле доки активной группы — одна строка с прокруткой',
-    /\.dock-group\.open \.dock-group-items \{[^}]*overflow-x: auto/s.test(cssAll));
+  check('на мобиле доки активного слоя прокручиваются вправо',
+    /\.dock-group-items\.open \{[^}]*overflow-x: auto/s.test(cssAll) &&
+    /\.dock-pills \{[^}]*overflow-x: auto/s.test(cssAll));
   const docksSrc = fs.readFileSync(path.join(ROOT, 'src/ui/docks.js'), 'utf8');
   check('страховка: делегированный клик по .dock', /closest\('\.dock'\)/.test(docksSrc));
   check('ошибка монтирования доски видна игроку', /board-error/.test(docksSrc));
@@ -1830,7 +1832,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     boardBeforeMenu + ' → ' + doc.body.dataset.board);
   check('после выбора меню закрылось', !G.ui.menu.isOpen());
   check('открытая группа в рейле следует за доской',
-    doc.querySelectorAll('#docks .dock-group.open').length === 1);
+    doc.querySelectorAll('#docks .dock-group-items.open').length === 1);
 
   section('5r. Спарклайны, закреплённые доски и подписи ветвей (v0.23.0)');
   /* история показателей */

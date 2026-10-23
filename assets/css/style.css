@@ -3079,3 +3079,45 @@ body.menu-open { overflow: hidden; }
   .tree-branch-label { font-size: 10px; padding: 4px 8px; }
   .tbl-count { display: none; }
 }
+
+/* ================= v0.23.1 — ФИКС: доки активного слоя не прокручивались =================
+   Было: блок досок лежал ВНУТРИ пилюли-группы, поэтому его ширина равнялась пилюле
+   и горизонтальная прокрутка не работала — «БУМ, Созвездия, …» обрезались.
+   Теперь пилюли и доки — два независимых ряда. */
+#docks { display: flex; flex-direction: column; min-height: 0; }
+.dock-groups { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.dock-pills { display: flex; flex-direction: column; gap: 6px; }
+.dock-items { display: flex; flex-direction: column; gap: 6px; min-height: 0; overflow-y: auto; }
+.dock-group-items { display: none; }
+.dock-group-items.open { display: flex; flex-direction: column; gap: 5px; }
+
+@media (max-width: 760px) {
+  /* пилюли — одна прокручиваемая строка */
+  .dock-pills {
+    flex-direction: row; flex-wrap: nowrap; gap: 6px;
+    overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    max-width: 100%;
+  }
+  .dock-pills::-webkit-scrollbar { display: none; }
+  .dock-pill { flex: 0 0 auto; width: auto; padding: 7px 10px; }
+  .dock-pill-name { flex: 0 0 auto; }
+
+  /* доки активного слоя — своя строка, прокручивается ВПРАВО до конца */
+  .dock-items { overflow: visible; gap: 0; }
+  .dock-group-items.open {
+    flex-direction: row; flex-wrap: nowrap; gap: 6px;
+    width: 100%;
+    overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .dock-group-items.open::-webkit-scrollbar { display: none; }
+  .dock-group-items.open .dock { flex: 0 0 auto; }
+  #docks { max-height: none; overflow: visible; }
+}
