@@ -63,6 +63,11 @@
     /* --- интервал между умножениями --- */
     speedBonus(state) {
       let bonus = 0.10 * G.lvl(state, 'speed1');
+      /* поля speedBonus у АПГРЕЙДОВ и узлов деревьев (Ψ-темп, «Разгон пакта»,
+         psi_speed): до v0.26.0 поле объявлялось в данных, но никто его не читал —
+         эффект был мёртвым. Теперь это обычный свип, как addM. */
+      const fromUpg = W.upgSum(state, 'speedBonus');
+      if (isFinite(fromUpg) && fromUpg > 0) bonus += fromUpg;
       for (const m of G.registry.mechanics()) {
         if (m.isUnlocked && !m.isUnlocked(state)) continue;
         if (blocked(state, m.id)) continue;

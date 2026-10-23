@@ -2037,6 +2037,68 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   }
   doc.querySelectorAll('.fx-pop').forEach((n) => n.remove());
 
+  section('5u. Ψ-дерево — второе дерево на общем движке (v0.26.0)');
+  const psiNodes = G.registry.upgradesOf('psitree');
+  const psiBr = (G.content.psitree && G.content.psitree.branches) || [];
+  check('узлов в Ψ-дереве', psiNodes.length >= 12, psiNodes.length + ' узлов');
+  check('ветвей Ψ-дерева', psiBr.length === 4, psiBr.map((b) => b.id).join(','));
+  check('корень каждой ветви — глубина 0',
+    psiNodes.filter((u) => !u.requires || !u.requires.length).length === psiBr.length,
+    psiNodes.filter((u) => !u.requires || !u.requires.length).length + ' корней');
+  check('узлы Ψ стоят в Ψ и в мете',
+    psiNodes.every((u) => u.res === 'psi' && u.scope === 'meta'));
+  check('у Ψ-дерева есть цвет и ярус', Cc.mechColor('psitree').indexOf('#') === 0 && Cc.mechTier('psitree') === '3',
+    Cc.mechColor('psitree') + ' / ' + Cc.mechTier('psitree'));
+
+  const psiMech = G.registry.mechanic('psitree');
+  check('Ψ-дерево закрыто без ПРОБОЯ', !psiMech.isUnlocked({ res: {}, meta: {} }));
+  const psiWas = state.res.psi, breaksWas = state.meta.breaks;
+  state.res.psi = 400;
+  state.meta.breaks = (breaksWas || 0) + 1;
+  check('Ψ-дерево открывается после ПРОБОЯ', psiMech.isUnlocked(state) && psiMech.total() === psiNodes.length);
+
+  G.ui.docks.select('psitree');
+  await sleep(30);
+  const psiDock = dockBtns().find((b) => b.dataset.id === 'psitree');
+  check('вкладка Ψ-дерева в рейле', !!psiDock, psiDock ? textOf(psiDock) : 'нет');
+  const psiCells = Array.from(doc.querySelectorAll('#board .tree-cell'));
+  check('на карте Ψ все ячейки', psiCells.length === psiNodes.length, psiCells.length + ' из ' + psiNodes.length);
+  check('виден только корень каждой ветви', psiCells.filter((c) => {
+    const n = c.querySelector('.node');
+    return n && n.style.display !== 'none';
+  }).length === psiBr.length, 'видимых ' + psiCells.filter((c) => {
+    const n = c.querySelector('.node');
+    return n && n.style.display !== 'none';
+  }).length);
+  check('HUD Ψ показывает Ψ', (doc.querySelector('.tree-hud-cores') || {}).textContent === '400 Ψ',
+    textOf(doc.querySelector('.tree-hud-cores')));
+
+  /* покупка узла за Ψ и живой эффект */
+  const dtPsiBefore = G.growth.dtMult(state);
+  const psiPsiBefore = state.res.psi;
+  const psiBuy = G.upgrades.buy(state, G.registry.upgrade('ps_freq'));
+  check('узел Ψ покупается за Ψ', psiBuy === 1 && state.res.psi < psiPsiBefore,
+    'Ψ ' + psiPsiBefore + ' → ' + state.res.psi);
+  check('эффект узла Ψ работает', G.growth.dtMult(state) < dtPsiBefore,
+    'ΔT ×' + dtPsiBefore.toFixed(2) + ' → ×' + G.growth.dtMult(state).toFixed(2));
+  check('следующий узел ветви скрыт до предка',
+    !G.upgrades.canBuy(state, G.registry.upgrade('ps_stretch')));
+  G.upgrades.buy(state, G.registry.upgrade('ps_cut'));
+  check('после предка узел Ψ открывается',
+    G.upgrades.canBuy(state, G.registry.upgrade('ps_stretch')),
+    'span ×' + G.growth.upgProduct(state, 'spanMult').toFixed(2));
+
+  /* регресс-тест фикса v0.26.0: speedBonus у апгрейдов был мёртвым полем */
+  const spBefore = G.growth.speedBonus(state);
+  state.upg.psi_speed = 1;
+  check('speedBonus апгрейда читается (фикс)',
+    Math.abs(G.growth.speedBonus(state) - spBefore - 0.3) < 1e-9,
+    spBefore.toFixed(2) + ' → ' + G.growth.speedBonus(state).toFixed(2));
+  state.upg.psi_speed = 0;
+  check('карта Ψ без мусора в DOM', !/Infinity|NaN|undefined/.test(doc.body.textContent));
+  state.res.psi = psiWas;
+  state.meta.breaks = breaksWas;
+
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
   G.debug.setD(120);

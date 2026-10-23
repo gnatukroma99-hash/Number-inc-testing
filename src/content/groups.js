@@ -21,7 +21,7 @@
     {
       id: 'tier3', name: 'Ярус 3', hint: 'после ПРОБОЯ',
       color: '#ff9de2',
-      mechs: ['breakthrough', 'omega']
+      mechs: ['breakthrough', 'psitree', 'omega']
     },
     {
       id: 'tier2', name: 'Ярус 2', hint: 'после БОЛЬШОГО БУМА',
