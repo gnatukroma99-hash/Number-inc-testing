@@ -11,6 +11,9 @@ const path = require('path');
 const puppeteer = require('puppeteer-core');
 
 const CANDIDATES = [
+  process.env.CHROME_PATH || '',
+  '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/chromium', '/usr/bin/chromium-browser',
+  '/root/.cache/puppeteer/chrome/linux-*/chrome-linux64/chrome',
   'C:/Program Files/Google/Chrome/Application/chrome.exe',
   'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
   'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
@@ -21,11 +24,28 @@ const ROOT = path.join(__dirname, '..');
 const OUT = path.join(__dirname, 'shots');
 const BOARDS = process.argv.slice(2).length
   ? process.argv.slice(2)
-  : ['core', 'digitsum', 'analysis', 'shop', 'primeranks', 'sieve', 'mirror', 'prestige', 'tree'];
+  : ['core', 'combo', 'digitsum', 'analysis', 'shop', 'primeranks', 'sieve', 'mirror', 'slot', 'prestige', 'tree',
+    'bigbang', 'glyphs', 'challenges', 'pacts', 'duplicator', 'pacttree', 'echo', 'chrono', 'rift', 'constellations', 'omega', 'achievements'];
 
 function findBrowser() {
-  for (const p of CANDIDATES) if (fs.existsSync(p)) return p;
-  throw new Error('Chrome/Edge не найден');
+  /* CHROME_PATH первым: в CI браузер ставится скриптом и путь приходит из окружения */
+  if (process.env.CHROME_PATH && fs.existsSync(process.env.CHROME_PATH)) return process.env.CHROME_PATH;
+  for (const p of CANDIDATES) {
+    if (!p) continue;
+    if (p.indexOf('*') >= 0) {
+      const dir = path.dirname(p);
+      const base = path.dirname(dir);
+      try {
+        for (const d of fs.readdirSync(base)) {
+          const cand = p.replace('*', d);
+          if (fs.existsSync(cand)) return cand;
+        }
+      } catch (e) { /* нет каталога — идём дальше */ }
+      continue;
+    }
+    if (fs.existsSync(p)) return p;
+  }
+  throw new Error('Chrome/Edge не найден (задайте CHROME_PATH)');
 }
 
 /* подготовка состояния: всё открыто, ядер/энергии хватает */
@@ -48,6 +68,20 @@ const PREP = `
   s.mech.mirror = { sym: 3, grain: 41, bestSym: 4, pairs: 5, lastSample: -1 };
   // искра на экране — чтобы было видно плавающую кнопку
   s.mech.spark = { nextIn: 30, left: 15, type: 'burst', caught: 7, buffs: [{ type: 'tempo', left: 12, total: 20, dt: 0.45 }], rush: { left: 14, streak: 3, spawned: 3 } };
+  // Ярус 2: стена снята, есть Δ/Ω — чтобы снять новые доски
+  s.meta.passedBarriers = ['wall_308'];
+  s.meta.tier = 'tier2';
+  s.meta.bangs = 3;
+  s.res.delta = 260;
+  s.meta.achievements = (G.achievements ? G.achievements.list().slice(0, 12).map((a) => a.id) : []);
+  if (s.mech.omega) { s.mech.omega.omega = 12; s.mech.omega.rules = ['w_pity', 'w_spark']; }
+  if (s.mech.glyphs) { s.mech.glyphs.slots = [{ id: 1, digit: 3, rarity: 'epic', profile: 'greed' }, { id: 2, digit: 7, rarity: 'legend', profile: 'kernel' }, null]; }
+  if (s.mech.combo) s.mech.combo.combo = 8.4;
+  if (s.mech.pacts) { s.mech.pacts.active = { tpl: 'p_greed', k: 1.1 }; }
+  if (s.mech.echo) { s.mech.echo = { bought: true, on: true, gained: 12 }; }
+  if (s.mech.duplicator) { s.mech.duplicator = { bought: true, on: true, shadow: 12.4, penalty: 0, merges: 2, best: 20 }; }
+  if (s.mech.rift) { s.mech.rift = { left: 11, nextIn: 0, opened: 3, caught: 7, bestLeft: 30 }; }
+  if (s.mech.challenges) { s.meta.challenges = ['ch_nosum']; }
   G.state.stats.bestD = 308;
   G.ui.app.render(s);
   return 'ok';
@@ -58,7 +92,8 @@ let browser = null;                       /* закрываем в finally: ин
   browser = await puppeteer.launch({
     executablePath: findBrowser(),
     headless: 'new',
-    args: ['--allow-file-access-from-files', '--hide-scrollbars', '--force-device-scale-factor=1']
+    args: ['--allow-file-access-from-files', '--hide-scrollbars', '--force-device-scale-factor=1',
+      '--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
   });
   fs.mkdirSync(OUT, { recursive: true });
 
@@ -112,6 +147,27 @@ let browser = null;                       /* закрываем в finally: ин
   await new Promise((r) => setTimeout(r, 260));
   await page.screenshot({ path: path.join(OUT, 'mobile-tree.png'), fullPage: false });
   console.log('  снято: tools/shots/mobile-tree.png');
+
+  /* меню «Все доски» — главный экран навигации */
+  await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  await page.evaluate(() => {
+    const back = Array.from(document.querySelectorAll('#docks .dock')).find((b) => b.dataset.id === 'core');
+    if (back) back.click();
+    if (window.G.ui.menu) window.G.ui.menu.open();
+  });
+  await new Promise((r) => setTimeout(r, 420));
+  await page.screenshot({ path: path.join(OUT, 'menu.png') });
+  console.log('  снято: tools/shots/menu.png');
+
+  /* мобильный вид: доки + меню */
+  await page.setViewport({ width: 420, height: 860, deviceScaleFactor: 1 });
+  await new Promise((r) => setTimeout(r, 220));
+  await page.screenshot({ path: path.join(OUT, 'mobile-menu.png') });
+  console.log('  снято: tools/shots/mobile-menu.png');
+  await page.evaluate(() => { if (window.G.ui.menu) window.G.ui.menu.close(); window.G.ui.app.render(window.G.state); });
+  await new Promise((r) => setTimeout(r, 260));
+  await page.screenshot({ path: path.join(OUT, 'mobile-core.png') });
+  console.log('  снято: tools/shots/mobile-core.png');
 
   /* настройки: сначала выходим из полноэкранного дерева, иначе шапка скрыта */
   await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });

@@ -1,0 +1,58 @@
+# .github/workflows/shots.yml — скриншоты игры в НАСТОЯЩЕМ браузере (headless Chrome).
+# Зачем: jsdom не рисует вёрстку, поэтому дизайн агент проверяет по картинкам.
+# Результат кладётся в ветку `shots` (main не засоряется бинарниками).
+name: Screenshots
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'assets/**'
+      - 'index.html'
+      - 'tools/shot.js'
+
+concurrency:
+  group: shots-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    name: shot.js в headless Chrome
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Установить Chrome
+        run: npx --yes @puppeteer/browsers install chrome@stable --path "$HOME/chrome"
+
+      - name: Снять скриншоты
+        run: |
+          CHROME_PATH="$(find "$HOME/chrome" -type f -name chrome | head -1)"
+          echo "chrome: $CHROME_PATH"
+          CHROME_PATH="$CHROME_PATH" node tools/shot.js
+        env:
+          TOOL_LIMIT: 600
+
+      - name: Опубликовать в ветку shots
+        run: |
+          git config user.name "shots-bot"
+          git config user.email "shots-bot@users.noreply.github.com"
+          git add -f tools/shots
+          if git diff --cached --quiet; then echo "нет изменений"; exit 0; fi
+          git commit -m "shots: $(date -u +%Y-%m-%dT%H:%MZ) · $(git rev-parse --short HEAD)"
+          git push origin HEAD:shots --force
+
+      - name: Список кадров
+        run: ls -la tools/shots | head -30
