@@ -12,6 +12,7 @@ on:
       - 'assets/**'
       - 'index.html'
       - 'tools/shot.js'
+      - 'tools/layout.js'
 
 concurrency:
   group: shots-${{ github.ref }}
