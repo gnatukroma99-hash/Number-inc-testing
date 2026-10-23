@@ -45,16 +45,26 @@
       ]),
       chipsEl
     ]);
-    const board = document.getElementById('board');
-    if (board && board.parentNode) board.parentNode.insertBefore(el, board);
-    else document.body.appendChild(el);
+    attach();
     return el;
+  }
+
+  /* доска пересоздаётся при каждом select → возвращаем полоску внутрь #board */
+  function attach() {
+    const board = document.getElementById('board');
+    if (!board) return false;
+    if (el.parentNode !== board || board.firstChild !== el) {
+      if (board.firstChild) board.insertBefore(el, board.firstChild);
+      else board.appendChild(el);
+    }
+    return true;
   }
 
   const B = {
     render(state, activeId) {
       if (!state || !activeId) return;
       if (!el) build();
+      else attach();
       const g = groupOf(activeId);
       if (!g) { el.classList.remove('on'); return; }
       el.classList.add('on');

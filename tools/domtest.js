@@ -1788,6 +1788,21 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     return /\.bg-stars \{[^}]*pointer-events: none/.test(css);
   })());
 
+  section('5p. Мобильная раскладка доков (регресс: «нажимается, но ничего не происходит»)');
+  const cssAll = fs.readFileSync(path.join(ROOT, 'assets/css/style.css'), 'utf8');
+  check('доки на телефоне — одна строка с прокруткой', /#docks\s*\{[^}]*max-height:\s*48px/s.test(cssAll));
+  check('группы доков на мобиле идут в строку', /\.dock-groups\s*\{\s*flex-direction:\s*row/s.test(cssAll));
+  check('доска не схлопывается (min-height: 0)', /#board\s*\{\s*min-height:\s*0/s.test(cssAll));
+  const docksSrc = fs.readFileSync(path.join(ROOT, 'src/ui/docks.js'), 'utf8');
+  check('страховка: делегированный клик по .dock', /closest\('\.dock'\)/.test(docksSrc));
+  check('ошибка монтирования доски видна игроку', /board-error/.test(docksSrc));
+  check('«мини-карта» живёт внутри #board (не ломает раскладку #main)', (function () {
+    click(dockBtns().find((b) => b.dataset.id === 'core'));
+    G.ui.app.render(state);
+    const bar = doc.querySelector('#board > .board-head-bar');
+    return !!bar;
+  })());
+
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
   G.debug.setD(120);

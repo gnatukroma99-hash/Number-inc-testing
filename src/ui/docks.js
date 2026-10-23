@@ -179,7 +179,16 @@
     boardEl.appendChild(content);
 
     if (mount) {
-      activeBoard = mount(content);
+      try {
+        activeBoard = mount(content);
+      } catch (err) {
+        activeBoard = null;
+        content.appendChild(G.h('div', { class: 'board-error' }, [
+          G.h('div', { class: 'board-error-title', text: 'Доска не открылась' }),
+          G.h('div', { class: 'board-error-text', text: String(err && err.message || err) })
+        ]));
+        if (window.console && console.error) console.error('[board]', id, err);
+      }
     } else {
       activeBoard = null;
       content.appendChild(G.h('div', { class: 'empty', text: 'У этой механики пока нет доски' }));
@@ -241,6 +250,15 @@
       build();
       G.bus.on('state:reset', () => { activeBoard = null; select('core'); });
       select('core');
+      /* страховка: делегированный клик по докам — если конкретный обработчик
+         не сработал (перекрытие, ошибка в монтировании), навигация всё равно работает */
+      document.addEventListener('click', (e) => {
+        const btn = e.target && e.target.closest ? e.target.closest('.dock') : null;
+        if (!btn || !btn.dataset || !btn.dataset.id) return;
+        if (btn.dataset.id === activeId) return;
+        select(btn.dataset.id);
+      }, true);
+
       /* горячие клавиши 1..9 */
       window.addEventListener('keydown', (e) => {
         const i = '123456789'.indexOf(e.key);
