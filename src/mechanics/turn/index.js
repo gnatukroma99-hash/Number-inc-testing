@@ -26,11 +26,17 @@
       return '⧜ ' + G.fmt.num(Math.floor(state.res.turns || 0));
     },
 
+    /* накат ⧜ идёт сам — через общий цикл механик (как Ψ-поток у ПРОБОЯ) */
+    tick(state, dt) {
+      G.turn.tick(state, dt);
+    },
+
     vars(state) {
       return {
         turns: Math.floor(state.res.turns || 0),
         turnStart: G.turn.startDigits(state),
-        turnGain: G.turn.gain(state)
+        turnGain: G.turn.gain(state),
+        turnRate: G.turn.rate(state)
       };
     }
   });

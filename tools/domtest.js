@@ -2242,6 +2242,59 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     return ['Разбег', 'Сила', 'Темп', 'Глубина'].every((n) => txt.indexOf(n) >= 0);
   })());
 
+  /* --- v0.32.0: накат ⧜, достижения и подсказки Яруса 4 --- */
+  state.res.turns = 0;
+  state.N = G.BN.fromLog10(200); state.D = 200;
+  check('накат ⧜ не идёт до Яруса 4', G.turn.rate(state) === 0 && G.turn.tick(state, 10) === 0,
+    '⧜/с ' + G.turn.rate(state));
+  state.N = G.BN.fromLog10(12000); state.D = 12000;
+  const turnRate0 = G.turn.rate(state);
+  check('после 1e10000 ⧜ капают сами', turnRate0 > 0, '+' + turnRate0.toFixed(5) + ' ⧜/с');
+  state.res.turns = 0;
+  G.turn.tick(state, 60);
+  check('тик наката даёт реальные ⧜', state.res.turns > 0 && isFinite(state.res.turns),
+    'за 60 с: ' + state.res.turns.toFixed(3) + ' ⧜');
+  check('накат растёт от числа ОБОРОТОВ', (function () {
+    state.res.turns = 0;
+    const a = G.turn.rate(state);
+    state.res.turns = 100;
+    const b = G.turn.rate(state);
+    return b > a * 5;
+  })());
+  check('накат растёт вместе с числом', (function () {
+    state.res.turns = 0;
+    const a = G.turn.rate(state);
+    state.N = G.BN.fromLog10(1e6); state.D = 1e6;
+    const b = G.turn.rate(state);
+    state.N = G.BN.fromLog10(12000); state.D = 12000;
+    return b > a * 3;
+  })());
+  check('механика ОБОРОТА тикает накат в общем цикле', (function () {
+    const mech = G.registry.mechanic('turn');
+    const before = state.res.turns;
+    if (typeof mech.tick === 'function') mech.tick(state, 5);
+    return state.res.turns > before;
+  })());
+  /* достижения и подсказки Яруса 4 */
+  const t4ach = G.achievements.list().filter((a) => a.id.indexOf('a_turn') === 0 || a.id === 'a_d10000' ||
+    a.id.indexOf('a_ttree') === 0);
+  check('достижений Яруса 4 добавлено', t4ach.length >= 8, t4ach.length + ' шт: ' + t4ach.map((a) => a.id).join(','));
+  check('условие «Первый оборот» открывается', (function () {
+    state.res.turns = 3;
+    state.meta.achievements = (state.meta.achievements || []).filter((id) => id !== 'a_turn1');
+    G.achievements.check(state);
+    return G.achievements.has(state, 'a_turn1');
+  })(), 'достижений открыто ' + G.achievements.count(state));
+  check('условие дерева ⧜ работает', (function () {
+    state.upg.tt_s1 = 1; state.upg.tt_p1 = 1; state.upg.tt_t1 = 1; state.upg.tt_d1 = 1;
+    state.meta.achievements = (state.meta.achievements || []).filter((id) => id !== 'a_ttree4');
+    G.achievements.check(state);
+    return G.achievements.has(state, 'a_ttree4');
+  })());
+  check('есть подсказки про ОБОРОТ и дерево ⧜',
+    (G.content.hints.list || []).filter((h) => /ОБОРОТ|⧜/.test(h.text)).length >= 3,
+    (G.content.hints.list || []).filter((h) => /ОБОРОТ|⧜/.test(h.text)).length + ' подсказок');
+
   section('5t. Цветовые темы ярусов, свои цвета досок, эффекты действий (v0.25.0)');
   const Cc = G.ui.components;
   const allMech = ['core'].concat(G.registry.mechanics().map((m) => m.id));

@@ -12,6 +12,7 @@
       const tTurns = C.tile('ОБОРОТОВ', '');
       const tStart = C.tile('Трамплин', '');
       const tSpan = C.tile('ΔT / span', '');
+      const tRate = C.tile('⧜-накат', 'good');
 
       const btn = G.h('button', { class: 'btn bigbang-btn', type: 'button', text: 'ОБОРОТ' });
       btn.addEventListener('click', () => {
@@ -31,7 +32,7 @@
 
       const el = G.h('div', { class: 'board-body' }, [
         G.h('p', { class: 'board-hint', text: mech.hint }),
-        C.grid([tNow.el, tGain.el, tTurns.el, tStart.el, tSpan.el]),
+        C.grid([tNow.el, tGain.el, tRate.el, tTurns.el, tStart.el, tSpan.el]),
         btn,
         G.h('div', { class: 'formula-card' }, [
           G.h('div', { class: 'block-label', text: 'Формулы' }),
@@ -55,6 +56,7 @@
           tNow.set(d.toFixed(1));
           tGain.set('⧜ ' + G.fmt.num(gain));
           tTurns.set(String(Math.floor(state.res.turns || 0)));
+          tRate.set('+' + G.fmt.num(G.turn.rate(state)) + '/с');
           tStart.set(Math.round(G.turn.startDigits(state)) + ' цифр');
           tSpan.set('×' + G.fmt.num(G.growth.dt(state)) + ' / ×' + G.fmt.num(G.growth.upgProduct(state, 'spanMult')));
           rows.forEach((r) => r.update(state));

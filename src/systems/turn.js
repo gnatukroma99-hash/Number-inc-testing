@@ -36,6 +36,39 @@
 
     canDo(state) { return T.gain(state) > 0; },
 
+    /* ⧜ в секунду — «накат»: капает, пока Ярус 4 открыт (формула из данных) */
+    rate(state) {
+      const c = T.cfg();
+      if (!T.tierOpen(state)) return 0;
+      let v = G.formula(c.rateFormula || '0', {
+        D: G.growth.D(state),
+        turns: state.res.turns || 0,
+        breaks: state.meta.breaks || 0,
+        cores: state.res.cores || 0,
+        psi: state.res.psi || 0
+      });
+      if (!isFinite(v) || v <= 0) return 0;
+      const upg = G.growth.upgProduct(state, 'turnRateMult');
+      if (isFinite(upg) && upg > 0) v *= upg;
+      for (const m of G.registry.mechanics()) {
+        if (m.isUnlocked && !m.isUnlocked(state)) continue;
+        if (typeof m.turnRateMult !== 'function') continue;
+        const k = m.turnRateMult(state);
+        if (isFinite(k) && k > 0) v *= k;
+      }
+      return isFinite(v) && v > 0 ? v : 0;
+    },
+
+    /* шаг наката (тик механики, см. mechanics/turn/index.js) */
+    tick(state, dt) {
+      const add = T.rate(state) * (dt || 0);
+      if (!(add > 0) || !isFinite(add)) return 0;
+      state.res.turns = (state.res.turns || 0) + add;
+      if (!isFinite(state.res.turns)) state.res.turns = 0;
+      state.meta.turnsPassive = (state.meta.turnsPassive || 0) + add;
+      return add;
+    },
+
     tierOpen(state) {
       return (state.res.turns || 0) > 0 || G.growth.D(state) >= (T.cfg().minD || 10000);
     },
