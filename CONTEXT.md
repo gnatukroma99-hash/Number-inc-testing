@@ -11,7 +11,7 @@
 
 ## 0. Быстрый старт (TL;DR)
 
-- **Версия: v0.23.1** (`VERSION`, `G.VERSION` в `src/systems/state.js`, `?v=0.23.1` в `index.html`,
+- **Версия: v0.23.3** (`VERSION`, `G.VERSION` в `src/systems/state.js`, `?v=0.23.3` в `index.html`,
   `package.json`, `package-lock.json` — всё синхронно, проверяется `tools/checkall.js`).
   Бамп одной командой: `node tools/bump.js [patch|minor|major|x.y.z]` — правит все 5 мест сразу.
 - **Репозиторий:** `https://github.com/gnatukroma99-hash/Number-inc-testing` (ветка `main`).
@@ -20,7 +20,7 @@
   - чтобы выпустить следующую версию: `PUBLISH.bat` (одна кнопка) **или** `node tools/bump.js` +
     `git commit/tag/push` — агент с доступом к git делает это сам (AGENTS §5.1).
 - **GitHub Pages:** `https://gnatukroma99-hash.github.io/Number-inc-testing/`
-  (на сайте должна быть 0.23.1 — проверить в ⚙ → Настройки; после каждого пуша нужен Ctrl+F5).
+  (на сайте должна быть 0.23.3 — проверить в ⚙ → Настройки; после каждого пуша нужен Ctrl+F5).
 - **Инструменты агента:** Git 2.56, Node v26.10.0, `bash`, интернет,
   **jsdom** (UI-тесты) и **puppeteer-core + локальный Chrome/Edge** (скриншоты). Перед первым
   прогоном в новой копии: `npm i`.
@@ -131,14 +131,15 @@ Number-inc-testing/           ← только игра (адблокер и б�
 ├── CONTEXT.md              ← этот файл
 ├── AGENTS.md               ← правила агента, процесс, версионирование, правило баланса
 ├── README.md               ← лицо репозитория (v0.12.9) + бейдж CI
-├── VERSION                 ← 0.23.1
-├── index.html              ← запуск игры (file:// или Pages); у скриптов ?v=0.23.1
+├── VERSION                 ← 0.23.3
+├── index.html              ← запуск игры (file:// или Pages); у скриптов ?v=0.23.3
 ├── package.json            ← только инструменты (jsdom, puppeteer-core) + npm-скрипты
 ├── PUBLISH.bat / PULL.bat  ← одна кнопка: релиз (бамп+тесты+пуш) / забрать пуши
 ├── PUBLISH_SETUP.bat / PUSH_VERSION.bat / GIT_STATUS.bat  ← старые, работают
 ├── .github/workflows/ci.yml ← CI: checkall → domtest → sim → bench на пуш/PR
 ├── tools/bump.js           ← версия одной командой (5 мест сразу)
 ├── tools/verify.js         ← все проверки параллельно + один отчёт (.verify/*.log)
+├── tools/layout.js         ← ИЗМЕРЕНИЕ раскладки в реальном Chrome (CI, ветка shots/layout.json)
 ├── assets/css/style.css    ← вся вёрстка (тёмный космос, дерево-созвездие, карточки)
 ├── docs/{ТЗ,ARCHITECTURE,MECHANICS,CHANGELOG,GIT}.md
 ├── src/core/
@@ -522,6 +523,18 @@ Pages должен отдавать 0.12.9 после пуша (проверят
   (`git pull --rebase --autostash`) и показать текущую версию.
 - Проверки: `checkall` OK · `domtest` ВСЁ ОК (158, exit 0) · `bench 1 300` — 82.2 мин, exit 0 ·
   `sim 160 900` — 77.7 мин. Правка баланса не потребовалась.
+
+### Сессия №29 — v0.23.2 / v0.23.3: прокрутка доков (окончательно)
+- **Появился измерительный тест:** `tools/layout.js` — headless Chrome, мобильный viewport,
+  замер `scrollWidth/clientWidth/scrollLeft`, достижимости последней доски, высот `#board` и рейла,
+  дамп вычисленных стилей. Пишет `tools/shots/layout.json` в ветку `shots`.
+- **Причина бага:** flex-элемент тянулся по содержимому (`min-width: auto`) — ряд доков был
+  1195 px при экране 404 и не мог прокручиваться. Фикс: `min-width: 0` + явные `width/max-width: 100%`
+  по цепочке `#docks → .dock-groups → .dock-items → .dock-group-items.open`.
+- **Ложный минус в тесте:** `scroll-behavior: smooth` не давал прочитать `scrollLeft` сразу;
+  теперь замер с временным `scroll-behavior: auto`.
+- Замер после фикса: `scrollW 1196 > clientW 402`, `scrollLeft 794`, последняя доска достижима.
+- UX: активная доска подкручивается в центр ряда, справа градиент-подсказка, `overscroll-behavior-x: contain`.
 
 ### Сессия №28 — v0.23.0 / v0.23.1
 - **Спарклайны:** `systems/history.js` (24 точки по 2 с) для D и первых числовых счётчиков
