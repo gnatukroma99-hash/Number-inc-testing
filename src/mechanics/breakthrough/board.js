@@ -11,6 +11,8 @@
       const tGain = C.tile('Ψ за ПРОБОЙ', 'good');
       const tBreaks = C.tile('ПРОБОЕВ', '');
       const tWall = C.tile('Стена 1e1000', '');
+      const tRate = C.tile('Ψ-поток', 'good');
+      const tPsi = C.tile('Ψ на руках', 'accent');
 
       const btn = G.h('button', { class: 'btn bigbang-btn', type: 'button', text: 'ПРОБОЙ' });
       btn.addEventListener('click', () => {
@@ -27,8 +29,13 @@
 
       const el = G.h('div', { class: 'board-body' }, [
         G.h('p', { class: 'board-hint', text: mech.hint }),
-        C.grid([tNow.el, tGain.el, tBreaks.el, tWall.el]),
+        C.grid([tNow.el, tGain.el, tRate.el, tPsi.el, tBreaks.el, tWall.el]),
         btn,
+        G.h('div', { class: 'formula-card' }, [
+          G.h('div', { class: 'block-label', text: 'Ψ-поток (пассивно)' }),
+          G.h('code', { text: (G.content.breakthrough.rateFormula || '0') + '   Ψ/с' }),
+          G.h('code', { text: 'поток ×= 1.5^ур. «Ψ-поток» — растёт вместе с числом и ПРОБОЯМИ' })
+        ]),
         C.section('Ψ в силу (покупки за Ψ)', rows.map((r) => r.el)),
         C.section('Что происходит', [
           G.h('div', { class: 'bb-cols' }, [
@@ -47,6 +54,8 @@
           tGain.set('Ψ ' + G.fmt.num(gain));
           tBreaks.set(String(state.meta.breaks || 0));
           tWall.set(G.breakthrough.wallPassed(state) ? 'снята' : 'держится');
+          tRate.set('+' + G.fmt.num(G.breakthrough.rate(state)) + '/с');
+          tPsi.set('Ψ ' + G.fmt.num(Math.floor(state.res.psi || 0)));
           tWall.setClass('tile ' + (G.breakthrough.wallPassed(state) ? 'good' : 'bad'));
           rows.forEach((r) => r.update(state));
           btn.disabled = gain <= 0;

@@ -23,10 +23,16 @@
       return G.breakthrough.wallPassed(state) ? 'стена 1e1000 снята' : 'Ψ 0';
     },
 
+    /* ПРОБОЙ капает Ψ сам — пассивный поток Яруса 3 (systems/breakthrough.js) */
+    tick(state, dt) {
+      G.breakthrough.tick(state, dt);
+    },
+
     vars(state) {
       return {
         breaks: state.meta.breaks || 0,
         psi: Math.floor(state.res.psi || 0),
+        psiRate: G.breakthrough.rate(state),
         wall1000: G.breakthrough.wallPassed(state) ? 1 : 0
       };
     }

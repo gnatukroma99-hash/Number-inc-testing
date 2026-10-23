@@ -34,6 +34,43 @@
 
     canDo(state) { return B.gain(state) > 0; },
 
+    /* Ψ в секунду — «эхо стены»: капает, пока Ярус 3 открыт.
+       Формула — из данных (content.breakthrough.rateFormula), множители — апгрейды
+       с полем psiRateMult и механики с одноимённым хуком. */
+    rate(state) {
+      const c = B.cfg();
+      if (!B.tierOpen(state)) return 0;
+      let v = G.formula(c.rateFormula || '0', {
+        D: G.growth.D(state),
+        minD: c.minD !== undefined ? c.minD : 1000,
+        runs: state.meta.totalRuns || 0,
+        breaks: state.meta.breaks || 0,
+        cores: state.res.cores || 0,
+        delta: state.res.delta || 0
+      });
+      if (!isFinite(v) || v <= 0) return 0;
+      const upg = G.growth.upgProduct(state, 'psiRateMult');
+      if (isFinite(upg) && upg > 0) v *= upg;
+      for (const m of G.registry.mechanics()) {
+        if (m.isUnlocked && !m.isUnlocked(state)) continue;
+        if (typeof m.psiRateMult !== 'function') continue;
+        const k = m.psiRateMult(state);
+        if (isFinite(k) && k > 0) v *= k;
+      }
+      return isFinite(v) && v > 0 ? v : 0;
+    },
+
+    /* шаг пассивного дохода (тик механики, см. mechanics/breakthrough/index.js) */
+    tick(state, dt) {
+      const add = B.rate(state) * (dt || 0);
+      if (!(add > 0) || !isFinite(add)) return 0;
+      state.res.psi = (state.res.psi || 0) + add;
+      if (!isFinite(state.res.psi)) state.res.psi = 0;
+      state.meta.psiPassive = (state.meta.psiPassive || 0) + add;
+      state.meta.bestPsi = Math.max(state.meta.bestPsi || 0, state.res.psi);
+      return add;
+    },
+
     wallPassed(state) {
       const id = B.cfg().barrier;
       return !id || (state.meta.passedBarriers || []).indexOf(id) >= 0;

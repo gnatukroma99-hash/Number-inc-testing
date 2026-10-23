@@ -2012,6 +2012,49 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('кнопка ПРОБОЯ срабатывает', state.res.psi > psiBefore || (state.meta.breaks || 0) >= 2,
     'Ψ ' + psiBefore + ' → ' + state.res.psi + ', ПРОБОЕВ ' + state.meta.breaks);
 
+  /* --- v0.28.1: Ψ-поток (пассивный доход Яруса 3) --- */
+  state.meta.passedBarriers = ['wall_308'];      /* стена 1e1000 ещё не снята */
+  state.meta.breaks = 0;
+  state.res.psi = 0;
+  state.N = G.BN.fromLog10(400); state.D = 400;
+  check('без ПРОБОЯ потока Ψ нет', G.breakthrough.rate(state) === 0 && G.breakthrough.tick(state, 10) === 0,
+    'Ψ/с ' + G.breakthrough.rate(state));
+  state.meta.passedBarriers = ['wall_308', 'wall_1000'];
+  state.meta.tier = 'tier3';
+  state.N = G.BN.fromLog10(1015); state.D = 1015;
+  const psiRate = G.breakthrough.rate(state);
+  check('после ПРОБОЯ Ψ капают сами', psiRate > 0, '+' + psiRate.toFixed(4) + ' Ψ/с');
+  state.res.psi = 0;
+  G.breakthrough.tick(state, 60);
+  check('тик даёт реальные Ψ', state.res.psi > 0 && isFinite(state.res.psi),
+    'за 60 с: ' + state.res.psi.toFixed(3) + ' Ψ');
+  state.upg.psi_flow = 0;
+  const flow0 = G.breakthrough.rate(state);
+  state.upg.psi_flow = 3;
+  check('апгрейд «Ψ-поток» ускоряет доход', G.breakthrough.rate(state) > flow0 * 3,
+    flow0.toFixed(4) + ' → ' + G.breakthrough.rate(state).toFixed(4));
+  check('поток растёт с числом, а не стоит', (function () {
+    const at1015 = G.breakthrough.rate(state);
+    state.N = G.BN.fromLog10(3000); state.D = 3000;
+    const at3000 = G.breakthrough.rate(state);
+    state.N = G.BN.fromLog10(1015); state.D = 1015;
+    return at3000 > at1015 * 1.5;
+  })());
+  check('ПРОБОИ ускоряют поток', (function () {
+    const b0 = G.breakthrough.rate(state);
+    state.meta.breaks = 4;
+    const b4 = G.breakthrough.rate(state);
+    state.meta.breaks = 0;
+    return b4 > b0;
+  })());
+  check('механика тикает поток в общем цикле', (function () {
+    const mech = G.registry.mechanic('breakthrough');
+    const before = state.res.psi;
+    if (typeof mech.tick === 'function') mech.tick(state, 5);
+    return state.res.psi > before;
+  })(), 'Ψ ' + state.res.psi.toFixed(3));
+  state.upg.psi_flow = 0;
+
   section('5t. Цветовые темы ярусов, свои цвета досок, эффекты действий (v0.25.0)');
   const Cc = G.ui.components;
   const allMech = ['core'].concat(G.registry.mechanics().map((m) => m.id));
