@@ -121,18 +121,31 @@
       G.h('div', { class: 'docks-ver', text: 'v' + (G.VERSION || '?') })
     ]));
 
-    /* группы вместо одного длинного списка: забег → мета → ярус 2 */
+    /* группы как «слои» (как в RCGI): в рейле видна только активная,
+       остальные свернуты в пилюли. Полный список — в меню ☰ «Все доски». */
     navEl.appendChild(G.h('div', { class: 'dock-groups' }, groups().map((block) => {
-      const head = G.h('div', { class: 'dock-group-head' }, [
-        G.h('span', { class: 'dock-group-dot' }),
-        G.h('span', { class: 'dock-group-name', text: block.g.name }),
-        G.h('span', { class: 'dock-group-hint', text: block.g.hint || '' })
+      const list = block.list;
+      const opened = list.some((x) => x.id === (activeId || 'core'));
+      const pill = G.h('button', { class: 'dock-pill' + (opened ? ' open' : ''), type: 'button' }, [
+        G.h('span', { class: 'dock-pill-dot' }),
+        G.h('span', { class: 'dock-pill-name', text: block.g.name }),
+        G.h('span', { class: 'dock-pill-count', text: String(list.filter(isAvailable).length) + '/' + list.length })
       ]);
-      head.style.setProperty('--grp', block.g.color || '#7d94a6');
-      return G.h('div', { class: 'dock-group', dataset: { group: block.g.id } }, [
-        head,
-        G.h('div', { class: 'dock-group-items' }, block.list.map(mkDock))
+      pill.style.setProperty('--grp', block.g.color || '#7d94a6');
+      pill.addEventListener('click', () => {
+        if (opened) return;
+        const first = list.find(isAvailable) || list[0];
+        if (first) select(first.id);
+      });
+      const group = G.h('div', {
+        class: 'dock-group' + (opened ? ' open' : ''),
+        dataset: { group: block.g.id }
+      }, [
+        pill,
+        G.h('div', { class: 'dock-group-items' }, list.map(mkDock))
       ]);
+      group.style.setProperty('--grp', block.g.color || '#7d94a6');
+      return group;
     })));
 
     for (const k in buttons) buttons[k].el.classList.toggle('active', k === activeId);
@@ -194,6 +207,16 @@
       content.appendChild(G.h('div', { class: 'empty', text: 'У этой механики пока нет доски' }));
     }
     for (const k in buttons) buttons[k].el.classList.toggle('active', k === id);
+    /* раскрываем пилюлю той группы, где лежит выбранная доска */
+    const curGroup = (G.content.groups || []).find((g) => (g.mechs || []).indexOf(id) >= 0);
+    if (curGroup) {
+      for (const gEl of navEl.querySelectorAll('.dock-group')) {
+        const on = gEl.dataset.group === curGroup.id;
+        gEl.classList.toggle('open', on);
+        const pillEl = gEl.querySelector('.dock-pill');
+        if (pillEl) pillEl.classList.toggle('open', on);
+      }
+    }
     if (activeToolbar) activeToolbar.update(state);
     if (activeBoard && activeBoard.update) activeBoard.update(state);
   }

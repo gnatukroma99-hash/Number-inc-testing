@@ -69,6 +69,7 @@
       if (G.ui.rift) G.ui.rift.mount();
       if (G.ui.combo) G.ui.combo.mount();
       if (G.ui.background) G.ui.background.mount();
+      if (G.ui.menu) G.ui.menu.init();
       initMotion();
 
       document.getElementById('btn-settings').addEventListener('click', () => {

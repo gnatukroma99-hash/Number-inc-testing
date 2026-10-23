@@ -1687,8 +1687,8 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('все доски попали в группы',
     doc.querySelectorAll('#docks .dock-group .dock').length === doc.querySelectorAll('#docks .dock').length,
     doc.querySelectorAll('#docks .dock').length + ' доков');
-  check('у группы есть заголовок и цвет',
-    doc.querySelectorAll('#docks .dock-group-name').length === groupList.length &&
+  check('у группы есть пилюля и цвет',
+    doc.querySelectorAll('#docks .dock-pill').length === groupList.length &&
     (groupList[0].name.length > 0), groupList.map((g) => g.name).join(' · '));
 
   section('5n. Комбо ⌘ и подсказки-онбординг (v0.20.0)');
@@ -1788,20 +1788,43 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     return /\.bg-stars \{[^}]*pointer-events: none/.test(css);
   })());
 
-  section('5p. Мобильная раскладка доков (регресс: «нажимается, но ничего не происходит»)');
+  section('5p. Навигация: пилюли групп, мобильная раскладка, меню «Все доски»');
   const cssAll = fs.readFileSync(path.join(ROOT, 'assets/css/style.css'), 'utf8');
-  check('доки на телефоне — одна строка с прокруткой', /#docks\s*\{[^}]*max-height:\s*48px/s.test(cssAll));
-  check('группы доков на мобиле идут в строку', /\.dock-groups\s*\{\s*flex-direction:\s*row/s.test(cssAll));
+  check('пилюли-«слои» в рейле', doc.querySelectorAll('#docks .dock-pill').length === (G.content.groups || []).length,
+    doc.querySelectorAll('#docks .dock-pill').length + ' пилюль');
+  check('раскрыта только активная группа', doc.querySelectorAll('#docks .dock-group.open').length === 1);
+  check('свернутые группы прячут свои доки', /\.dock-group:not\(\.open\) \.dock-group-items \{ display: none/.test(cssAll));
   check('доска не схлопывается (min-height: 0)', /#board\s*\{\s*min-height:\s*0/s.test(cssAll));
+  check('на мобиле доки активной группы — одна строка с прокруткой',
+    /\.dock-group\.open \.dock-group-items \{[^}]*overflow-x: auto/s.test(cssAll));
   const docksSrc = fs.readFileSync(path.join(ROOT, 'src/ui/docks.js'), 'utf8');
   check('страховка: делегированный клик по .dock', /closest\('\.dock'\)/.test(docksSrc));
   check('ошибка монтирования доски видна игроку', /board-error/.test(docksSrc));
-  check('«мини-карта» живёт внутри #board (не ломает раскладку #main)', (function () {
-    click(dockBtns().find((b) => b.dataset.id === 'core'));
-    G.ui.app.render(state);
-    const bar = doc.querySelector('#board > .board-head-bar');
-    return !!bar;
-  })());
+
+  section('5q. Меню «Все доски» (хаб как в RCGI)');
+  check('меню смонтировано', !!G.ui.menu && !!doc.querySelector('.menu-overlay'));
+  G.ui.menu.open();
+  G.ui.app.render(state);
+  check('меню открывается', G.ui.menu.isOpen() && doc.querySelector('.menu-overlay.on'));
+  const cards = doc.querySelectorAll('.menu-card');
+  const allDocks = dockBtns().length;
+  check('в меню карточка на каждую доску', cards.length === allDocks,
+    cards.length + ' карточек / ' + allDocks + ' доков');
+  check('карточки разложены по группам', doc.querySelectorAll('.menu-group').length === (G.content.groups || []).length,
+    doc.querySelectorAll('.menu-group').length + ' групп');
+  const cur = doc.querySelector('.menu-card.current');
+  check('текущая доска подсвечена в меню', !!cur, cur && cur.dataset.id);
+  /* клик по карточке другой группы переключает доску и закрывает меню */
+  const otherGroupCard = Array.from(cards).find((c) => !c.classList.contains('current') &&
+    !c.classList.contains('locked') && c.dataset.id !== 'core');
+  const boardBeforeMenu = doc.body.dataset.board;
+  if (otherGroupCard) click(otherGroupCard);
+  G.ui.app.render(state);
+  check('карточка меню переключает доску', doc.body.dataset.board === (otherGroupCard && otherGroupCard.dataset.id),
+    boardBeforeMenu + ' → ' + doc.body.dataset.board);
+  check('после выбора меню закрылось', !G.ui.menu.isOpen());
+  check('открытая группа в рейле следует за доской',
+    doc.querySelectorAll('#docks .dock-group.open').length === 1);
 
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
