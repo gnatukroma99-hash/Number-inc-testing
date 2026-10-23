@@ -109,6 +109,12 @@
       const branches = cfg.branches || [];
       const all = G.registry.upgradesOf('tree');
 
+      /* слой глубины: звёзды/туманность едут медленнее карты — глаз читает объём */
+      const parallax = G.h('div', { class: 'tree-parallax', 'aria-hidden': 'true' }, [
+        G.h('div', { class: 'tree-nebula' }),
+        G.h('div', { class: 'tree-stars' })
+      ]);
+
       const map = G.h('div', { class: 'tree-map' });
       map.style.width = SIZE + 'px';
       map.style.height = SIZE + 'px';
@@ -321,7 +327,7 @@
       const zoomCenter = mkBtn('center', 'К центру');
       const zoomBar = G.h('div', { class: 'tree-zoom' }, [zoomIn, zoomOut, zoomFit, zoomCenter]);
 
-      const stage = G.h('div', { class: 'tree-stage' }, [map, hud, zoomBar, tip]);
+      const stage = G.h('div', { class: 'tree-stage' }, [parallax, map, hud, zoomBar, tip]);
       const el = G.h('div', { class: 'board-body tree-board' }, [stage]);
       root.appendChild(el);
 
@@ -345,6 +351,12 @@
         const k = baseK * view.z;
         map.style.transformOrigin = 'top left';
         map.style.transform = 'translate(' + view.tx.toFixed(1) + 'px,' + view.ty.toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
+        /* фон-параллакс: 35 % сдвига и 20 % масштаба — ощущение глубины без тормозов */
+        if (parallax) {
+          const pk = 1 + (k - 1) * 0.2;
+          parallax.style.transform = 'translate(' + (view.tx * 0.35).toFixed(1) + 'px,' +
+            (view.ty * 0.35).toFixed(1) + 'px) scale(' + pk.toFixed(4) + ')';
+        }
         stage.classList.toggle('far', view.z < 1.15);
         zoomOut.disabled = view.z <= ZMIN + 1e-6;
         zoomIn.disabled = view.z >= ZMAX - 1e-6;

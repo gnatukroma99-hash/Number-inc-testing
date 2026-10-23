@@ -1749,6 +1749,45 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('подсказки выключаются настройкой', !bar.classList.contains('on'));
   state.settings.hints = true;
 
+  section('5o. Визуальный пасс: мини-карта доски и параллакс дерева (v0.21.0)');
+  click(dockBtns().find((b) => b.dataset.id === 'digit' + 'sum'));
+  G.ui.app.render(state);
+  const bh = doc.querySelector('.board-head-bar');
+  check('мини-карта над доской есть', !!bh && bh.classList.contains('on'));
+  check('в крошках группа и доска', !!doc.querySelector('.bh-group') &&
+    !!doc.querySelector('.bh-board') &&
+    doc.querySelector('.bh-group').textContent.length > 0 &&
+    doc.querySelector('.bh-board').textContent.length > 0,
+    (doc.querySelector('.bh-group') || {}).textContent + ' › ' + (doc.querySelector('.bh-board') || {}).textContent);
+  check('чипы соседних досок группы', doc.querySelectorAll('.bh-chip').length >= 2,
+    doc.querySelectorAll('.bh-chip').length + ' шт');
+  check('активный чип помечен', doc.querySelectorAll('.bh-chip.on').length === 1);
+  /* клик по чипу переключает доску */
+  const otherChip = Array.from(doc.querySelectorAll('.bh-chip')).find((c) => !c.classList.contains('on'));
+  const beforeBoard = (doc.querySelector('.bh-board') || {}).textContent;
+  if (otherChip) click(otherChip);
+  G.ui.app.render(state);
+  check('клик по чипу меняет доску', (doc.querySelector('.bh-board') || {}).textContent !== beforeBoard ||
+    doc.querySelectorAll('.bh-chip.on').length === 1,
+    beforeBoard + ' → ' + (doc.querySelector('.bh-board') || {}).textContent);
+  check('у каждой группы свой цвет в крошке', (doc.querySelector('.board-head-bar') || {}).style !== undefined);
+
+  /* параллакс в дереве */
+  click(dockBtns().find((b) => b.dataset.id === 'tree'));
+  state.res.cores = 1e6;
+  G.ui.app.render(state);
+  const par = doc.querySelector('#board .tree-parallax');
+  check('слой параллакса в дереве есть', !!par && !!par.querySelector('.tree-nebula') && !!par.querySelector('.tree-stars'));
+  const parTransform = par && par.style.transform;
+  click(doc.querySelector('#board .tree-zoom-btn'));
+  G.ui.app.render(state);
+  check('параллакс двигается вместе с картой', !!par && par.style.transform !== parTransform &&
+    /translate\(/.test(par.style.transform || ''), (par && par.style.transform || '').slice(0, 40));
+  check('фон-звёзды не мешают кликам', (function () {
+    const css = fs.readFileSync(path.join(ROOT, 'assets/css/style.css'), 'utf8');
+    return /\.bg-stars \{[^}]*pointer-events: none/.test(css);
+  })());
+
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
   G.debug.setD(120);

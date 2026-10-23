@@ -68,6 +68,7 @@
       if (G.ui.spark) G.ui.spark.mount();
       if (G.ui.rift) G.ui.rift.mount();
       if (G.ui.combo) G.ui.combo.mount();
+      if (G.ui.background) G.ui.background.mount();
       initMotion();
 
       document.getElementById('btn-settings').addEventListener('click', () => {
@@ -99,6 +100,7 @@
       if (G.ui.rift) G.ui.rift.update(state);
       if (G.ui.combo) G.ui.combo.update(state);
       if (G.ui.hints) G.ui.hints.update(state);
+      if (G.ui.boardhead) G.ui.boardhead.tick(state);
       G.ui.docks.update(state);
       if (G.ui.settings.isOpen()) {
         /* лёгкое обновление превью формата */

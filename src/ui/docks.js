@@ -153,6 +153,8 @@
 
     /* полноэкранные доски (карта дерева): прячем число и меню */
     document.body.classList.toggle('board-full', !!d.fullscreen);
+    document.body.dataset.board = id;
+    if (G.ui.boardhead) G.ui.boardhead.render(state, id);
 
     let mount = null;
     if (id === 'core') mount = mountCore;
