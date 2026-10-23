@@ -1979,6 +1979,64 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('кнопка ПРОБОЯ срабатывает', state.res.psi > psiBefore || (state.meta.breaks || 0) >= 2,
     'Ψ ' + psiBefore + ' → ' + state.res.psi + ', ПРОБОЕВ ' + state.meta.breaks);
 
+  section('5t. Цветовые темы ярусов, свои цвета досок, эффекты действий (v0.25.0)');
+  const Cc = G.ui.components;
+  const allMech = ['core'].concat(G.registry.mechanics().map((m) => m.id));
+  check('цвет задан для каждой доски',
+    allMech.every((id) => !!Cc.mechColor(id) && Cc.mechColor(id).indexOf('#') === 0),
+    allMech.filter((id) => !Cc.mechColor(id) || Cc.mechColor(id).indexOf('#') !== 0).join(',') || 'все 26');
+  check('цвета досок различаются', (function () {
+    const set = new Set(allMech.map((id) => Cc.mechColor(id)));
+    return set.size >= allMech.length - 3;
+  })(), new Set(allMech.map((id) => Cc.mechColor(id))).size + ' уникальных');
+  check('у каждой доски есть ярус', allMech.every((id) => ['1', 'meta', '2', '3'].indexOf(Cc.mechTier(id)) >= 0),
+    allMech.map((id) => id + ':' + Cc.mechTier(id)).slice(0, 6).join(' '));
+
+  /* смена доски меняет тему и цвет */
+  click(dockBtns().find((b) => b.dataset.id === 'core'));
+  check('Ярус 1 — холодная тема', doc.body.dataset.tier === '1', 'tier=' + doc.body.dataset.tier);
+  click(dockBtns().find((b) => b.dataset.id === 'tree'));
+  check('Мета — золотая тема', doc.body.dataset.tier === 'meta', 'tier=' + doc.body.dataset.tier);
+  click(dockBtns().find((b) => b.dataset.id === 'glyphs'));
+  check('Ярус 2 — фиолетовая тема', doc.body.dataset.tier === '2', 'tier=' + doc.body.dataset.tier);
+  click(dockBtns().find((b) => b.dataset.id === 'breakthrough'));
+  check('Ярус 3 — розовая тема', doc.body.dataset.tier === '3', 'tier=' + doc.body.dataset.tier);
+  check('краска доски уходит в --mech',
+    (doc.body.style.getPropertyValue('--mech') || '').trim() === Cc.mechColor('breakthrough'),
+    doc.body.style.getPropertyValue('--mech'));
+  check('в CSS есть палитры всех ярусов', (function () {
+    const css = fs.readFileSync(path.join(ROOT, 'assets/css/style.css'), 'utf8');
+    return ['1', 'meta', '2', '3'].every((t) => new RegExp('body\\[data-tier="' + t + '"\\]').test(css));
+  })());
+
+  /* эффекты */
+  check('модуль эффектов есть', !!G.ui.fx);
+  G.ui.fx.init();
+  const heroEl = doc.getElementById('heroN');
+  G.ui.fx.pop(heroEl, '+1 ур.');
+  check('pop создаёт всплывающий текст', doc.querySelectorAll('.fx-pop').length > 0);
+  G.ui.fx.flash('rgba(255,209,102,.5)');
+  check('flash создаёт вспышку', doc.querySelectorAll('.fx-flash').length > 0);
+  G.ui.fx.banner('ТЕСТ БАННЕР');
+  check('banner создаёт плашку события', doc.querySelectorAll('.fx-banner').length > 0);
+  G.ui.fx.chrono(true);
+  check('винетка хроно включается', doc.body.classList.contains('fx-chrono'));
+  G.ui.fx.chrono(false);
+  check('винетка хроно выключается', !doc.body.classList.contains('fx-chrono'));
+  doc.querySelectorAll('.fx-pop, .fx-flash, .fx-banner').forEach((n) => n.remove());
+
+  /* событие покупки даёт pop над строкой (берём апгрейд, который есть на текущей доске) */
+  state.res.energy = 1e12;
+  const rowEl = doc.querySelector('#board .upg[data-upgrade]');
+  if (rowEl) {
+    G.bus.emit('upgrade:bought', { id: rowEl.dataset.upgrade, count: 1, level: 1 });
+    check('покупка апгрейда даёт всплывающий «+»', doc.querySelectorAll('.fx-pop').length > 0 ||
+      G.animationsOff(), doc.querySelectorAll('.fx-pop').length + ' шт');
+  } else {
+    check('покупка апгрейда даёт всплывающий «+»', false, 'не нашёл ни одной строки апгрейда');
+  }
+  doc.querySelectorAll('.fx-pop').forEach((n) => n.remove());
+
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
   G.debug.setD(120);

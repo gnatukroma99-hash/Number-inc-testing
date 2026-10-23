@@ -71,6 +71,7 @@
       if (G.ui.combo) G.ui.combo.mount();
       if (G.ui.background) G.ui.background.mount();
       if (G.ui.menu) G.ui.menu.init();
+      if (G.ui.fx) G.ui.fx.init();
       G.ui.fxDock();
       initMotion();
 
@@ -104,6 +105,7 @@
       if (G.ui.combo) G.ui.combo.update(state);
       if (G.ui.hints) G.ui.hints.update(state);
       if (G.ui.boardhead) G.ui.boardhead.tick(state);
+      if (G.ui.fx) G.ui.fx.update(state);
       G.ui.docks.update(state);
       if (G.ui.settings.isOpen()) {
         /* лёгкое обновление превью формата */

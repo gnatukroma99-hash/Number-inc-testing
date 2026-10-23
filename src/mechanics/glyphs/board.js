@@ -33,6 +33,13 @@
       rollBtn.addEventListener('click', () => {
         const res = G.glyphs.roll(G.state);
         if (!res) return;
+        /* переворот карточки слота — визуально «крутится» */
+        const slotEl = slotViews[res.slot] && slotViews[res.slot].el;
+        if (slotEl && !G.animationsOff()) {
+          slotEl.classList.remove('flip');
+          void slotEl.offsetWidth;
+          slotEl.classList.add('flip');
+        }
         paintSlots(true);
         const g = res.glyph;
         const rar = G.glyphs.rarity(g.rarity);

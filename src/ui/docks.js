@@ -181,6 +181,10 @@
     /* полноэкранные доски (карта дерева): прячем число и меню */
     document.body.classList.toggle('board-full', !!d.fullscreen);
     document.body.dataset.board = id;
+    /* цветовая идентичность: ярус (тема) + своя краска доски */
+    const tier = (C() && C().mechTier) ? C().mechTier(id) : '1';
+    document.body.dataset.tier = tier;
+    document.body.style.setProperty('--mech', (C() && C().mechColor) ? C().mechColor(id) : '#35e2c0');
     /* «недавние» для меню: последние 4 доски, живут в мете */
     try {
       if (state && state.meta) {

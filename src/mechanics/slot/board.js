@@ -76,6 +76,12 @@
         if (res.reson) {
           G.ui.toast('⌾ РЕЗОНАНС: барабаны собрали первую цифру твоего числа (' + res.lead + ')', 'good', 3500);
         }
+        if (res.rule === 'jack' && G.ui.fx) {
+          G.ui.fx.flash('rgba(255, 209, 102, .5)');
+          G.ui.fx.shake();
+          G.ui.fx.banner('⌾ ДЖЕКПОТ 777');
+        }
+        if (res.reson && G.ui.fx) G.ui.fx.flash('rgba(201, 160, 255, .38)');
         if (res.rule === 'jack') {
           G.ui.toast('⌾ ДЖЕКПОТ 777: +' + CFG.jackpot.cores + ' ◆ и M ×' +
             CFG.jackpot.mult + ' на ' + CFG.jackpot.dur + ' с', 'good', 4000);

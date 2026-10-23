@@ -11,9 +11,46 @@
   /* иконки-медальоны на карточках апгрейдов (можно переопределить полем u.icon) */
   /* акцентный цвет механики — для рамок карточек и иконок (данные-оформление) */
   const MECH_COLOR = {
-    core: '#35e2c0', digitsum: '#2bb5ff', primefit: '#a78bfa', primeranks: '#ff9de2',
-    analysis: '#38e0ff', shop: '#ffd166', sieve: '#7cf7b0', mirror: '#5eead4',
-    tree: '#ffd166', achievements: '#ffc75f', slot: '#ffd166'
+    /* Ярус 1 «Арифметика» — холодная гамма (голубой → бирюза → мятный) */
+    core: '#35e2c0',
+    digitsum: '#3fa9ff',
+    primefit: '#6f8dff',
+    primeranks: '#9d7bff',
+    analysis: '#22d3ee',
+    shop: '#4ade80',
+    sieve: '#7cf7b0',
+    mirror: '#2dd4bf',
+    combo: '#38bdf8',
+    slot: '#f0b429',
+    spark: '#ffd166',
+    /* Мета «Ядра» — золото и янтарь */
+    prestige: '#ffb14d',
+    tree: '#ffcc4d',
+    achievements: '#ffd97a',
+    /* Ярус 2 «Экспонента» — фиолет и маджента */
+    bigbang: '#c084fc',
+    constellations: '#a78bfa',
+    glyphs: '#d8b4fe',
+    pacttree: '#8b5cf6',
+    challenges: '#e879f9',
+    pacts: '#f472b6',
+    duplicator: '#c4b5fd',
+    echo: '#a5b4fc',
+    chrono: '#818cf8',
+    rift: '#f0abfc',
+    /* Ярус 3 «Логарифм/ПРОБОЙ» — розовый неон */
+    breakthrough: '#ff5fd2',
+    omega: '#ff9de2'
+  };
+
+  /* какой ярус у доски — для общей цветовой темы */
+  const MECH_TIER = {
+    core: '1', digitsum: '1', primefit: '1', primeranks: '1', analysis: '1', shop: '1',
+    sieve: '1', mirror: '1', combo: '1', slot: '1', spark: '1',
+    prestige: 'meta', tree: 'meta', achievements: 'meta',
+    bigbang: '2', constellations: '2', glyphs: '2', pacttree: '2', challenges: '2',
+    pacts: '2', duplicator: '2', echo: '2', chrono: '2', rift: '2',
+    breakthrough: '3', omega: '3'
   };
 
   const MECH_ICON = {
@@ -49,6 +86,8 @@
     resName(res) { return RES_NAME[res] || res; },
     mechIcon(mech) { return MECH_ICON[mech] || '•'; },
     mechColor(mech) { return MECH_COLOR[mech] || 'var(--accent)'; },
+    MECH_TIER: MECH_TIER,
+    mechTier(mech) { return MECH_TIER[mech] || '1'; },
     buyMode: buyMode,
 
     /**
