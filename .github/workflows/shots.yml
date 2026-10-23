@@ -39,6 +39,7 @@ jobs:
         run: npx --yes @puppeteer/browsers install chrome@stable --path "$HOME/chrome"
 
       - name: Измерить раскладку (мобильный прокрут доков)
+        continue-on-error: true
         run: |
           CHROME_PATH="$(find "$HOME/chrome" -type f -name chrome | head -1)"
           CHROME_PATH="$CHROME_PATH" node tools/layout.js

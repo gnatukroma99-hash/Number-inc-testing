@@ -153,5 +153,9 @@ function measure() {
   }
 })().catch((e) => {
   console.error('FATAL:', e.message);
+  try {
+    fs.mkdirSync(OUT, { recursive: true });
+    fs.writeFileSync(path.join(OUT, 'layout.json'), JSON.stringify({ fatal: String(e && e.message || e) }, null, 2));
+  } catch (e2) { /* уже всё плохо */ }
   process.exitCode = 1;
 });
