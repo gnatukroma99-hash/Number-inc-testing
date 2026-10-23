@@ -15,8 +15,8 @@
   `package.json`, `package-lock.json` — всё синхронно, проверяется `tools/checkall.js`).
   Бамп одной командой: `node tools/bump.js [patch|minor|major|x.y.z]` — правит все 5 мест сразу.
 - **Репозиторий:** `https://github.com/gnatukroma99-hash/Number-inc-testing` (ветка `main`).
-  - закоммичено: **`v0.12.2: update`** (`e59666c`); теги есть до **v0.12.2**;
-    **закоммичено — v0.12.3** (CI + автопубликация); v0.12.4 — фикс тача в дереве.
+  - закоммичено: **`v0.27.0`** (`4889943`) + пост-релизные фиксы `c248cd4`/`b4ea846`;
+    теги есть до **v0.27.0** (всего 30+ тегов, `git tag`).
   - чтобы выпустить следующую версию: `PUBLISH.bat` (одна кнопка) **или** `node tools/bump.js` +
     `git commit/tag/push` — агент с доступом к git делает это сам (AGENTS §5.1).
 - **GitHub Pages:** `https://gnatukroma99-hash.github.io/Number-inc-testing/`
@@ -480,6 +480,17 @@ spanMult из дерева — кэшем). Плюс панорама дерев
 ---
 
 ## 13. Состояние репозитория на конец сессии №33 (v0.27.0)
+
+### Сессия №34 — синхронизация ПК (это устройство)
+- На ПК была старая копия **v0.12.2**; сделан `git fetch` + `merge --ff-only origin/main`
+  → **v0.27.0** (44 коммита, fast-forward, откатывать нечего).
+- Старый локальный `CONTEXT.md` (незакоммиченный) сохранён вне репо:
+  `C:\Users\HomePC\Desktop\CONTEXT_local_0.12.2_backup.md`.
+- `npm i` → ок; `node tools/checkall.js` → ВСЁ ОК; `node tools/domtest.js` → ВСЁ ОК, 0 ошибок.
+- **Пуш с этого ПК работает** (Git Credential Manager, токен в системе): `git push` из bash
+  проходит без запроса пароля — агент выпускает версии сам.
+- Мусор старого adblock-проекта в папке (все в `.gitignore`, игре не мешают):
+  `_metadata/`, `.venv/`, `build/`, `dist/`, `frames/`, `.idea/` — можно удалить вручную.
 
 ```
 git status — рабочая копия ЧИСТАЯ
