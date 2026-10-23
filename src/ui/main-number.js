@@ -59,7 +59,10 @@
       (spd > 1 ? '  ≫×' + spd : '');
 
     const r = G.growth.rate(state);
-    refs.dps.textContent = G.fmt.num(r, mode) + ' цифр/с';
+    /* маленький, но живой темп нельзя показывать как «0 цифр/с» — игрок читает это
+       как «число замерло». Ниже 0.01 цифр/с печатаем значащие цифры. */
+    const rTxt = (r > 0 && r < 0.01) ? r.toPrecision(2).replace('e-', 'e-') : G.fmt.num(r, mode);
+    refs.dps.textContent = rTxt + ' цифр/с';
 
     /* ресурсы */
     for (const res of G.registry.allResources()) {

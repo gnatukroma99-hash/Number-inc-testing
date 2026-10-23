@@ -2119,6 +2119,79 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   })(), 'Ψ ' + state.res.psi.toFixed(3));
   state.upg.psi_flow = 0;
 
+  section('5v. Ярус 4 «ОБОРОТ ⧜» — четвёртый этап прогресса (v0.30.0)');
+  check('данные ОБОРОТА есть', !!G.content.turn && G.content.turn.minD === 10000,
+    G.content.turn ? 'minD ' + G.content.turn.minD : 'нет');
+  check('ярус IV зарегистрирован', !!G.registry.tier && !!G.registry.tier('tier4'));
+  check('ОБОРОТ в группе «Ярус 4»', (G.content.groups || []).some((g) => g.id === 'tier4' &&
+    (g.mechs || []).indexOf('turn') >= 0));
+  /* ниже стены 1e10000 оборот не считается */
+  state.meta.passedBarriers = ['wall_308', 'wall_1000'];
+  state.res.turns = 0;
+  state.N = G.BN.fromLog10(9000); state.D = 9000;
+  check('до 1e10000 ОБОРОТ не даёт ⧜', G.turn.gain(state) === 0 && !G.turn.canDo(state),
+    'D=9000 → ⧜ ' + G.turn.gain(state));
+  state.N = G.BN.fromLog10(12000); state.D = 12000;
+  const turnGain = G.turn.gain(state);
+  check('⧜ считаются по формуле', turnGain > 0, '⧜ ' + turnGain);
+  /* сохраняем вечное перед оборотом */
+  state.res.cores = 5000;
+  state.res.psi = 777;
+  state.res.turns = 0;
+  state.upg.tree_mult5 = 2;
+  const turnPsiBefore = state.res.psi;
+  const turnGainNow = G.turn.perform(state);
+  check('ОБОРОТ даёт ⧜ и пишет ярус', turnGainNow > 0 && (state.res.turns || 0) >= turnGainNow &&
+    state.meta.tier === 'tier4', '⧜ ' + state.res.turns + ', tier ' + state.meta.tier);
+  check('Ψ и ◆ переживают ОБОРОТ', state.res.psi === turnPsiBefore && (state.res.cores || 0) === 5000,
+    'Ψ ' + state.res.psi + ', ◆ ' + state.res.cores);
+  check('Ярус 2 сгорает (Δ в ноль)', (state.res.delta || 0) === 0, 'Δ ' + state.res.delta);
+  const startD = G.growth.D(state);
+  check('трамплин поднимает старт следующего забега', startD >= 40,
+    'забег начался с ' + startD.toFixed(1) + ' цифр');
+  check('старт растёт от числа ОБОРОТОВ', (function () {
+    const a = G.turn.startDigits(state, 1);
+    const b = G.turn.startDigits(state, 20);
+    return b > a * 2;
+  })(), '1 ⧜ → ' + G.turn.startDigits(state, 1) + ' цифр, 20 ⧜ → ' + G.turn.startDigits(state, 20));
+  check('апгрейд «Трамплин» добавляет старт', (function () {
+    const before = G.turn.startDigits(state, 5);
+    state.res.turns = 200;
+    state.upg.tr_start = 0;
+    if (!G.upgrades.buy(state, G.registry.upgrade('tr_start'))) return false;
+    const after = G.turn.startDigits(state, 5);
+    return after > before;
+  })(), 'старт ×' + (G.turn.startDigits(state, 5) / 100).toFixed(1));
+  check('ОБОРОТ не сбрасывается перерождением', (function () {
+    const keep = state.res.turns;
+    G.resetScopes(state, ['run', 'tier']);
+    return (state.res.turns || 0) === keep;
+  })(), '⧜ ' + Math.floor(state.res.turns || 0));
+  check('апгрейды за ⧜ доходят до движка', (function () {
+    state.res.turns = 500;
+    state.upg.tr_span = 0;
+    state.upg.tr_mult = 0;
+    const span0 = G.growth.upgProduct(state, 'spanMult');
+    const m0 = G.growth.upgProduct(state, 'Mmult');
+    G.upgrades.buy(state, G.registry.upgrade('tr_span'));
+    G.upgrades.buy(state, G.registry.upgrade('tr_mult'));
+    return G.growth.upgProduct(state, 'spanMult') > span0 && G.growth.upgProduct(state, 'Mmult') > m0;
+  })());
+  check('πλοщадка ОБОРОТА открывается в доке', (function () {
+    state.N = G.BN.fromLog10(12000); state.D = 12000;
+    click(dockBtns().find((b) => b.dataset.id === 'turn'));
+    G.ui.app.render(state);
+    return !!doc.querySelector('#board .bigbang-btn') &&
+      doc.querySelectorAll('#board .upg').length >= 6;
+  })(), doc.querySelectorAll('#board .upg').length + ' ⧜-апгрейдов');
+  check('кнопка ОБОРОТА срабатывает', (function () {
+    state.res.turns = 0;
+    const btn = doc.querySelector('#board .bigbang-btn');
+    if (!btn || btn.disabled) return false;
+    click(btn);
+    return (state.res.turns || 0) > 0;
+  })(), '⧜ ' + Math.floor(state.res.turns || 0));
+
   section('5t. Цветовые темы ярусов, свои цвета досок, эффекты действий (v0.25.0)');
   const Cc = G.ui.components;
   const allMech = ['core'].concat(G.registry.mechanics().map((m) => m.id));
@@ -2129,7 +2202,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     const set = new Set(allMech.map((id) => Cc.mechColor(id)));
     return set.size >= allMech.length - 3;
   })(), new Set(allMech.map((id) => Cc.mechColor(id))).size + ' уникальных');
-  check('у каждой доски есть ярус', allMech.every((id) => ['1', 'meta', '2', '3'].indexOf(Cc.mechTier(id)) >= 0),
+  check('у каждой доски есть ярус', allMech.every((id) => ['1', 'meta', '2', '3', '4'].indexOf(Cc.mechTier(id)) >= 0),
     allMech.map((id) => id + ':' + Cc.mechTier(id)).slice(0, 6).join(' '));
 
   /* смена доски меняет тему и цвет */
@@ -2253,7 +2326,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const menuCardIds = () => Array.from(doc.querySelectorAll('.menu-card')).map((c) => c.dataset.id);
   const uniqCards = () => new Set(menuCardIds()).size;   /* есть повторы из «Закреплённых»/«Недавних» */
   const allCards = uniqCards();
-  check('в меню все доски', allCards === 28, allCards + ' уникальных карточек (27 механик + «Рост»)');
+  check('в меню все доски', allCards === 29, allCards + ' уникальных карточек (28 механик + «Рост»)');
 
   setSearch('дерев');
   const foundIds = menuCardIds();

@@ -40,6 +40,7 @@
     chrono: '#818cf8',
     rift: '#f0abfc',
     /* Ярус 3 «Логарифм/ПРОБОЙ» — розовый неон */
+    turn: '#a3e635',
     breakthrough: '#ff5fd2',
     psitree: '#ff8fa8',
     omega: '#ff9de2'
@@ -52,7 +53,8 @@
     prestige: 'meta', tree: 'meta', achievements: 'meta',
     bigbang: '2', constellations: '2', glyphs: '2', pacttree: '2', challenges: '2',
     pacts: '2', duplicator: '2', echo: '2', chrono: '2', rift: '2',
-    breakthrough: '3', psitree: '3', omega: '3'
+    breakthrough: '3', psitree: '3', omega: '3',
+    turn: '4'
   };
 
   const MECH_ICON = {

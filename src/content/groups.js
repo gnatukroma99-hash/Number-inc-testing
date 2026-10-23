@@ -28,5 +28,11 @@
       id: 'tier3', name: 'Ярус 3', hint: 'после ПРОБОЯ',
       color: '#ff9de2',
       mechs: ['breakthrough', 'psitree', 'omega']
-    }  ];
+    },
+    {
+      id: 'tier4', name: 'Ярус 4', hint: 'после ОБОРОТА',
+      color: '#a3e635',
+      mechs: ['turn']
+    }
+  ];
 })(window.G = window.G || {});

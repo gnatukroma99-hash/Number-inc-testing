@@ -28,6 +28,8 @@
         d1: s.d1,
         rho: s.rho,
         prime: state.res.prime || 0,
+        turns: state.res.turns || 0,
+        breaks: state.meta.breaks || 0,
         t: state.stats.playtime || 0
       };
     },

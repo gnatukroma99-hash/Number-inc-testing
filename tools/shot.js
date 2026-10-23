@@ -95,6 +95,12 @@ const PREP = `
   ['psi_start', 'psi_speed', 'psi_delta'].forEach((id) => { if (G.registry.upgrade(id)) buy(id, 1); });
   ['ps_freq', 'ps_cut', 'ps_yield', 'ps_boom1'].forEach((id) => { if (G.registry.upgrade(id)) buy(id, 1); });
   s.res.psi = 21;
+  /* Ярус 4: обороты и трамплин — чтобы снять доску ОБОРОТА */
+  s.res.turns = 24;
+  if (G.registry.upgrade('tr_start')) buy('tr_start', 3);
+  if (G.registry.upgrade('tr_span')) buy('tr_span', 2);
+  if (G.registry.upgrade('tr_mult')) buy('tr_mult', 2);
+  G.debug.setD(12000);
   /* паттерны: коллекция и активный буфф, чтобы доска была «живой» */
   s.mech.patterns = {
     count: { triple: 2, quad: 1, run3: 1, run4: 1, pal: 0 }, total: 5,

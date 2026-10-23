@@ -3198,6 +3198,8 @@ body[data-tier="meta"] { --tier-a: #ffcc4d; --tier-b: #ffb14d; --tier-glow: rgba
 body[data-tier="2"] { --tier-a: #c084fc; --tier-b: #a78bfa; --tier-glow: rgba(192, 132, 252, .24); }
 /* Ярус 3 «Логарифм» — розовый неон */
 body[data-tier="3"] { --tier-a: #ff5fd2; --tier-b: #ff9de2; --tier-glow: rgba(255, 95, 210, .26); }
+/* Ярус 4 «ОБОРОТ ⧜» — лайм и зелёный неон: новый слой начинается заново, но с разбега */
+body[data-tier="4"] { --tier-a: #a3e635; --tier-b: #7cf7b0; --tier-glow: rgba(163, 230, 53, .26); }
 
 #board {
   --accent: var(--tier-a, #35e2c0);
