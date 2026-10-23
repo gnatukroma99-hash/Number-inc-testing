@@ -37,13 +37,16 @@
 
   const TIER_LABEL = { t1: 'I', t2: 'II', t3: 'III', t4: 'IV' };
   /* ---------- фабрика: одна карта на любое «дерево-валюту» ----------
-     opts: { mech, content, res, unit, icon, close }
+     opts: { mech, content, res, unit, icon, close, theme, canBuy, buy, blocked, visible }
        mech    — id механики: её узлы = registry.upgradesOf(mech)
        content — ключ G.content с { branches, tiers }
        res     — ресурс-валюта узлов ('cores' для ◆, 'psi' для Ψ)
        unit    — значок валюты в HUD ('◆' / 'Ψ')
        icon    — иконка хаба и кнопки покупки
        close   — куда уводит крестик/Esc (id доски)
+       theme   — класс оформления карты ('rot' у Пакт-дерева), только CSS
+       canBuy / buy / blocked / visible — хуки: дерево с развилками подменяет
+                  правила покупки, не дублируя весь движок (v0.28.0)
      Тело доски ниже оставлено почти дословно — чтобы дифф при выносе был минимальным. */
   function build(opts) {
     opts = opts || {};
@@ -52,6 +55,12 @@
     const unit = opts.unit || '◆';
     const ico = opts.icon || 'core';
     const closeId = opts.close || 'core';
+    /* хуки: обычные деревья ничего не передают — работает поведение ◆-дерева */
+    const canBuy = opts.canBuy || ((s, u) => G.upgrades.canBuy(s, u));
+    const buyUpg = opts.buy || ((s, u) => G.upgrades.buy(s, u));
+    const blockedOf = opts.blocked || null;
+    const visibleOf = opts.visible || ((s, u) => G.upgrades.requirementsMet(s, u));
+    const themeCls = opts.theme ? ' theme-' + opts.theme : '';
 
     /* геометрия карты наружу — чтобы тесты ловили выход узлов за край и перекрытие ветвей */
     mech.geometry = { SIZE: SIZE, HUB: HUB, R0: R0, RSTEP: RSTEP, DRIFT: DRIFT };
@@ -99,7 +108,7 @@
     }
 
     function visible(s) {
-      return G.upgrades.requirementsMet(s, u) || G.lvl(s, u.id) > 0;
+      return visibleOf(s, u) || G.lvl(s, u.id) > 0;
     }
 
     function update(s) {
@@ -110,7 +119,17 @@
 
       const lvl = G.lvl(s, u.id);
       const maxed = lvl >= u.max;
+      const blocker = blockedOf ? blockedOf(s, u) : null;
       lvlEl.textContent = maxed ? 'макс' : 'ур. ' + lvl + (isFinite(u.max) ? '/' + u.max : '');
+
+      if (blocker) {
+        /* развилка пакт-дерева: ветвь отсохла, узел не покупается */
+        priceEl.textContent = '';
+        lvlEl.textContent = 'закрыто';
+        orb.disabled = true;
+        el.className = 'node blocked' + (lvl > 0 ? ' done' : '');
+        return;
+      }
 
       if (maxed) {
         priceEl.textContent = '';
@@ -118,7 +137,7 @@
         el.className = 'node maxed done';
         return;
       }
-      const can = G.upgrades.canBuy(s, u);
+      const can = canBuy(s, u);
       priceEl.textContent = G.fmt.num(G.upgrades.currentCost(s, u));
       orb.disabled = !can;
       el.className = 'node' + (lvl > 0 ? ' done' : '') + (can ? ' ready' : '');
@@ -194,7 +213,9 @@
 
         list.forEach((u) => {
           const d = u.depth || 0;
-          const a = (base + Math.sin(d * 0.8 + i * 1.9) * DRIFT) * Math.PI / 180;
+          /* angleOffset — развилка: два узла одной глубины расходятся в стороны (пакт-дерево) */
+          const off = Number(u.angleOffset) || 0;
+          const a = (base + Math.sin(d * 0.8 + i * 1.9) * DRIFT + off) * Math.PI / 180;
           const rad = R0 + d * RSTEP;
           const x = HUB + Math.cos(a) * rad;
           const y = HUB + Math.sin(a) * rad;
@@ -268,7 +289,7 @@
       let hideTimer = null;
 
       function buyOnce(u) {
-        const ok = G.upgrades.buy(G.state, u);
+        const ok = buyUpg(G.state, u);
         const c = cards.find((x) => x.u === u);
         if (c && ok) c.card.flash();
         if (tip.classList.contains('on')) fillTip(u);
@@ -278,6 +299,7 @@
         const s = G.state;
         const lvl = G.lvl(s, u.id);
         const maxed = lvl >= u.max;
+        const blocker = blockedOf ? blockedOf(s, u) : null;
         const cur = G.upgrades.value(s, u);
         tipTitle.textContent = u.name;
         tipSub.textContent = 'ярус ' + (TIER_LABEL[u.tier] || '?') + ' · ур. ' + lvl + ' / ' + u.max;
@@ -285,12 +307,17 @@
         tipEff.textContent = maxed
           ? 'сейчас: ' + C().fmtEffect(u, cur) + ' · максимум'
           : 'сейчас: ' + C().fmtEffect(u, cur) + ' → ' + C().fmtEffect(u, nextValue(s, u, lvl));
-        if (maxed) {
+        if (blocker) {
+          const other = G.registry.upgrade(blocker);
+          tipBuy.textContent = 'ветвь закрыта: ' + (other ? other.name : blocker);
+          tipBuy.disabled = true;
+          tipBuy.classList.add('maxed');
+        } else if (maxed) {
           tipBuy.textContent = 'максимум';
           tipBuy.disabled = true;
           tipBuy.classList.add('maxed');
         } else {
-          tipBuy.disabled = !G.upgrades.canBuy(s, u);
+          tipBuy.disabled = !canBuy(s, u);
           tipBuy.classList.remove('maxed');
           G.dom.clear(tipBuy);
           tipBuy.appendChild(G.ui.icons.node(ico));
@@ -377,7 +404,7 @@
       const zoomCenter = mkBtn('center', 'К центру');
       const zoomBar = G.h('div', { class: 'tree-zoom' }, [zoomIn, zoomOut, zoomFit, zoomCenter]);
 
-      const stage = G.h('div', { class: 'tree-stage' }, [parallax, map, hud, zoomBar, tip]);
+      const stage = G.h('div', { class: 'tree-stage' + themeCls }, [parallax, map, hud, zoomBar, tip]);
       const el = G.h('div', { class: 'board-body tree-board' }, [stage]);
       root.appendChild(el);
 
@@ -488,7 +515,7 @@
         const cell = target && target.closest ? target.closest('.tree-cell') : null;
         if (!cell) return null;
         const orb = cell.querySelector('.node-orb');
-        if (!orb || orb.disabled) return null;
+        if (!orb) return null;
         return cards.find((c) => c.cell === cell) || null;
       }
 
@@ -624,6 +651,7 @@
 
       /* ---------- размеры и первый кадр ---------- */
       let lastSize = { w: 0, h: 0 };
+      let lastSig = -1;
       const onResize = () => {
         const w = stage.clientWidth;
         const h = stage.clientHeight;
@@ -649,6 +677,18 @@
 
         update(state) {
           onResize();
+          /* Подпись состояния: валюта + уровни узлов. Карта — 20–40 узлов, и если
+             ничего не менялось (а меняется оно только по клику), пересчитывать цены
+             и классы каждый кадр незачем: это самый дорогой участок рендера. */
+          let sig = Math.floor(state.res[res] || 0) % 1000000007;
+          for (const c of cards) sig = (sig * 31 + G.lvl(state, c.u.id)) % 1000000007;
+          if (sig === lastSig) {
+            /* открытая карточка узла всё равно должна обновлять числа */
+            if ((hovered || selected) && tip.classList.contains('on')) fillTip(hovered || selected);
+            return;
+          }
+          lastSig = sig;
+
           /* счётчики в подписях ветвей: «куплено/всего» */
           for (const info of branchInfo) {
             let bought = 0;
@@ -667,7 +707,8 @@
             if (c.cell) {
               const on = c.card.visible(state);
               c.cell.classList.toggle('is-hidden', !on);
-              c.cell.classList.toggle('ready', G.upgrades.canBuy(state, c.u));
+              c.cell.classList.toggle('ready', canBuy(state, c.u));
+              c.cell.classList.toggle('blocked', !!(blockedOf && blockedOf(state, c.u)));
             }
           }
           for (const l of links) {

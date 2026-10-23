@@ -12,21 +12,28 @@
 
   G.content.pacttree = {
     id: 'pacttree',
-    hint: 'Двадцать узлов за Δ. В каждой ветви на одной глубине — развилка: берёшь одно, ' +
-      'соседнее закрывается. Сейчас у тебя 8 выборов из 2, и это меняет забег, а не только цифру.',
+    hint: 'Гнилое дерево Яруса 2: те же ветви, что у ◆-дерева, но валюта — Δ осколки, ' +
+      'а на каждой глубине развилка: берёшь одно, соседнее сохнет навсегда. ' +
+      'Что не взял — то и не было.',
+
+    /* оформление карты — только CSS: .tree-stage.theme-rot (файл style.css) */
+    theme: 'rot',
+
+    /* на сколько градусов расходятся два узла развилки на одной глубине */
+    forkSpread: 9,
 
     branches: [
-      { id: 'growth', name: 'Рост', color: '#35e2c0' },
-      { id: 'speed', name: 'Скорость', color: '#2bb5ff' },
-      { id: 'meta', name: 'Мета', color: '#ffd166' },
-      { id: 'lucky', name: 'Удача', color: '#ff9de2' }
+      { id: 'growth', name: 'Рост', color: '#a6d13f', angle: -90 },
+      { id: 'speed', name: 'Скорость', color: '#5fc79a', angle: -22 },
+      { id: 'meta', name: 'Мета', color: '#e0b344', angle: -158 },
+      { id: 'lucky', name: 'Удача', color: '#c962a6', angle: 96 }
     ]
   };
 
   /* helper для краткости: n(id, branch, depth, цена, имя, эффект, поля) */
   function n(id, branch, depth, base, name, note, fields, excludes) {
     return Object.assign({
-      id: id, mech: 'pacttree', branch: branch, depth: depth,
+      id: id, mech: 'pacttree', branch: branch, depth: depth, tier: 't2',
       scope: 'tier', res: 'delta', icon: branch === 'meta' ? 'core' : (branch === 'lucky' ? 'slot' : '◈'),
       name: name, base: base, growth: 1.9, max: 3, note: note,
       autoBuy: false,
@@ -68,4 +75,20 @@
     n('pt_l3a', 'lucky', 2, 14, 'Джекпот-мастер', 'M за джекпот +1·lvl', { formula: '1 * lvl', fmt: 'num', slotJackAdd: '1 * lvl', requires: ['pt_l2a'] }, ['pt_l3b']),
     n('pt_l3b', 'lucky', 2, 14, 'Искро-мастер', 'искры чаще ×= 0.8^lvl', { formula: '1 / (0.8 ** lvl)', fmt: 'x', sparkGap: '0.8 ** lvl', requires: ['pt_l2b'] }, ['pt_l3a'])
   ]);
+
+  /* Развилки на карте: два узла одной ветви и одной глубины разводим по углу,
+     иначе карта рисует их в одной точке. Расхождение — из данных (forkSpread). */
+  (function () {
+    const spread = Number(G.content.pacttree.forkSpread) || 9;
+    const groups = {};
+    for (const u of G.registry.upgradesOf('pacttree')) {
+      const key = u.branch + ':' + (u.depth || 0);
+      (groups[key] = groups[key] || []).push(u);
+    }
+    for (const key in groups) {
+      const g = groups[key];
+      if (g.length < 2) continue;
+      g.forEach((u, i) => { u.angleOffset = (i % 2 ? 1 : -1) * spread; });
+    }
+  })();
 })(window.G = window.G || {});

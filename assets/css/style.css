@@ -3431,3 +3431,211 @@ body.board-full .fx-dock { bottom: 190px; }
   body.board-full .fx-dock { bottom: 8px; }
   body.board-full .tree-zoom { bottom: 76px; }
 }
+
+/* ================= v0.28.0 — ПАКТ-ДЕРЕВО ⌁: ГНИЛОЕ АНТИ-ДЕРЕВО =================
+   Один движок карты (mechanics/tree/engine.js), два настроения:
+   ◆-дерево — дальний космос, пакт-дерево — затхлый лес. Всё отличие — класс
+   .theme-rot на .tree-stage (приходит из данных: content/pacttree.js → theme:'rot').
+   Никакой JS-логики здесь нет: только CSS. */
+
+.tree-stage.theme-rot {
+  background:
+    radial-gradient(30% 26% at 50% 48%, rgba(168, 208, 70, .20), transparent 72%),
+    radial-gradient(78% 66% at 50% 44%, rgba(126, 158, 44, .15), transparent 62%),
+    radial-gradient(46% 38% at 10% 8%, rgba(150, 42, 92, .12), transparent 66%),
+    radial-gradient(52% 44% at 92% 94%, rgba(88, 60, 140, .16), transparent 66%),
+    radial-gradient(80% 70% at 50% 118%, rgba(52, 18, 26, .55), transparent 72%),
+    radial-gradient(120% 120% at 50% 50%, transparent 55%, rgba(0, 0, 0, .55) 100%),
+    #080a06;
+}
+
+/* туман гнили вместо неоновой туманности */
+.theme-rot .tree-nebula {
+  background:
+    radial-gradient(46% 40% at 28% 34%, rgba(140, 178, 50, .14), transparent 70%),
+    radial-gradient(40% 34% at 74% 66%, rgba(122, 40, 82, .15), transparent 70%),
+    radial-gradient(34% 30% at 52% 84%, rgba(72, 52, 112, .12), transparent 70%);
+  animation-duration: 38s;
+}
+/* споры: тянутся вверх медленно, в отличие от звёзд ◆-дерева */
+.theme-rot .tree-stars {
+  background-image:
+    radial-gradient(1.6px 1.6px at 20% 30%, rgba(186, 222, 96, .55), transparent),
+    radial-gradient(1.3px 1.3px at 68% 18%, rgba(150, 190, 80, .45), transparent),
+    radial-gradient(1.1px 1.1px at 42% 72%, rgba(210, 230, 150, .40), transparent),
+    radial-gradient(1.7px 1.7px at 82% 58%, rgba(170, 90, 130, .40), transparent),
+    radial-gradient(1.2px 1.2px at 12% 82%, rgba(160, 200, 90, .38), transparent);
+  background-size: 420px 420px, 360px 360px, 300px 300px, 480px 480px, 260px 260px;
+  animation: rotSpores 80s linear infinite;
+  opacity: .8;
+}
+@keyframes rotSpores { to { transform: translate3d(26px, -74px, 0); } }
+/* крупные споры вблизи — размытие даёт «сырость» без картинок */
+.theme-rot .tree-parallax::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .45;
+  background-image:
+    radial-gradient(3px 3px at 24% 62%, rgba(190, 226, 110, .5), transparent),
+    radial-gradient(4px 4px at 63% 34%, rgba(160, 200, 90, .4), transparent),
+    radial-gradient(2.5px 2.5px at 81% 76%, rgba(200, 160, 200, .35), transparent),
+    radial-gradient(3.5px 3.5px at 44% 14%, rgba(150, 190, 90, .38), transparent);
+  background-size: 520px 520px, 640px 640px, 580px 580px, 700px 700px;
+  filter: blur(5px);
+  animation: rotSpores 56s linear infinite;
+}
+
+/* кольца глубин — трухлявые, рваные */
+.theme-rot .tring { stroke: rgba(168, 138, 70, .16); stroke-dasharray: 1 11; }
+.theme-rot .tring.base { stroke: rgba(166, 196, 70, .26); stroke-dasharray: 4 8; }
+.theme-rot .tray { opacity: .11; stroke-dasharray: 3 16; }
+
+/* ветви-лианы: толще, грязнее, «текут» медленнее */
+.theme-rot .tline { stroke-width: 3.4; stroke-dasharray: 6 8; opacity: .55; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .9)); }
+.theme-rot .tline.done { stroke-width: 4; stroke-dasharray: 8 6; opacity: .95; }
+.theme-rot .tline.is-hidden { opacity: .12; }
+.theme-rot .tline.flow { stroke-width: 5; stroke-dasharray: 9 30; }
+.theme-rot .tline.flow.done { opacity: .7; animation-duration: 2.8s; }
+
+/* сердце гнили: вместо золотого — больное зелёное, с каплей */
+.theme-rot .hub-ring { border-color: rgba(166, 196, 70, .30); }
+.theme-rot .hub-ring::after {
+  border-color: rgba(150, 42, 92, .22);
+  box-shadow: inset 0 0 30px rgba(126, 158, 44, .16);
+}
+.theme-rot .hub-core {
+  color: #b6d94e;
+  filter: drop-shadow(0 0 20px rgba(150, 200, 60, .8));
+}
+.theme-rot .hub-label {
+  color: #d6ec9c;
+  text-shadow: 0 0 16px rgba(150, 200, 60, .75);
+}
+.theme-rot .tree-hub::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 74%;
+  width: 7px;
+  height: 40px;
+  margin-left: -3.5px;
+  border-radius: 0 0 70% 70%;
+  background: linear-gradient(rgba(140, 176, 50, .55), rgba(140, 176, 50, 0));
+  filter: blur(.7px);
+  pointer-events: none;
+  animation: rotDrip 7s ease-in-out infinite;
+}
+@keyframes rotDrip {
+  0%, 100% { transform: scaleY(.65); opacity: .45; }
+  50% { transform: scaleY(1.08); opacity: .85; }
+}
+
+/* узлы — набухшие наросты, а не ровные сферы */
+.theme-rot .tree-cell .node-orb,
+.theme-rot .node-orb {
+  border-radius: 46% 54% 52% 48% / 52% 46% 56% 44%;
+  background: radial-gradient(circle at 42% 26%, #1c2a12 0%, #050805 78%);
+  border-color: color-mix(in srgb, var(--branch, #a6d13f) 62%, #2a2113);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, .9), inset 0 -7px 12px rgba(34, 12, 22, .55),
+              0 0 10px color-mix(in srgb, var(--branch, #a6d13f) 16%, transparent);
+}
+.theme-rot .tree-cell:nth-child(3n) .node-orb { border-radius: 53% 47% 45% 55% / 47% 55% 45% 55%; }
+.theme-rot .tree-cell:nth-child(3n+1) .node-orb { border-radius: 48% 52% 57% 43% / 55% 46% 54% 45%; }
+.theme-rot .orb-ico { color: color-mix(in srgb, var(--branch, #8fbf3a) 70%, #dfe8c0); }
+
+/* можно купить — гнойное свечение */
+.theme-rot .node.ready .node-orb {
+  border-color: var(--branch, #8fbf3a);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--branch, #8fbf3a) 45%, transparent),
+              inset 0 0 18px rgba(0, 0, 0, .9);
+  animation: rotPulse 2.8s ease-in-out infinite;
+}
+.theme-rot .node.ready .orb-price { color: #eef7cf; }
+@keyframes rotPulse {
+  50% {
+    box-shadow: 0 0 30px color-mix(in srgb, var(--branch, #8fbf3a) 62%, transparent),
+                inset 0 0 20px rgba(0, 0, 0, .9);
+  }
+}
+/* куплен — нарост оброс мхом */
+.theme-rot .node.done .node-orb {
+  background: radial-gradient(circle at 50% 30%, #1d2611 0%, #050805 80%);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--branch, #8fbf3a) 28%, transparent),
+              inset 0 0 16px rgba(0, 0, 0, .8);
+}
+.theme-rot .node.done .node-orb::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  border: 1px solid color-mix(in srgb, var(--branch, #8fbf3a) 30%, transparent);
+  opacity: .55;
+  pointer-events: none;
+}
+
+/* развилка закрыта: ветвь отсохла — серый скелет с крестом */
+.theme-rot .node.blocked .node-orb {
+  border-style: dashed;
+  border-color: rgba(124, 112, 92, .5);
+  background: radial-gradient(circle at 50% 30%, #141210 0%, #040404 78%);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, .95);
+  color: rgba(196, 186, 156, .5);
+}
+.theme-rot .node.blocked .node-orb::before {
+  content: '';
+  position: absolute;
+  inset: 27%;
+  background:
+    linear-gradient(45deg, transparent 45%, rgba(186, 74, 74, .6) 46%, rgba(186, 74, 74, .6) 54%, transparent 55%),
+    linear-gradient(-45deg, transparent 45%, rgba(186, 74, 74, .6) 46%, rgba(186, 74, 74, .6) 54%, transparent 55%);
+  pointer-events: none;
+}
+.theme-rot .node.blocked .orb-ico { opacity: .32; }
+.theme-rot .node.blocked .orb-price,
+.theme-rot .node.blocked .orb-ring { display: none; }
+.theme-rot .node.blocked .node-lvl {
+  color: rgba(198, 122, 118, .8);
+  letter-spacing: .04em;
+}
+.theme-rot .tree-cell.blocked { opacity: .78; }
+
+/* подписи ветвей, шапка и зум — в тон гнили */
+.theme-rot .tree-branch-label {
+  border-color: color-mix(in srgb, var(--branch, #a6d13f) 62%, transparent);
+  background: rgba(8, 10, 5, .88);
+  color: color-mix(in srgb, var(--branch, #a6d13f) 88%, #ffffff);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .55), 0 0 14px color-mix(in srgb, var(--branch, #a6d13f) 18%, transparent);
+}
+.theme-rot .tbl-dot {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--branch, #8fbf3a) 75%, transparent);
+}
+.theme-rot .tree-hud-left {
+  border-color: rgba(150, 140, 88, .22);
+  background: rgba(8, 10, 5, .78);
+}
+.theme-rot .tree-hud-cores {
+  color: #b6d94e;
+  text-shadow: 0 0 12px rgba(150, 200, 60, .5);
+}
+.theme-rot .tree-zoom-btn {
+  border-color: rgba(150, 140, 88, .22);
+  background: rgba(8, 10, 5, .8);
+}
+.theme-rot .tree-zoom-btn:hover { border-color: #b6d94e; color: #b6d94e; }
+.theme-rot .tree-tip {
+  border-color: rgba(150, 140, 88, .3);
+  background: rgba(8, 10, 5, .97);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .8), 0 0 26px rgba(126, 158, 44, .10);
+}
+.theme-rot .tip-title { color: #d6ec9c; }
+.theme-rot .tip-buy {
+  border-color: color-mix(in srgb, #8fbf3a 40%, transparent);
+  color: #d6ec9c;
+}
+
+/* «анимации выключены» — гниль тоже не шевелится */
+body.no-anim .theme-rot .tree-hub::after,
+body.no-anim .theme-rot .node.ready .node-orb,
+body.no-anim .theme-rot .tree-parallax::after { animation: none !important; }

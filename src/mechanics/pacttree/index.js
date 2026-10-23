@@ -53,6 +53,8 @@
     short: 'Пакт-дерево',
     icon: '⌁',
     scope: 'tier',
+    noBulk: true,          // у узлов дерева своя цена, массовая покупка не нужна
+    fullscreen: true,      // доска — карта на весь экран (тот же движок, что у ◆-дерева)
     hint: cfg().hint,
     lockHint: 'нужен БОЛЬШОЙ БУМ (Ярус 2)',
 
@@ -60,6 +62,15 @@
       return G.bigbang && G.bigbang.tierOpen ? G.bigbang.tierOpen(state)
         : (state.res.delta || 0) > 0;
     },
+
+    /* сколько узлов куплено / всего — читает общий движок карты */
+    bought(state) {
+      let n = 0;
+      for (const u of list()) if (G.lvl(state, u.id) > 0) n++;
+      return n;
+    },
+
+    total() { return list().length; },
 
     /* эффекты собираются свипами: upgProduct/upgSum берут только isUnlocked-узлы,
        поэтому закрытый развилкой узел не даёт бонуса, даже если его когда-то купили. */

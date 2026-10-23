@@ -1628,6 +1628,39 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   state.upg.pt_g2a = 0;
   check('после снятия узла сосед снова доступен', G.pacttree.canBuy(state, forkB) === true);
 
+  /* --- пакт-дерево как КАРТА (v0.28.0: гнилое анти-дерево) --- */
+  state.upg.pt_g1 = 1;
+  state.upg.pt_g2a = 1;
+  state.res.delta = 500;
+  click(dockBtns().find((b) => b.dataset.id === 'pacttree'));
+  const ptStage = doc.querySelector('#board .tree-stage');
+  check('доска пакт-дерева — карта, а не список',
+    !!ptStage && !!doc.querySelector('#board .tree-map') && !doc.querySelector('#board .pt-branch'),
+    ptStage ? ptStage.className : 'нет .tree-stage');
+  check('карта в оформлении «гниль»', !!doc.querySelector('#board .tree-stage.theme-rot'));
+  const ptCells = Array.from(doc.querySelectorAll('#board .tree-cell'));
+  check('на карте стоят все 20 узлов', ptCells.length >= 20, ptCells.length + ' ячеек');
+  const ptNode = (id) => {
+    const u = G.registry.upgrade(id);
+    return u ? ptCells.find((c) => c.textContent.indexOf(u.name) >= 0) : null;
+  };
+  const cA = ptNode('pt_g2a');
+  const cB = ptNode('pt_g2b');
+  check('узлы развилки разведены по карте (не в одной точке)',
+    !!cA && !!cB && (cA.style.left !== cB.style.left || cA.style.top !== cB.style.top),
+    cA && cB ? cA.style.left + ',' + cA.style.top + ' / ' + cB.style.left + ',' + cB.style.top : 'не нашёл узлы');
+  G.ui.app.render(state);
+  check('закрытый развилкой узел на карте зачёркнут',
+    !!(cB && cB.querySelector('.node.blocked')) || !!doc.querySelector('#board .node.blocked'),
+    'blocked-узлов: ' + doc.querySelectorAll('#board .node.blocked').length);
+  check('у закрытого узла нет цены', (function () {
+    const b = doc.querySelector('#board .node.blocked .orb-price');
+    return !b || !b.textContent;
+  })());
+  state.upg.pt_g2a = 0;
+  G.ui.app.render(state);
+  state.res.delta = 500;
+
   /* --- кристалл Ω --- */
   state.mech.omega = null;
   state.stats.bestD = Math.max(state.stats.bestD || 0, 400);

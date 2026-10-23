@@ -74,6 +74,11 @@ const PREP = `
   s.meta.tier = 'tier2';
   s.meta.bangs = 3;
   s.res.delta = 260;
+  // пакт-дерево: часть ветвей выбрана — в кадре видно готовые, купленные и отсохшие узлы
+  ['pt_g1', 'pt_g2a', 'pt_g3a', 'pt_s1', 'pt_s2b', 'pt_m1', 'pt_l1'].forEach((id) => {
+    if (G.registry.upgrade(id)) buy(id, 1);
+  });
+  s.res.delta = 260;
   s.meta.achievements = (G.achievements ? G.achievements.list().slice(0, 12).map((a) => a.id) : []);
   if (s.mech.omega) { s.mech.omega.omega = 12; s.mech.omega.rules = ['w_pity', 'w_spark']; }
   if (s.mech.glyphs) { s.mech.glyphs.slots = [{ id: 1, digit: 3, rarity: 'epic', profile: 'greed' }, { id: 2, digit: 7, rarity: 'legend', profile: 'kernel' }, null]; }
@@ -161,6 +166,16 @@ let browser = null;                       /* закрываем в finally: ин
   await new Promise((r) => setTimeout(r, 260));
   await page.screenshot({ path: path.join(OUT, 'mobile-tree.png'), fullPage: false });
   console.log('  снято: tools/shots/mobile-tree.png');
+
+  /* мобильный вид гнилого пакт-дерева — проверяем вёрстку темы и подписи в листе */
+  await page.evaluate(() => {
+    const btn = Array.from(document.querySelectorAll('#docks .dock')).find((b) => b.dataset.id === 'pacttree');
+    if (btn) btn.click();
+    window.G.ui.app.render(window.G.state);
+  });
+  await new Promise((r) => setTimeout(r, 260));
+  await page.screenshot({ path: path.join(OUT, 'mobile-pacttree.png'), fullPage: false });
+  console.log('  снято: tools/shots/mobile-pacttree.png');
 
   /* меню «Все доски» — главный экран навигации */
   await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });

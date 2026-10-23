@@ -1,75 +1,46 @@
-/* mechanics/pacttree/board.js — доска «Пакт-дерево ⌁»: 4 ветви по 5 узлов, развилки. */
+/* mechanics/pacttree/board.js — доска «Гнилое дерево ⌁» (v0.28.0).
+   Раньше это был список карточек, теперь — та же карта-созвездие, что у ◆-дерева
+   (механика tree/engine.js), но с оформлением «гниль» (`theme: 'rot'` в content/pacttree.js)
+   и развилками: закрытый развилкой узел виден, но мёртв (хук `blocked`).
+
+   Отличие от ◆-дерева — только четыре хука движка, сам движок про пакты не знает:
+     canBuy  — цена + требования + развилка;
+     blocked — какая именно ветвь отсохла (для подписи «закрыто»);
+     buy     — покупка через G.pacttree.buy;
+     visible — глубину 2 видно, если куплен ЛЮБОЙ узел предыдущей глубины этой ветви. */
 (function (G) {
   'use strict';
 
-  const mech = G.registry.mechanic('pacttree');
-  const C = G.ui.components;
-  const CFG = G.content.pacttree;
+  const branchOf = (u) => u.branch || '';
 
-  mech.board = {
-    mount(root) {
-      const tNodes = C.tile('Узлов куплено', 'good');
-      const tForks = C.tile('Развилок выбрано', 'accent');
-      const tDelta = C.tile('Δ осколки', '');
+  /* Узлы предыдущей глубины по каждой ветви — считаем ОДИН раз (карта спрашивает
+     visible() для каждого узла на каждом кадре; перебор реестра там был бы дорогим). */
+  const parents = {};
+  for (const u of G.registry.upgradesOf('pacttree')) {
+    const key = branchOf(u) + ':' + (u.depth || 0);
+    (parents[key] = parents[key] || []).push(u.id);
+  }
+  const parentIds = (u) => parents[branchOf(u) + ':' + ((u.depth || 0) - 1)] || [];
 
-      const blocks = (CFG.branches || []).map((b) => {
-        const nodes = G.registry.upgradesOf('pacttree').filter((u) => u.branch === b.id)
-          .sort((x, y) => (x.depth || 0) - (y.depth || 0));
-        const cards = nodes.map((u) => {
-          const name = G.h('div', { class: 'pt-name', text: u.name });
-          const note = G.h('div', { class: 'pt-note', text: u.note || '' });
-          const btn = G.h('button', { class: 'btn pt-buy', type: 'button' });
-          btn.addEventListener('click', () => {
-            if (G.pacttree.buy(G.state, u)) G.ui.toast('⌁ ' + u.name + ' — куплено', 'good', 2200);
-          });
-          const el = G.h('div', { class: 'pt-node' }, [name, note, btn]);
-          el.style.setProperty('--pt', b.color || '#35e2c0');
-          return { u: u, el: el, btn: btn };
-        });
-        return { b: b, el: G.h('div', { class: 'pt-branch' }, [
-          G.h('div', { class: 'pt-branch-name', text: b.name }),
-          G.h('div', { class: 'pt-nodes' }, cards.map((c) => c.el))
-        ]), cards: cards };
-      });
+  G.treeBoard.build({
+    mech: 'pacttree',
+    content: 'pacttree',
+    res: 'delta',
+    unit: 'Δ',
+    icon: '⌁',
+    close: 'bigbang',
+    theme: 'rot',
 
-      const el = G.h('div', { class: 'board-body' }, [
-        G.h('p', { class: 'board-hint', text: mech.hint }),
-        C.grid([tNodes.el, tForks.el, tDelta.el]),
-        C.section('Ветви', blocks.map((b) => b.el))
-      ]);
-      root.appendChild(el);
+    canBuy(state, u) { return G.pacttree.canBuy(state, u); },
+    buy(state, u) { return G.pacttree.buy(state, u); },
+    blocked(state, u) { return G.pacttree.blockedBy(state, u); },
 
-      return {
-        update(state) {
-          let bought = 0;
-          for (const u of G.registry.upgradesOf('pacttree')) if (G.lvl(state, u.id) > 0) bought++;
-          tNodes.set(bought + ' / ' + G.registry.upgradesOf('pacttree').length);
-          tForks.set(String(G.pacttree.chosen(state)));
-          tDelta.set('Δ ' + G.fmt.num(state.res.delta || 0));
-
-          for (const block of blocks) {
-            for (const c of block.cards) {
-              const lvl = G.lvl(state, c.u.id);
-              const blockedBy = G.pacttree.blockedBy(state, c.u);
-              const maxed = lvl >= c.u.max;
-              c.el.classList.toggle('done', lvl > 0 && !blockedBy);
-              c.el.classList.toggle('blocked', !!blockedBy);
-              if (blockedBy) {
-                const other = G.registry.upgrade(blockedBy);
-                c.btn.textContent = 'закрыто: ' + (other ? other.name : blockedBy);
-                c.btn.disabled = true;
-              } else if (maxed) {
-                c.btn.textContent = 'максимум';
-                c.btn.disabled = true;
-              } else {
-                const cost = G.upgrades.currentCost(state, c.u);
-                c.btn.textContent = (lvl > 0 ? lvl + ' → ' : '') + G.fmt.num(cost) + ' Δ';
-                c.btn.disabled = !G.pacttree.canBuy(state, c.u);
-              }
-            }
-          }
-        }
-      };
+    visible(state, u) {
+      if (!u.requires || !u.requires.length) return true;
+      if ((u.depth || 0) <= 0) return true;
+      const ids = parentIds(u);
+      for (let i = 0; i < ids.length; i++) if (G.lvl(state, ids[i]) > 0) return true;
+      return false;
     }
-  };
+  });
 })(window.G = window.G || {});
