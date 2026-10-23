@@ -24,8 +24,9 @@ const ROOT = path.join(__dirname, '..');
 const OUT = path.join(__dirname, 'shots');
 const BOARDS = process.argv.slice(2).length
   ? process.argv.slice(2)
-  : ['core', 'combo', 'digitsum', 'analysis', 'shop', 'primeranks', 'sieve', 'mirror', 'slot', 'prestige', 'tree',
-    'bigbang', 'glyphs', 'challenges', 'pacts', 'duplicator', 'pacttree', 'echo', 'chrono', 'rift', 'constellations', 'omega', 'achievements'];
+  : ['core', 'combo', 'digitsum', 'analysis', 'shop', 'primeranks', 'sieve', 'mirror', 'patterns', 'slot', 'prestige', 'tree',
+    'bigbang', 'glyphs', 'challenges', 'pacts', 'duplicator', 'pacttree', 'echo', 'chrono', 'rift', 'constellations',
+    'breakthrough', 'psitree', 'omega', 'achievements'];
 
 function findBrowser() {
   /* CHROME_PATH первым: в CI браузер ставится скриптом и путь приходит из окружения */
