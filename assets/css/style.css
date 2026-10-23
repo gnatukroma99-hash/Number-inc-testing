@@ -3129,3 +3129,44 @@ body.menu-open { overflow: hidden; }
   .bh-chips { display: none; }
   .bh-crumb { font-size: 10px; }
 }
+
+/* ================= v0.23.3 — ФИКС: ряд досок не сжимался (1196 px при экране 404) =================
+   Замер в реальном браузере (tools/layout.js, ветка shots): .dock-group-items.open
+   имел width 1196 при clientWidth 1196 — то есть НЕ сжимался под контейнер,
+   потому что у flex-элемента min-width: auto (= ширина содержимого).
+   Поэтому overflow-x: auto прокручивать было нечего, а лишние доски обрезались телом.
+   Лечится min-width: 0 на всех уровнях цепочки. */
+#docks,
+.dock-groups,
+.dock-items,
+.dock-group-items {
+  min-width: 0;
+}
+.dock-items { overflow: hidden; }
+
+@media (max-width: 760px) {
+  #docks { overflow: hidden; }
+  .dock-items { overflow: hidden; min-width: 0; }
+  .dock-pills {
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  .dock-group-items.open {
+    min-width: 0;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-behavior: smooth;
+  }
+  /* мягкая подсказка «справа есть ещё» */
+  .dock-items { position: relative; }
+  .dock-items::after {
+    content: '';
+    position: absolute; right: 0; top: 0; bottom: 0; width: 26px;
+    background: linear-gradient(90deg, transparent, rgba(8, 12, 17, .85));
+    pointer-events: none;
+  }
+  .dock-items:has(.dock-group-items.open:not(:hover))::after { opacity: 1; }
+}

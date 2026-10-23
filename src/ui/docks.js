@@ -229,6 +229,15 @@
       content.appendChild(G.h('div', { class: 'empty', text: 'У этой механики пока нет доски' }));
     }
     for (const k in buttons) buttons[k].el.classList.toggle('active', k === id);
+    /* прокручиваем активную доску в видимую часть ряда (мобильный ряд бывает длинным) */
+    try {
+      const btn = buttons[id] && buttons[id].el;
+      const row = btn && btn.parentNode;
+      if (btn && row && row.scrollWidth > row.clientWidth) {
+        const left = btn.offsetLeft - (row.clientWidth - btn.offsetWidth) / 2;
+        row.scrollTo ? row.scrollTo({ left: Math.max(0, left), behavior: 'smooth' }) : (row.scrollLeft = Math.max(0, left));
+      }
+    } catch (e) { /* прокрутка — не критично */ }
     /* переключаем активный блок досок и его пилюлю */
     const curGroup = (G.content.groups || []).find((g) => (g.mechs || []).indexOf(id) >= 0);
     if (curGroup) {
