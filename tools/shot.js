@@ -83,6 +83,19 @@ const PREP = `
   if (s.mech.duplicator) { s.mech.duplicator = { bought: true, on: true, shadow: 12.4, penalty: 0, merges: 2, best: 20 }; }
   if (s.mech.rift) { s.mech.rift = { left: 11, nextIn: 0, opened: 3, caught: 7, bestLeft: 30 }; }
   if (s.mech.challenges) { s.meta.challenges = ['ch_nosum']; }
+  /* Ярус 3: стена 1e1000 снята — чтобы снять ПРОБОЙ и Ψ-дерево, и были Ψ на покупки */
+  s.meta.passedBarriers.push('wall_1000');
+  s.res.psi = 60;
+  s.meta.breaks = 2;
+  ['psi_start', 'psi_speed', 'psi_delta'].forEach((id) => buy(id, 1));
+  ['ps_freq', 'ps_cut', 'ps_yield', 'ps_boom1'].forEach((id) => { if (G.registry.upgrade(id)) buy(id, 1); });
+  s.res.psi = 21;
+  /* паттерны: коллекция и активный буфф, чтобы доска была «живой» */
+  s.mech.patterns = {
+    count: { triple: 2, quad: 1, run3: 1, run4: 1, pal: 0 }, total: 5,
+    clock: 100, lastScan: 99.85, buffUntil: 106.5, streak: 3,
+    lastClaim: 96, lastType: 'run4', lastText: '3210', bestLen: 4
+  };
   G.state.stats.bestD = 308;
   G.ui.app.render(s);
   return 'ok';
