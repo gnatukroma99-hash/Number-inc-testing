@@ -40,6 +40,7 @@
     motionFlash = flash;
   }
   let motionFlash = null;
+  let fxDockEl = null;
 
   'use strict';
 
@@ -70,6 +71,7 @@
       if (G.ui.combo) G.ui.combo.mount();
       if (G.ui.background) G.ui.background.mount();
       if (G.ui.menu) G.ui.menu.init();
+      G.ui.fxDock();
       initMotion();
 
       document.getElementById('btn-settings').addEventListener('click', () => {
@@ -108,6 +110,14 @@
         G.ui.settings.updatePreview(state);
       }
     }
+  };
+
+  /* единый док плавающих событий (искра ✦, разлом ⌁⃠): не перекрывают доску */
+  G.ui.fxDock = function () {
+    if (fxDockEl && fxDockEl.parentNode) return fxDockEl;
+    fxDockEl = G.h('div', { class: 'fx-dock', 'aria-live': 'polite' });
+    document.body.appendChild(fxDockEl);
+    return fxDockEl;
   };
 
   G.ui.app = App;

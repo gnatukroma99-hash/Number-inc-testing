@@ -25,16 +25,12 @@
       }
       S.update(G.state);
     });
-    document.body.appendChild(el);
+    const host = G.ui.fxDock ? G.ui.fxDock() : document.body;
+    host.appendChild(el);
     return el;
   }
 
-  function place(seed) {
-    const a = (seed * 7919 + 104729) % 233280;
-    const b = (seed * 3571 + 6151) % 233280;
-    el.style.left = (10 + (a / 233280) * 76).toFixed(1) + 'vw';
-    el.style.top = (48 + (b / 233280) * 34).toFixed(1) + 'vh';
-  }
+  function place() { /* позиция задаётся контейнером .fx-dock */ }
 
   const S = {
     mount() { ensure(); },
@@ -49,7 +45,7 @@
       }
       ensure();
       if (!shown) {
-        place(Math.floor((state.stats.playtime || 0) * 3) + 17);
+        place();
         shown = true;
         el.classList.add('visible');
       }

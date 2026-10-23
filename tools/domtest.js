@@ -1808,10 +1808,16 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('меню открывается', G.ui.menu.isOpen() && doc.querySelector('.menu-overlay.on'));
   const cards = doc.querySelectorAll('.menu-card');
   const allDocks = dockBtns().length;
-  check('в меню карточка на каждую доску', cards.length === allDocks,
-    cards.length + ' карточек / ' + allDocks + ' доков');
-  check('карточки разложены по группам', doc.querySelectorAll('.menu-group').length === (G.content.groups || []).length,
-    doc.querySelectorAll('.menu-group').length + ' групп');
+  const cardIds = new Set(Array.from(cards).map((c) => c.dataset.id));
+  check('в меню есть карточка на каждую доску',
+    Array.from(dockBtns()).every((b) => cardIds.has(b.dataset.id)),
+    cards.length + ' карточек (включая недавние), доков ' + allDocks);
+  check('«Недавние» сверху + все группы', doc.querySelectorAll('.menu-recent').length === 1 &&
+    doc.querySelectorAll('.menu-group').length === (G.content.groups || []).length + 1,
+    doc.querySelectorAll('.menu-group').length + ' секций');
+  check('карточка — только один элемент на доску в «Недавних»',
+    doc.querySelectorAll('.menu-recent .menu-card').length <= 4,
+    doc.querySelectorAll('.menu-recent .menu-card').length + ' шт');
   const cur = doc.querySelector('.menu-card.current');
   check('текущая доска подсвечена в меню', !!cur, cur && cur.dataset.id);
   /* клик по карточке другой группы переключает доску и закрывает меню */

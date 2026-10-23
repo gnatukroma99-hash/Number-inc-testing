@@ -26,19 +26,12 @@
       }
       S.update(G.state);
     });
-    document.body.appendChild(el);
+    const host = G.ui.fxDock ? G.ui.fxDock() : document.body;
+    host.appendChild(el);
     return el;
   }
 
-  function place(seed) {
-    /* простая псевдослучайная, но устойчивая точка по id искры */
-    const a = (seed * 9301 + 49297) % 233280;
-    const b = (seed * 4177 + 12345) % 233280;
-    const x = 24 + (a / 233280) * 58;      /* 24…82 % по ширине */
-    const y = 26 + (b / 233280) * 48;      /* 26…74 % по высоте */
-    el.style.left = x.toFixed(1) + 'vw';
-    el.style.top = y.toFixed(1) + 'vh';
-  }
+  function place() { /* позиция задаётся контейнером .fx-dock */ }
 
   const S = {
     mount() { ensure(); },
@@ -58,7 +51,7 @@
       if (shownId !== now.id || !el.classList.contains('visible')) {
         el.style.setProperty('--spark', rush.active ? '#ff7ad9' : (now.color || '#ffd166'));
         G.ui.icons.set(el.querySelector('.spark-float-icon'), now.icon || 'sparkle');
-        place(Math.floor((state.stats.playtime || 0) * 7) + now.id.length * 13);
+        place();
         shownId = now.id;
         el.classList.add('visible');
       }

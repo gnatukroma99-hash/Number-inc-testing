@@ -167,6 +167,14 @@
     /* полноэкранные доски (карта дерева): прячем число и меню */
     document.body.classList.toggle('board-full', !!d.fullscreen);
     document.body.dataset.board = id;
+    /* «недавние» для меню: последние 4 доски, живут в мете */
+    try {
+      if (state && state.meta) {
+        const rec = (state.meta.recent || []).filter((x) => x !== id);
+        rec.unshift(id);
+        state.meta.recent = rec.slice(0, 4);
+      }
+    } catch (e) { /* мета ещё не готова — не критично */ }
     if (G.ui.boardhead) G.ui.boardhead.render(state, id);
 
     let mount = null;

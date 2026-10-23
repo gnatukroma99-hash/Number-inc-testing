@@ -22,6 +22,10 @@
       return G.achievements.mult(state);
     },
 
+    vars(state) {
+      return { achievements: G.achievements.count(state) };
+    },
+
     status(state) {
       return '' + G.achievements.count(state) + '/' + G.achievements.total();
     }

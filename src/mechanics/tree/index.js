@@ -32,6 +32,12 @@
       return G.registry.upgradesOf('tree').length;
     },
 
+    vars(state) {
+      let n = 0;
+      for (const u of G.registry.upgradesOf('tree')) if (G.lvl(state, u.id) > 0) n++;
+      return { treeNodes: n };
+    },
+
     status(state) {
       return '◆ ' + G.fmt.num(state.res.cores || 0);
     }

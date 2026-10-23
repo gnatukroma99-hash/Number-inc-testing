@@ -2924,3 +2924,74 @@ body.menu-open { overflow: hidden; }
   .menu-grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); }
   .menu-panel { max-height: 90vh; }
 }
+
+/* ================= v0.22.1 — ФИКСЫ ПО СКРИНШОТАМ =================
+   По кадрам из CI видно три проблемы: плавающие искра/разлом лежали на контенте,
+   в рейле обрезались названия, символьные иконки давали «тофу»-квадраты. */
+
+/* 1) док событий: правый нижний угол, колонкой, не перекрывает доску */
+.fx-dock {
+  position: fixed; right: 16px; bottom: 16px; z-index: 45;
+  display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 8px;
+  pointer-events: none;
+}
+.fx-dock > * { pointer-events: auto; }
+.spark-float, .rift-float {
+  position: static !important;
+  left: auto !important; top: auto !important;
+  transform: none !important;
+  margin: 0;
+}
+.spark-float.popped { animation: fxPop .28s var(--e-out); }
+.rift-float.popped { animation: fxPop .28s var(--e-out); }
+@keyframes fxPop { 40% { transform: scale(1.08) !important; } }
+@media (max-width: 760px) {
+  .fx-dock { right: 10px; bottom: 74px; gap: 6px; }
+  .spark-float, .rift-float { font-size: 11.5px; padding: 8px 11px; }
+  .spark-float-label, .rift-float-label { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* 2) рейл: шире, названия не режутся, бейджи — аккуратной пилюлей справа */
+#docks { flex: 0 0 208px; }
+.dock { min-width: 0; }
+.dock-text {
+  flex: 1 1 auto; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dock-badge {
+  flex: 0 0 auto; margin-left: auto;
+  max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 800 9.5px/1 var(--mono);
+  color: var(--dim2);
+  opacity: .9;
+}
+@media (max-width: 760px) {
+  #docks { flex: 0 0 auto; }
+  .dock-badge { display: none; }
+}
+
+/* ================= v0.22.1 — меню: воздух, прогресс, «недавние» ================= */
+.menu-panel { overflow: hidden; }
+.menu-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.menu-card { min-height: 88px; padding: 11px 12px 10px; gap: 5px; }
+.menu-card-name { font-size: 12.5px; }
+.menu-card-status { font-size: 9.5px; color: var(--dim2); min-height: 13px; }
+.menu-card-bar {
+  position: relative; margin-top: 4px;
+  height: 5px; border-radius: 4px; overflow: hidden;
+  background: rgba(255, 255, 255, .08);
+}
+.menu-card-bar-fill {
+  position: absolute; inset: 0 auto 0 0;
+  background: var(--grp, var(--accent));
+  opacity: .85;
+  transition: width var(--t-slow) var(--e-out);
+}
+.menu-card-bar-text {
+  display: block; margin-top: 3px;
+  font: 800 9px/1 var(--mono); color: var(--dim2);
+}
+.menu-card-bar-empty { display: block; height: 12px; }
+.menu-recent { padding-bottom: 4px; }
+.menu-recent .menu-card { min-height: 74px; }
+.menu-recent .menu-card-name { font-size: 12px; }

@@ -11,6 +11,15 @@
   G.ui = G.ui || {};
 
   /* d — контур (stroke), f — заливка (fill). Можно несколько путей через '|'. */
+
+  /* символьные иконки механик (◆ ⌗ ⧗ ⌘ …) -> имя SVG, чтобы не было «тофу»-квадратов */
+  const ALIAS = {
+    '⌘': 'cycle', '⧗': 'cycle', '⟲': 'recycle', '⧉': 'branch', '⌗': 'grid',
+    '◆': 'core', '⌁': 'bolt', '⌾': 'target', '⚑': 'target', '✍': 'facet',
+    'Ω': 'crystal', '✧': 'star', '✦': 'sparkle', '💥': 'burst', '◈': 'diamond',
+    'Σ': 'sigma', 'Δ': 'delta', '❖': 'prime', '×': 'plus', '✧✦': 'star'
+  };
+
   const ICONS = {
     /* ресурсы и валюта */
     bolt: 'M13.5 2.5 5.5 13.5H11l-1.5 8 8.5-11.5H12l1.5-7.5z',
@@ -110,8 +119,9 @@
     /* элемент иконки: SVG для ключа, текст для моносимвола, ◆ по умолчанию */
     node(name, cls) {
       const box = G.h('span', { class: 'ico' + (cls ? ' ' + cls : ''), 'aria-hidden': 'true' });
-      if (I.has(name)) {
-        box.appendChild(svgEl(name));
+      const real = ALIAS[name] || name;
+      if (I.has(real)) {
+        box.appendChild(svgEl(real));
         box.classList.add('ico-svg-box');
         return box;
       }
