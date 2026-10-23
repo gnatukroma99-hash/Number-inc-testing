@@ -111,6 +111,14 @@
       { id: 'a_wall1000', icon: 'brick', name: 'Тысяча', desc: 'Дойти до 1000 цифр', cond: 'wall1000 >= 1' },
       { id: 'a_ch9', icon: 'trophy', name: 'Девять кругов', desc: 'Пройти 9 испытаний', cond: 'challenges >= 9' },
 
+      /* --- Ярус 3: мера ⁿ (v0.34.0) --- */
+      { id: 'a_measure1', icon: 'chart', name: 'Мера найдена', desc: 'Купить первое свойство меры',
+        cond: 'measureMult > 1' },
+      { id: 'a_beauty3', icon: 'star', name: 'Красивые порядки', desc: 'Поймать 3 «красивых» порядка',
+        cond: 'measureBeauty >= 3' },
+      { id: 'a_measure_prime', icon: 'prime', name: 'Простой порядок', desc: 'Застать простой показатель',
+        cond: 'measurePrime >= 1' },
+
       /* --- Ярус 3: трещины ⟁ (v0.33.0) --- */
       { id: 'a_crack1', icon: 'brick', name: 'Первая трещина', desc: 'Сломать трещину ⟁',
         cond: 'cracks >= 1' },

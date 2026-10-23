@@ -25,7 +25,7 @@ const OUT = path.join(__dirname, 'shots');
 const BOARDS = process.argv.slice(2).length
   ? process.argv.slice(2)
   : ['core', 'combo', 'digitsum', 'analysis', 'shop', 'primeranks', 'sieve', 'mirror', 'patterns', 'slot', 'prestige', 'tree',
-    'bigbang', 'glyphs', 'challenges', 'pacts', 'duplicator', 'pacttree', 'echo', 'chrono', 'rift', 'constellations', 'cracks',
+    'bigbang', 'glyphs', 'challenges', 'pacts', 'duplicator', 'pacttree', 'echo', 'chrono', 'rift', 'constellations', 'cracks', 'measure',
     'breakthrough', 'psitree', 'omega', 'turn', 'turntree', 'achievements'];
 
 function findBrowser() {
@@ -88,6 +88,11 @@ const PREP = `
   if (s.mech.duplicator) { s.mech.duplicator = { bought: true, on: true, shadow: 12.4, penalty: 0, merges: 2, best: 20 }; }
   if (s.mech.rift) { s.mech.rift = { left: 11, nextIn: 0, opened: 3, caught: 7, bestLeft: 30 }; }
   if (s.mech.challenges) { s.meta.challenges = ['ch_nosum']; }
+  /* мера ⁿ: свойства куплены и показатель удачный */
+  if (s.mech.measure === undefined || s.mech.measure === null) s.mech.measure = null;
+  s.upg.ms_sum = 2; s.upg.ms_zero = 2; s.upg.ms_even = 1; s.upg.ms_len = 2; s.upg.ms_beauty = 2;
+  s.mech.measure = { clock: 5, lastScan: 0, e: 0, beauty: { 5000: 1, 12000: 1, 1221: 1 }, beautyCount: 3, props: null };
+  G.debug.setD(1221);
   /* трещина ⟁ — видимая на кадре (осколок в случайной точке экрана) */
   s.mech.cracks = { nextIn: 0, left: 8.4, broken: 9, best: 9, spawns: 9, seed: 0.42 };
   /* Ярус 3: стена 1e1000 снята — чтобы снять ПРОБОЙ и Ψ-дерево, и были Ψ на покупки */

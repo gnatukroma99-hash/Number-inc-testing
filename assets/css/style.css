@@ -4039,3 +4039,79 @@ body.no-anim .theme-bloom .tree-parallax::after { animation: none !important; }
 body.no-anim .crack-shard,
 body.no-anim .crack-glint,
 body.no-anim .crack-float.fading .crack-shard { animation: none !important; }
+
+/* ================= v0.34.0 — МЕРА ⁿ =================
+   Показатель числа как отдельная «плита измерения»: цифры набраны как шкала прибора,
+   свойства — карточки, которые загораются, когда порядок удачный. */
+
+.measure-plate {
+  padding: 14px 16px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(56, 189, 248, .22);
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .045) 0 1px, transparent 1px 28px),
+    linear-gradient(180deg, rgba(56, 189, 248, .07), rgba(0, 0, 0, .25));
+}
+.measure-exp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.measure-digit {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 44px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(255, 255, 255, .03);
+  font: 800 22px/1 var(--mono, monospace);
+  color: #e6f4ff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 14px rgba(56, 189, 248, .35);
+  transition: border-color .18s, color .18s, box-shadow .18s;
+}
+.measure-digit.zero {
+  color: #7cf7b0;
+  border-color: rgba(124, 247, 176, .35);
+  background: rgba(124, 247, 176, .06);
+}
+.measure-exp.prime .measure-digit { border-color: rgba(255, 209, 102, .45); box-shadow: 0 0 14px rgba(255, 209, 102, .18); }
+.measure-exp.pal .measure-digit { border-color: rgba(201, 160, 255, .5); box-shadow: 0 0 16px rgba(201, 160, 255, .2); }
+.measure-exp.round .measure-digit { border-color: rgba(255, 157, 226, .5); box-shadow: 0 0 16px rgba(255, 157, 226, .2); }
+
+.measure-card {
+  position: relative;
+  display: grid;
+  gap: 3px;
+  padding: 11px 13px 12px 44px;
+  border-radius: 13px;
+  border: 1px solid rgba(255, 255, 255, .07);
+  background: rgba(255, 255, 255, .02);
+  transition: border-color .18s, background .18s, box-shadow .18s;
+}
+.measure-card .measure-tag {
+  position: absolute;
+  left: 12px;
+  top: 11px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ms, #38bdf8) 45%, transparent);
+  color: var(--ms, #38bdf8);
+  font: 800 12px/1 var(--mono, monospace);
+}
+.measure-name { font: 800 12.5px/1.2 var(--sans, sans-serif); color: #e9f6ff; }
+.measure-val { font: 800 11px/1 var(--mono, monospace); color: var(--dim, #9aa6b2); }
+.measure-desc { font: 500 11px/1.35 var(--sans, sans-serif); color: rgba(180, 196, 210, .72); }
+.measure-card.on {
+  border-color: color-mix(in srgb, var(--ms, #38bdf8) 55%, transparent);
+  background: color-mix(in srgb, var(--ms, #38bdf8) 9%, transparent);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--ms, #38bdf8) 16%, transparent);
+}
+.measure-card.on .measure-val { color: var(--ms, #38bdf8); }
+.measure-card.owned .measure-name { color: #f4fbff; }
+.measure-card.idle { opacity: .62; }

@@ -2429,7 +2429,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const menuCardIds = () => Array.from(doc.querySelectorAll('.menu-card')).map((c) => c.dataset.id);
   const uniqCards = () => new Set(menuCardIds()).size;   /* есть повторы из «Закреплённых»/«Недавних» */
   const allCards = uniqCards();
-  check('в меню все доски', allCards === 31, allCards + ' уникальных карточек (30 механик + «Рост»)');
+  check('в меню все доски', allCards === 32, allCards + ' уникальных карточек (31 механика + «Рост»)');
 
   setSearch('дерев');
   const foundIds = menuCardIds();
@@ -2511,6 +2511,83 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('поиск и закрепление без ошибок в логе', errors.length === 0, errors.join(' | '));
 
   section('5w. Паттерны мантиссы — узоры ловятся сами (v0.27.0)');
+  section('5w0a. Мера ⁿ — бонусы от порядка числа (v0.34.0)');
+  check('данные меры есть', !!G.content.measure && (G.content.measure.props || []).length === 7,
+    (G.content.measure.props || []).length + ' свойств');
+  check('профиль порядка разбирается', (function () {
+    const p = G.measure.profile(12000);
+    const r = G.measure.profile(5000);
+    return p.text === '12000' && p.len === 5 && p.zeros === 3 && p.sum === 3 &&
+      p.round === 0 && p.even === 1 && r.round === 1 && r.zeros === 3;
+  })(), JSON.stringify(G.measure.profile(12000)) + ' / ' + JSON.stringify(G.measure.profile(5000)));
+  check('простота порядка считается', G.measure.isPrime(1009) === true &&
+    G.measure.isPrime(1000) === false && G.measure.isPrime(7) === true);
+  check('палиндром порядка находится', G.measure.profile(12021).pal === 1 &&
+    G.measure.profile(12000).pal === 0);
+  /* мера до ПРОБОЯ закрыта */
+  state.meta.breaks = 0; state.res.psi = 0;
+  state.N = G.BN.fromLog10(50); state.D = 50;
+  check('без ПРОБОЯ меры нет', G.measure.open(state) === false);
+  state.meta.breaks = 1;
+  state.res.psi = 200;
+  state.N = G.BN.fromLog10(12000); state.D = 12000;
+  state.mech.measure = null;
+  for (const u of G.registry.upgradesOf('measure')) state.upg[u.id] = 0;
+  G.measure.tick(state, 1);
+  check('мера видит показатель', G.measure.snapshot(state).text === '12000',
+    'показатель ' + G.measure.snapshot(state).text);
+  const restMs = noCores();                  /* M может стоять на потолке 1e300 из-за ◆ */
+  const mM0 = G.growth.M(state);
+  state.upg.ms_zero = 1;                     /* 12000: нулей три — свойство активно */
+  const mM1 = G.growth.M(state);
+  check('купленное свойство множит M', mM1 > mM0 * 1.1,
+    'M ×' + (mM1 / mM0).toFixed(2));
+  check('неактивное свойство не даёт ничего', (function () {
+    state.upg.ms_pal = 3;                    /* 12000 — не палиндром */
+    const before = G.growth.M(state);
+    state.upg.ms_pal = 0;
+    const after = G.growth.M(state);
+    return Math.abs(before - after) < 1e-9;
+  })(), 'M не изменился');
+  restMs();
+  check('смена показателя включает другое свойство', (function () {
+    state.upg.ms_pal = 2;
+    state.N = G.BN.fromLog10(12021); state.D = 12021;
+    G.measure.tick(state, 1);
+    const on = G.measure.active(state);
+    return on.pal === true && on.round === false;
+  })());
+  check('красивые порядки копятся навсегда', (function () {
+    const before = G.measure.data(state).beautyCount || 0;
+    state.N = G.BN.fromLog10(2000); state.D = 2000;
+    G.measure.tick(state, 1);
+    state.N = G.BN.fromLog10(3000); state.D = 3000;
+    G.measure.tick(state, 1);
+    return (G.measure.data(state).beautyCount || 0) >= before + 2;
+  })(), 'красивых: ' + (G.measure.data(state).beautyCount || 0));
+  check('апгрейд «Красота навсегда» даёт span', (function () {
+    const before = G.measure.spanMult(state);
+    state.upg.ms_beauty = 2;
+    return G.measure.spanMult(state) > before;
+  })(), 'span ×' + G.measure.spanMult(state).toFixed(3));
+  check('апгрейд «Мера потока» ускоряет Ψ-поток', (function () {
+    state.upg.ms_flow = 0;
+    const before = G.breakthrough.rate(state);
+    state.upg.ms_flow = 3;
+    return G.breakthrough.rate(state) > before;
+  })());
+  check('мера попадает в vars для достижений',
+    G.registry.mechanic('measure').vars(state).measureBeauty >= 1);
+  state.N = G.BN.fromLog10(12000); state.D = 12000;
+  G.measure.tick(state, 1);
+  click(dockBtns().find((b) => b.dataset.id === 'measure'));
+  G.ui.app.render(state);
+  check('доска меры: цифры порядка и карточки свойств',
+    doc.querySelectorAll('#board .measure-digit').length >= 5 &&
+    doc.querySelectorAll('#board .measure-card').length === 7,
+    doc.querySelectorAll('#board .measure-digit').length + ' цифр, ' +
+    doc.querySelectorAll('#board .measure-card').length + ' карточек');
+
   section('5w0. Трещины ⟁ — актив Яруса 3 (v0.33.0)');
   check('данные трещин есть', !!G.content.cracks && G.content.cracks.minD === 1000);
   state.meta.passedBarriers = ['wall_308'];
