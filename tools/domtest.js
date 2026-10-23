@@ -135,6 +135,7 @@ async function main() {
   section('1. Загрузка index.html и всех скриптов');
   const page = loadPage();
   const dom = page.dom, win = page.win, G = page.G, srcs = page.srcs, loadMs = page.loadMs;
+
   const doc = win.document;
   try {
     await runTests({ dom, win, G, srcs, loadMs, doc });
@@ -157,6 +158,20 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   section('2. Игровой цикл (реальное время 1.5 с)');
   const state = G.state;
   check('состояние создано', !!state);
+  /* M в позднем сейве упирается в потолок 1e300 (1.5^◆), и тогда ЛЮБОЙ другой
+     множитель в M не виден. Для проверок проводки («эффект доходит до M»)
+     временно обнуляем ◆ — баланс при этом не участвует. */
+  let _coresSaved = null;
+  function noCores() {
+    _coresSaved = { c: state.res.cores || 0, b: state.meta.coresBest || 0 };
+    state.res.cores = 0;
+    state.meta.coresBest = 0;
+    return () => {
+      state.res.cores = _coresSaved.c;
+      state.meta.coresBest = _coresSaved.b;
+      _coresSaved = null;
+    };
+  }
   const d0 = G.growth.D(state);
   await sleep(1500);
   const d1 = G.growth.D(state);
@@ -796,16 +811,20 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
 
   state.res.energy = 1e5;
   const coresBeforeSlot = state.res.cores || 0;
+  const restS1 = noCores();                      /* ◆ потом изменятся — меряем без них */
   const mNoBuff = G.growth.M(state);
+  restS1();
   G.slot.setRng(() => 0.75);                     /* 7,7,7 — джекпот */
   sp = G.slot.spin(state);
   check('777 — джекпот ×50 и +2 ◆', sp.rule === 'jack' && sp.payout === sp.stake * 50 &&
     (state.res.cores || 0) === coresBeforeSlot + 2,
     sp.digits.join('') + ' → ' + sp.name + ', ◆ ' + coresBeforeSlot + ' → ' + (state.res.cores || 0));
+  const restS2 = noCores();
   check('буфф джекпота множит M втрое', Math.abs(G.growth.M(state) / mNoBuff - 3) < 1e-9,
     'M ×' + (G.growth.M(state) / mNoBuff).toFixed(2));
   G.slot.tick(state, G.content.slot.jackpot.dur + 0.1);
   check('буфф истекает', Math.abs(G.growth.M(state) - mNoBuff) < 1e-9);
+  restS2();
 
   /* холодная серия и гарант */
   sd.cd = 0; sd.cold = 0;
@@ -1096,6 +1115,39 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   state.upg.tree_mult5 = 2;
   check('«Гигант» множит M', Math.abs(G.growth.M(state) / mBefore4 - 25) < 1e-6,
     'M ×' + (G.growth.M(state) / mBefore4).toFixed(1));
+
+  /* --- v0.29.1: переполнение НЕ обнуляет рост (баг юзера «купил всё — число замерло») --- */
+  const ds = G.registry.mechanic('digitsum');
+  const dsMult = ds.mult;
+  const baseMNo = G.growth.M(state);
+  ds.mult = () => 1e260;                 /* таким множитель становится в поздней игре */
+  const mHuge = G.growth.M(state);
+  ds.mult = dsMult;
+  check('огромный множитель не обнуляет M (было ×1)', mHuge > 1 && isFinite(mHuge),
+    'M = ' + mHuge.toExponential(2));
+  check('с огромным множителем M упирается в 1e300, а не падает', mHuge >= 1e100,
+    'M = ' + mHuge.toExponential(2));
+  check('рост не останавливается при переполнении', (function () {
+    const d0 = G.growth.D(state);
+    ds.mult = () => 1e260;
+    const r = G.growth.rate(state);
+    for (let i = 0; i < 40; i++) G.growth.tick(state, 0.05);
+    ds.mult = dsMult;
+    const grew = G.growth.D(state) > d0;
+    G.debug.setD && G.debug.setD(d0);
+    return r > 0 && grew;
+  })(), 'M после: ' + baseMNo.toExponential(1));
+  check('ядра ◆ с переполнением дают потолок, а не ×1', (function () {
+    const keep = state.res.cores;
+    state.res.cores = 1e7;
+    const v = G.prestige.mult(state);
+    state.res.cores = keep;
+    return v > 1 && isFinite(v);
+  })(), '×' + G.prestige.mult(state).toExponential(1));
+  check('M всегда ≥ 1 и конечен', (function () {
+    const m = G.growth.M(state);
+    return isFinite(m) && m >= 1 && m <= 1e300;
+  })(), 'M = ' + G.growth.M(state).toExponential(2));
   state.upg.tree_income5 = 2;
   check('«Гипердоход» множит ⌁', Math.abs(G.growth.energyRate(state) / eBefore - 100) < 1e-6,
     '⌁ ×' + (G.growth.energyRate(state) / eBefore).toFixed(0));
@@ -1207,9 +1259,11 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   dNo.slots[0] = null;
   const dtNo = G.growth.dt(state);
   const eNo = G.growth.energyRate(state);
+  const restGlyph = noCores();
   const mNo = G.growth.M(state);
   dNo.slots[0] = { id: 902, digit: (lead2 + 4) % 10, rarity: 'common', profile: 'greed' };
   check('глифы меняют M', G.growth.M(state) > mNo, 'M ×' + (G.growth.M(state) / mNo).toFixed(3));
+  restGlyph();
   dNo.slots[1] = { id: 903, digit: (lead2 + 3) % 10, rarity: 'common', profile: 'tide' };
   check('глифы меняют ΔT и ⌁', G.growth.dt(state) < dtNo && G.growth.energyRate(state) !== eNo,
     'ΔT ' + dtNo.toFixed(2) + ' → ' + G.growth.dt(state).toFixed(2) +
@@ -1278,6 +1332,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   state.res.delta = 300; state.mech.glyphs = null;
   const gset = G.glyphs.data(state);
   gset.slots[0] = { id: 77, digit: 0, rarity: 'legend', profile: 'greed' };
+  const restBlock = noCores();
   const mFreeAll = G.growth.M(state);
   const realBlocked = G.challenges.blocked;
   G.challenges.blocked = (st, id) => id === 'glyphs';
@@ -1285,6 +1340,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.challenges.blocked = realBlocked;
   check('движок уважает blocked(): механика выпадает из M', mBlockedGlyph < mFreeAll,
     'M ' + mBlockedGlyph.toFixed(1) + ' < ' + mFreeAll.toFixed(1));
+  restBlock();
 
   /* прохождение испытания: доходим до цели */
   state.res.delta = 300;
@@ -1423,12 +1479,14 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('разлом удваивает M и ⌁', mRiftFree === G.content.rift.mult &&
     G.rift.energyMult(state) === G.content.rift.energyMult, 'M ×' + mRiftFree);
   check('эффект доходит до движка', (function () {
+    const rest = noCores();
     const realRift = G.rift.visible;
     G.rift.visible = () => true;
     const withRift = G.growth.M(state);
     G.rift.visible = () => false;
     const noRift = G.growth.M(state);
     G.rift.visible = realRift;
+    rest();
     return withRift / noRift > 1.5;
   })(), 'M с разломом больше ×' + G.content.rift.mult);
   const leftBeforeTap = G.rift.left(state);
@@ -1457,11 +1515,13 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     if (!G.achievements.has(state, id)) state.meta.achievements.push(id);
   }
   check('знак открылся по связке достижений', G.constellations.unlocked(state)[signScales.id] === true);
+  const restSign = noCores();
   const mSignBefore = G.growth.M(state);
   const picked = G.constellations.choose(state, signScales.id);
   check('знак выбирается', !!picked && G.constellations.active(state).id === signScales.id);
   check('эффект знака доходит до M', Math.abs(G.growth.M(state) / mSignBefore - 1.15) < 1e-6,
     'M ×' + (G.growth.M(state) / mSignBefore).toFixed(2));
+  restSign();
   check('знак живёт в мете (переживает перерождение)', (function () {
     G.resetScopes(state, ['run']);
     return (state.meta.sign || null) === signScales.id;
@@ -1580,11 +1640,13 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   state.N = G.BN.fromLog10(120); state.D = 120;
   state.res.delta = 500;
   state.mech.duplicator = null;
+  const restDup = noCores();
   const mPlain = G.growth.M(state);
   check('дубликатор покупается за Δ', G.duplicator.buy(state) === true &&
     state.res.delta === 500 - G.content.duplicator.cost, 'Δ ' + state.res.delta);
   check('пока тень копится — M слабее', Math.abs(G.growth.M(state) / mPlain - G.content.duplicator.multWhileShadow) < 1e-9,
     'M ×' + (G.growth.M(state) / mPlain).toFixed(2));
+  restDup();
   const shadow0 = G.duplicator.shadow(state);
   G.duplicator.tick(state, 10);
   check('тень растёт по времени', G.duplicator.shadow(state) > shadow0,
@@ -1730,6 +1792,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   state.N = G.BN.fromLog10(5); state.D = 5;
   state.mech.combo = null;
   check('комбо в реестре', !!cm && !!G.combo, cm && cm.id);
+  const restCombo = noCores();
   const multBase = G.growth.M(state);
   let t = 1000;
   for (let i = 0; i < 8; i++) G.combo.tap(state, t += 100);
@@ -1737,6 +1800,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('тапы копят серию', comboVal > 0.5, 'серия ' + comboVal.toFixed(2));
   check('серия множит M', G.growth.M(state) > multBase,
     'M ×' + (G.growth.M(state) / multBase).toFixed(2));
+  restCombo();
   check('антиавтоклик отсекает слишком частые тапы',
     G.combo.tap(state, 5000) !== null && G.combo.tap(state, 5010) === null);
   const beforeDecay = G.combo.value(state);

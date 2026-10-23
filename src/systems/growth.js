@@ -7,6 +7,7 @@
 
   const MIN_DT = 0.033;     // 30 тиков/с — предел скорости
   const MAX_EXP = 1.5;      // предел степени бонуса (защита движка)
+  const MAX_LG = 300;       // предел |M| = 1e300 (дальше — только софткапы и стены)
   const MIN_DT_MULT = 0.02; // предел множителя интервала
   const MAX_SUBSTEPS = 400; // защита от фриза при огромном dt (×100 и т.п.)
 
@@ -93,24 +94,31 @@
 
     /* --- множитель --- */
     baseM(state) {
-      return 2 + G.lvl(state, 'mult1') + W.upgSum(state, 'addM');
+      let base = 2 + G.lvl(state, 'mult1') + W.upgSum(state, 'addM');
+      /* база — тоже множитель: без клампа mult1/addM с огромными уровнями
+         делают base = Infinity, и M раньше молча падал в 1 */
+      if (!isFinite(base) || base < 1) base = 1;
+      return Math.min(base, 1e300);
     },
 
     M(state) {
+      /* ВАЖНО (v0.29.1): M собирается в ЛОГАРИФМИЧЕСКОМ пространстве.
+         Раньше было `m = base * mech ** exp * Mmult`, и когда произведение
+         переполняло 1.8e308 (а в поздней игре ◆ со множителем 1.5^cores
+         легко зашкаливает), Math.pow() давало Infinity, срабатывал
+         предохранитель `return 1` — и число ЗАМИРАЛО НАВСЕГДА (баг юзера:
+         «купил всё → 0 цифр/с»). Теперь сумма логарифмов: переполнения нет,
+         а результат клампится в [1, 1e300] — рост продолжается. */
       const base = W.baseM(state);
-      let mech = 1;
+      let lg = Math.log10(base > 0 ? base : 1);
+
       for (const m of G.registry.mechanics()) {
         if (m.isUnlocked && !m.isUnlocked(state)) continue;
         if (blocked(state, m.id)) continue;
-        if (typeof m.mult === 'function') {
-          const v = m.mult(state);
-          if (isFinite(v) && v > 0) mech *= v;
-        }
-        /* предохранитель НА ОДНУ механику: раньше здесь был `mech = 1; break;` —
-           одна механика с Infinity/0 обнуляла вклад ВСЕХ остальных (и они молча
-           выпадали из M). Теперь плохое значение просто не учитывается. */
-        if (!isFinite(mech) || mech <= 0) mech = 1;
-        if (mech > 1e300) mech = 1e300;
+        if (typeof m.mult !== 'function') continue;
+        const v = m.mult(state);
+        /* Infinity/0/NaN от одной механики — не повод терять остальные */
+        if (isFinite(v) && v > 0) lg += Math.log10(v);
       }
 
       /* «показатель» из магазина: бонус механик возводится в степень.
@@ -118,12 +126,17 @@
       let exp = W.upgProduct(state, 'powM');
       if (!isFinite(exp) || exp < 1) exp = 1;
       exp = Math.min(exp, MAX_EXP);
+      if (exp > 1) lg *= exp;
 
-      let m = base * (exp > 1 ? Math.pow(mech, exp) : mech);
       /* плоские множители из дерева ◆ (данные: поле Mmult) */
-      m *= W.upgProduct(state, 'Mmult');
-      if (!isFinite(m) || m <= 0) return 1;
-      return m > 1e300 ? 1e300 : m;
+      const mm = W.upgProduct(state, 'Mmult');
+      if (isFinite(mm) && mm > 0) lg += Math.log10(mm);
+
+      if (!isFinite(lg)) lg = MAX_LG;          /* переполнение → потолок, а не 1 */
+      if (lg > MAX_LG) lg = MAX_LG;
+      if (lg < 0) lg = 0;                      /* число не умеет умешаться */
+      const m = Math.pow(10, lg);
+      return m > 1e300 ? 1e300 : (m < 1 ? 1 : m);
     },
 
     /* --- барьеры (софткапы). Пройденные исчезают навсегда --- */
@@ -157,8 +170,11 @@
         span: hs.span * spanMult,
         power: hs.power
       });
-      if (!isFinite(v) || v <= 0) return 0;
-      return Math.max(0.001, Math.min(1, v));
+      /* 0 здесь означал бы «рост остановился навсегда» — это запрещено правилом
+         «число всегда растёт». Даже при span = 0/Infinity оставляем микроскопический,
+         но живой темп: 1e-9 цифр/с всё равно движет число. */
+      if (!isFinite(v) || v <= 0) return 1e-9;
+      return Math.max(0.000001, Math.min(1, v));
     },
 
     /* видимые барьеры, без невидимого софткапа (для индикации в UI) */

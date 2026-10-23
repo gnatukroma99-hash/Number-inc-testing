@@ -101,7 +101,22 @@
       state: () => G.state,
       give(n) { G.state.res.energy += n; },
       setD(d) { G.state.N = G.BN.fromLog10(d); G.state.D = d; G.state.disp = null; },
-      summary: () => G.registry.summary()
+      summary: () => G.registry.summary(),
+      /* из чего собрался M: если число вдруг «замерло» — видно, какой слой виноват */
+      mParts() {
+        const s = G.state;
+        const out = {
+          M: G.growth.M(s), base: G.growth.baseM(s),
+          powM: G.growth.upgProduct(s, 'powM'), Mmult: G.growth.upgProduct(s, 'Mmult'),
+          rate: G.growth.rate(s), dt: G.growth.dt(s), mech: {}
+        };
+        for (const m of G.registry.mechanics()) {
+          if (typeof m.mult !== 'function') continue;
+          if (m.isUnlocked && !m.isUnlocked(s)) continue;
+          try { out.mech[m.id] = m.mult(s); } catch (e) { out.mech[m.id] = 'ERR ' + e.message; }
+        }
+        return out;
+      }
     };
   }
 
