@@ -1,0 +1,191 @@
+{
+  "mobile": {
+    "viewport": {
+      "w": 420,
+      "h": 860
+    },
+    "docks": {
+      "w": 404,
+      "h": 81,
+      "clientW": 404,
+      "scrollW": 404,
+      "canScroll": false,
+      "top": 284,
+      "right": 412
+    },
+    "pills": {
+      "w": 402,
+      "h": 29,
+      "clientW": 402,
+      "scrollW": 545,
+      "canScroll": true,
+      "top": 284,
+      "right": 410
+    },
+    "items": {
+      "w": 402,
+      "h": 42,
+      "clientW": 402,
+      "scrollW": 516,
+      "canScroll": true,
+      "top": 321,
+      "right": 410
+    },
+    "board": {
+      "w": 404,
+      "h": 477,
+      "clientW": 402,
+      "scrollW": 402,
+      "canScroll": false,
+      "top": 375,
+      "right": 412
+    },
+    "computed": {
+      "docks": {
+        "display": "flex",
+        "flexDir": "column",
+        "width": "404px",
+        "minW": "0px",
+        "overflowX": "hidden",
+        "flex": "0 0 auto"
+      },
+      "groups": {
+        "display": "flex",
+        "flexDir": "column",
+        "width": "402px",
+        "minW": "0px",
+        "overflowX": "visible",
+        "flex": "0 1 auto"
+      },
+      "itemsWrap": {
+        "display": "flex",
+        "flexDir": "column",
+        "width": "402px",
+        "minW": "0px",
+        "overflowX": "hidden",
+        "flex": "0 1 auto"
+      },
+      "items": {
+        "display": "flex",
+        "flexDir": "row",
+        "width": "402px",
+        "minW": "0px",
+        "overflowX": "auto",
+        "flex": "0 1 auto"
+      },
+      "pillsWrap": {
+        "display": "flex",
+        "flexDir": "row",
+        "width": "402px",
+        "minW": "0px",
+        "overflowX": "auto",
+        "flex": "0 1 auto"
+      }
+    },
+    "itemsScrollWorks": true,
+    "pillsScrollWorks": true,
+    "lastDockReachable": true,
+    "itemDocks": 5,
+    "itemsScrollLeft": 114,
+    "cssRules": {
+      "total": 1210,
+      "hasMinWidthRule": true,
+      "hasItemsOpen": true
+    }
+  },
+  "desktop": {
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "docks": {
+      "w": 208,
+      "h": 715,
+      "clientW": 208,
+      "scrollW": 208,
+      "canScroll": false,
+      "top": 175,
+      "right": 218
+    },
+    "pills": {
+      "w": 206,
+      "h": 167,
+      "clientW": 206,
+      "scrollW": 206,
+      "canScroll": false,
+      "top": 217,
+      "right": 216
+    },
+    "items": {
+      "w": 206,
+      "h": 512,
+      "clientW": 206,
+      "scrollW": 206,
+      "canScroll": false,
+      "top": 392,
+      "right": 216
+    },
+    "board": {
+      "w": 1202,
+      "h": 715,
+      "clientW": 1200,
+      "scrollW": 1200,
+      "canScroll": false,
+      "top": 175,
+      "right": 1430
+    },
+    "computed": {
+      "docks": {
+        "display": "flex",
+        "flexDir": "column",
+        "width": "208px",
+        "minW": "0px",
+        "overflowX": "auto",
+        "flex": "0 0 208px"
+      },
+      "groups": {
+        "display": "flex",
+        "flexDir": "column",
+        "width": "206px",
+        "minW": "0px",
+        "overflowX": "visible",
+        "flex": "0 1 auto"
+      },
+      "itemsWrap": {
+        "display": "flex",
+        "flexDir": "column",
+        "width": "206px",
+        "minW": "0px",
+        "overflowX": "hidden",
+        "flex": "0 1 auto"
+      },
+      "items": {
+        "display": "flex",
+        "flexDir": "column",
+        "width": "206px",
+        "minW": "0px",
+        "overflowX": "visible",
+        "flex": "0 1 auto"
+      },
+      "pillsWrap": {
+        "display": "flex",
+        "flexDir": "column",
+        "width": "206px",
+        "minW": "auto",
+        "overflowX": "visible",
+        "flex": "0 1 auto"
+      }
+    },
+    "itemsScrollWorks": false,
+    "pillsScrollWorks": false,
+    "lastDockReachable": true,
+    "itemDocks": 11,
+    "itemsScrollLeft": 0,
+    "cssRules": {
+      "total": 1210,
+      "hasMinWidthRule": true,
+      "hasItemsOpen": true
+    }
+  },
+  "consoleErrors": []
+}
