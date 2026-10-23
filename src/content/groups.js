@@ -11,7 +11,7 @@
     {
       id: 'run', name: 'Забег', hint: 'сбрасывается перерождением',
       color: '#2bb5ff',
-      mechs: ['core', 'slot', 'digitsum', 'primefit', 'primeranks', 'analysis', 'shop', 'sieve', 'mirror']
+      mechs: ['core', 'combo', 'slot', 'digitsum', 'primefit', 'primeranks', 'analysis', 'shop', 'sieve', 'mirror']
     },
     {
       id: 'meta', name: 'Мета', hint: 'не сбрасывается никогда',

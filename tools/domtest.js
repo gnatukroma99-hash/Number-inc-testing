@@ -1691,6 +1691,64 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     doc.querySelectorAll('#docks .dock-group-name').length === groupList.length &&
     (groupList[0].name.length > 0), groupList.map((g) => g.name).join(' · '));
 
+  section('5n. Комбо ⌘ и подсказки-онбординг (v0.20.0)');
+  const cm = G.registry.mechanic('combo');
+  state.N = G.BN.fromLog10(5); state.D = 5;
+  state.mech.combo = null;
+  check('комбо в реестре', !!cm && !!G.combo, cm && cm.id);
+  const multBase = G.growth.M(state);
+  let t = 1000;
+  for (let i = 0; i < 8; i++) G.combo.tap(state, t += 100);
+  const comboVal = G.combo.value(state);
+  check('тапы копят серию', comboVal > 0.5, 'серия ' + comboVal.toFixed(2));
+  check('серия множит M', G.growth.M(state) > multBase,
+    'M ×' + (G.growth.M(state) / multBase).toFixed(2));
+  check('антиавтоклик отсекает слишком частые тапы',
+    G.combo.tap(state, 5000) !== null && G.combo.tap(state, 5010) === null);
+  const beforeDecay = G.combo.value(state);
+  G.combo.tick(state, 1);
+  check('серия гаснет сама', G.combo.value(state) < beforeDecay,
+    beforeDecay.toFixed(2) + ' → ' + G.combo.value(state).toFixed(2));
+  for (let i = 0; i < 200; i++) G.combo.tick(state, 1);
+  check('до нуля', G.combo.value(state) === 0 && Math.abs(G.combo.mult(state) - 1) < 1e-9);
+  check('серия ограничена сверху', (function () {
+    let tt = 9000;
+    for (let i = 0; i < 400; i++) G.combo.tap(state, tt += 100);
+    return G.combo.value(state) <= G.content.combo.maxCombo + 1e-9;
+  })(), 'макс ' + G.content.combo.maxCombo + ' → x' + G.combo.mult(state).toFixed(2));
+  check('чип комбо показывает серию', (function () {
+    G.ui.combo.update(state);
+    const chip = doc.querySelector('.combo-chip');
+    return !!chip && /[0-9]/.test(chip.textContent);
+  })(), (doc.querySelector('.combo-chip') || {}).textContent);
+  check('тап по главному числу копит серию', (function () {
+    state.mech.combo = null;
+    const hero = doc.getElementById('heroN');
+    if (!hero) return false;
+    const ev = new win.MouseEvent('pointerdown', { bubbles: true });
+    hero.dispatchEvent(ev);
+    return G.combo.value(state) > 0;
+  })(), 'серия ' + G.combo.value(state).toFixed(2));
+
+  /* подсказки */
+  const hintList = (G.content.hints && G.content.hints.list) || [];
+  check('подсказки в данных', hintList.length >= 10, hintList.length + ' шт');
+  state.N = G.BN.fromLog10(0.5); state.D = 0.5;
+  state.settings.hints = true;
+  G.ui.hints.update(state);
+  const bar = doc.querySelector('.hint-bar');
+  check('подсказка показывается по условию', !!bar && bar.classList.contains('on'),
+    (bar && bar.textContent || '').slice(0, 40));
+  const firstText = bar && bar.querySelector('.hint-text').textContent;
+  state.N = G.BN.fromLog10(200); state.D = 200;
+  G.ui.hints.update(state);
+  check('подсказка меняется с прогрессом', (bar && bar.querySelector('.hint-text').textContent) !== firstText,
+    (bar && bar.querySelector('.hint-text').textContent || '').slice(0, 40));
+  state.settings.hints = false;
+  G.ui.hints.update(state);
+  check('подсказки выключаются настройкой', !bar.classList.contains('on'));
+  state.settings.hints = true;
+
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
   G.debug.setD(120);

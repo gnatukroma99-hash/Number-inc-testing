@@ -98,6 +98,14 @@
       { id: 'a_omega', icon: 'Ω', name: 'Правило мира', desc: 'Купить правило за Ω',
         cond: 'omegaRules >= 1' },
 
+      /* --- комбо ⌘ (v0.20.0) --- */
+      { id: 'a_combo5', icon: '⌘', name: 'Разогрев', desc: 'Довести серию до 5',
+        cond: 'comboBest >= 5' },
+      { id: 'a_combo12', icon: '⌘', name: 'Полная серия', desc: 'Довести серию до 12',
+        cond: 'comboBest >= 12' },
+      { id: 'a_combo500', icon: 'target', name: 'Пальцы', desc: '500 тапов по числу',
+        cond: 'comboTaps >= 500' },
+
       { id: 'a_hour', icon: 'clock', name: 'Час в игре', desc: 'Час суммарного времени',
         cond: 'playtime >= 3600' },
       { id: 'a_collector', icon: 'trophy', name: 'Коллекционер', desc: 'Открыть 12 достижений',

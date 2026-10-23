@@ -2610,3 +2610,56 @@ body.no-anim .rift-float.visible, body.no-anim .rift-float.popped { animation: n
 .modal-card .section:nth-child(3) { animation-delay: 80ms; }
 .modal-card .section:nth-child(n+4) { animation-delay: 120ms; }
 body.no-anim .ui-ripple { display: none; }
+
+/* ================= v0.20.0 — комбо ⌘ и подсказки ================= */
+.combo-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 8px; padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(255, 255, 255, .04);
+  font: 800 12px/1 var(--mono);
+  color: var(--dim2);
+  transition: color var(--t-fast) linear, border-color var(--t-fast) linear,
+              transform var(--t-fast) var(--e-out), opacity var(--t-base) linear;
+  opacity: .55;
+  pointer-events: none;
+}
+.combo-chip.on { opacity: 1; color: var(--accent); border-color: rgba(53, 226, 192, .45); }
+.combo-chip.hot {
+  color: #ffd166; border-color: rgba(255, 209, 102, .6);
+  box-shadow: 0 0 22px rgba(255, 209, 102, .22);
+  animation: comboTick 900ms ease-in-out infinite;
+}
+@keyframes comboTick { 50% { transform: scale(1.04); } }
+.combo-ico { font-size: 14px; }
+.combo-mult { color: inherit; font-variant-numeric: tabular-nums; }
+.combo-bar { width: 74px; height: 4px; border-radius: 3px; background: rgba(255, 255, 255, .10); overflow: hidden; }
+.combo-bar-fill { height: 100%; width: 0; border-radius: 3px; background: currentColor; transition: width 120ms linear; }
+.hero-number.tap { animation: heroTap 180ms var(--e-out); }
+@keyframes heroTap { 50% { transform: scale(1.04); } }
+
+.hint-bar {
+  display: none; align-items: center; gap: 9px;
+  margin: 0 auto 8px; max-width: 1180px;
+  padding: 9px 13px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 209, 102, .28);
+  background: linear-gradient(180deg, rgba(255, 209, 102, .10), rgba(255, 209, 102, .03));
+  color: #ffe6a8;
+  font: 700 12.5px/1.4 var(--mono);
+}
+.hint-bar.on { display: flex; }
+.hint-bar.pop { animation: hintPop 320ms var(--e-spring); }
+@keyframes hintPop { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
+.hint-ico { font-size: 14px; }
+.hint-text { flex: 1; }
+.hint-close {
+  border: 0; background: transparent; color: var(--dim2);
+  font: 800 16px/1 var(--mono); cursor: pointer; padding: 2px 6px; border-radius: 6px;
+}
+.hint-close:hover { color: var(--text); background: rgba(255, 255, 255, .08); }
+@media (max-width: 720px) {
+  .combo-bar { width: 46px; }
+  .hint-bar { font-size: 11.5px; margin: 0 0 6px; }
+}
