@@ -56,6 +56,22 @@ function measure() {
     };
   };
 
+  const css = (el) => {
+    if (!el) return null;
+    const cs = getComputedStyle(el);
+    return {
+      display: cs.display, flexDir: cs.flexDirection, width: cs.width,
+      minW: cs.minWidth, overflowX: cs.overflowX, flex: cs.flex
+    };
+  };
+  const chain = {
+    docks: css(document.querySelector('#docks')),
+    groups: css(document.querySelector('.dock-groups')),
+    itemsWrap: css(document.querySelector('.dock-items')),
+    items: css(document.querySelector('.dock-group-items.open')),
+    pillsWrap: css(document.querySelector('.dock-pills'))
+  };
+
   const items = document.querySelector('.dock-group-items.open');
   const pills = document.querySelector('.dock-pills');
   const out = {
@@ -64,6 +80,7 @@ function measure() {
     pills: box('.dock-pills'),
     items: box('.dock-group-items.open'),
     board: box('#board'),
+    computed: chain,
     itemsScrollWorks: false,
     pillsScrollWorks: false,
     lastDockReachable: false,
@@ -87,6 +104,23 @@ function measure() {
     pills.scrollLeft = 9999;
     out.pillsScrollWorks = pills.scrollLeft > 4;
   }
+  out.cssRules = { total: 0, hasMinWidthRule: false, hasItemsOpen: false };
+  try {
+    for (const sheet of document.styleSheets) {
+      let rules = [];
+      try { rules = sheet.cssRules || []; } catch (e) { continue; }
+      const walk = (list) => {
+        for (const r of list) {
+          out.cssRules.total++;
+          const sel = r.selectorText || '';
+          if (sel.indexOf('.dock-group-items.open') >= 0) out.cssRules.hasItemsOpen = true;
+          if (sel.indexOf('.dock-group-items') >= 0 && r.style && r.style.minWidth === '0px') out.cssRules.hasMinWidthRule = true;
+          if (r.cssRules) walk(r.cssRules);
+        }
+      };
+      walk(rules);
+    }
+  } catch (e) { out.cssRules.error = String(e && e.message); }
   return out;
 }
 
