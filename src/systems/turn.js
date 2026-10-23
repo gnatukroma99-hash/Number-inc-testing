@@ -44,7 +44,11 @@
     startDigits(state, turnsAfter) {
       const c = T.cfg();
       const turns = turnsAfter !== undefined ? turnsAfter : (state.res.turns || 0);
-      const v = G.formula(c.startFormula || '0', { turns: turns, lvl: G.lvl(state, 'tr_start') });
+      /* переменные старта объявлены данными: startVars { имя → id узла } */
+      const vars = { turns: turns, lvl: G.lvl(state, 'tr_start') };
+      const sv = c.startVars || {};
+      for (const k in sv) vars[k] = G.lvl(state, sv[k]);
+      const v = G.formula(c.startFormula || '0', vars);
       if (!isFinite(v) || v <= 0) return 0;
       return Math.min(v, 1e300);
     },

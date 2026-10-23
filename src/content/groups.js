@@ -32,7 +32,7 @@
     {
       id: 'tier4', name: 'Ярус 4', hint: 'после ОБОРОТА',
       color: '#a3e635',
-      mechs: ['turn']
+      mechs: ['turn', 'turntree']
     }
   ];
 })(window.G = window.G || {});

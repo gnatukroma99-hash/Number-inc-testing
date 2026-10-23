@@ -26,7 +26,7 @@ const BOARDS = process.argv.slice(2).length
   ? process.argv.slice(2)
   : ['core', 'combo', 'digitsum', 'analysis', 'shop', 'primeranks', 'sieve', 'mirror', 'patterns', 'slot', 'prestige', 'tree',
     'bigbang', 'glyphs', 'challenges', 'pacts', 'duplicator', 'pacttree', 'echo', 'chrono', 'rift', 'constellations',
-    'breakthrough', 'psitree', 'omega', 'achievements'];
+    'breakthrough', 'psitree', 'omega', 'turn', 'turntree', 'achievements'];
 
 function findBrowser() {
   /* CHROME_PATH первым: в CI браузер ставится скриптом и путь приходит из окружения */
@@ -100,6 +100,10 @@ const PREP = `
   if (G.registry.upgrade('tr_start')) buy('tr_start', 3);
   if (G.registry.upgrade('tr_span')) buy('tr_span', 2);
   if (G.registry.upgrade('tr_mult')) buy('tr_mult', 2);
+  s.res.turns = 160;
+  ['tt_s1', 'tt_p1', 'tt_t1', 'tt_d1', 'tt_s2', 'tt_p2', 'tt_s3', 'tt_p3', 'tt_t2', 'tt_d2']
+    .forEach((id) => { if (G.registry.upgrade(id)) buy(id, 1); });
+  s.res.turns = 118;
   G.debug.setD(12000);
   /* паттерны: коллекция и активный буфф, чтобы доска была «живой» */
   s.mech.patterns = {

@@ -3641,3 +3641,164 @@ body.board-full .fx-dock { bottom: 190px; }
 body.no-anim .theme-rot .tree-hub::after,
 body.no-anim .theme-rot .node.ready .node-orb,
 body.no-anim .theme-rot .tree-parallax::after { animation: none !important; }
+
+/* ================= v0.31.0 — ДЕРЕВО ⧜: ЖИВОЙ РОСТОК =================
+   Четвёртая карта на том же движке (mechanics/tree/engine.js).
+   Пакт-дерево — гниль, это — прорастание: лайм, живой свет, круглые орбы с ядром.
+   Всё отличие снова только в CSS: .tree-stage.theme-bloom. */
+
+.tree-stage.theme-bloom {
+  background:
+    radial-gradient(26% 24% at 50% 48%, rgba(163, 230, 53, .20), transparent 70%),
+    radial-gradient(70% 62% at 50% 46%, rgba(52, 211, 153, .12), transparent 66%),
+    radial-gradient(44% 36% at 10% 10%, rgba(34, 211, 238, .10), transparent 68%),
+    radial-gradient(50% 42% at 92% 92%, rgba(163, 230, 53, .10), transparent 68%),
+    radial-gradient(110% 110% at 50% 50%, transparent 58%, rgba(0, 0, 0, .5) 100%),
+    #060a07;
+}
+
+.theme-bloom .tree-nebula {
+  background:
+    radial-gradient(46% 40% at 30% 32%, rgba(163, 230, 53, .16), transparent 70%),
+    radial-gradient(40% 34% at 72% 68%, rgba(52, 211, 153, .14), transparent 70%),
+    radial-gradient(34% 30% at 54% 82%, rgba(34, 211, 238, .10), transparent 70%);
+  animation-duration: 22s;
+}
+/* пыльца поднимается вверх — жизнь, а не гниль */
+.theme-bloom .tree-stars {
+  background-image:
+    radial-gradient(1.7px 1.7px at 22% 28%, rgba(200, 255, 140, .65), transparent),
+    radial-gradient(1.4px 1.4px at 70% 20%, rgba(150, 240, 200, .55), transparent),
+    radial-gradient(1.2px 1.2px at 44% 70%, rgba(220, 255, 180, .50), transparent),
+    radial-gradient(1.6px 1.6px at 84% 60%, rgba(120, 230, 240, .45), transparent),
+    radial-gradient(1.2px 1.2px at 14% 80%, rgba(180, 250, 160, .45), transparent);
+  background-size: 420px 420px, 360px 360px, 300px 300px, 480px 480px, 260px 260px;
+  animation: bloomMotes 46s linear infinite;
+  opacity: .9;
+}
+@keyframes bloomMotes { to { transform: translate3d(-20px, -90px, 0); } }
+.theme-bloom .tree-parallax::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .5;
+  background-image:
+    radial-gradient(3px 3px at 26% 60%, rgba(200, 255, 140, .55), transparent),
+    radial-gradient(4px 4px at 64% 36%, rgba(150, 240, 200, .45), transparent),
+    radial-gradient(2.5px 2.5px at 80% 74%, rgba(163, 230, 53, .45), transparent),
+    radial-gradient(3.5px 3.5px at 46% 16%, rgba(140, 235, 220, .4), transparent);
+  background-size: 520px 520px, 640px 640px, 580px 580px, 700px 700px;
+  filter: blur(4px);
+  animation: bloomMotes 38s linear infinite;
+}
+
+/* кольца роста — тонкие и светящиеся */
+.theme-bloom .tring { stroke: rgba(163, 230, 53, .16); stroke-dasharray: 3 10; }
+.theme-bloom .tring.base { stroke: rgba(200, 255, 140, .34); stroke-dasharray: none; }
+.theme-bloom .tray { opacity: .13; stroke-dasharray: 5 12; }
+
+/* ветви — молодые побеги: ровные, светлые, «тянутся» */
+.theme-bloom .tline { stroke-width: 2.6; stroke-dasharray: 9 6; opacity: .6; }
+.theme-bloom .tline.done { stroke-width: 3.4; stroke-dasharray: 12 4; opacity: .95; }
+.theme-bloom .tline.is-hidden { opacity: .1; }
+.theme-bloom .tline.flow { stroke-width: 4; stroke-dasharray: 14 26; }
+.theme-bloom .tline.flow.done { opacity: .85; animation-duration: 1.1s; }
+
+/* сердце — росток: пульс и поднимающаяся «капля сока» */
+.theme-bloom .hub-ring { border-color: rgba(163, 230, 53, .38); border-style: solid; border-width: 1.5px; }
+.theme-bloom .hub-ring::after {
+  border-color: rgba(52, 211, 153, .3);
+  box-shadow: inset 0 0 34px rgba(163, 230, 53, .18);
+}
+.theme-bloom .hub-core {
+  color: #d9ffa0;
+  filter: drop-shadow(0 0 22px rgba(163, 230, 53, .9));
+  animation: bloomHeart 3.4s ease-in-out infinite;
+}
+@keyframes bloomHeart { 50% { filter: drop-shadow(0 0 30px rgba(163, 230, 53, 1)); } }
+.theme-bloom .hub-label { color: #ecffd0; text-shadow: 0 0 16px rgba(163, 230, 53, .8); }
+.theme-bloom .tree-hub::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 74%;
+  width: 6px;
+  height: 34px;
+  margin-left: -3px;
+  border-radius: 60% 60% 0 0;
+  background: linear-gradient(rgba(163, 230, 53, 0), rgba(163, 230, 53, .5));
+  filter: blur(.8px);
+  pointer-events: none;
+  animation: bloomSap 5.5s ease-in-out infinite;
+}
+@keyframes bloomSap {
+  0%, 100% { transform: scaleY(.5); opacity: .35; }
+  50% { transform: scaleY(1); opacity: .8; }
+}
+
+/* орбы — спелые плоды: мягкий свет изнутри */
+.theme-bloom .tree-cell .node-orb,
+.theme-bloom .node-orb {
+  background: radial-gradient(circle at 46% 30%, #1d2d16 0%, #050a06 78%);
+  border-color: color-mix(in srgb, var(--branch, #a3e635) 66%, #16301c);
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, .85),
+              0 0 12px color-mix(in srgb, var(--branch, #a3e635) 22%, transparent);
+}
+.theme-bloom .orb-ico { color: color-mix(in srgb, var(--branch, #a3e635) 74%, #ffffff); }
+.theme-bloom .node.ready .node-orb {
+  border-color: var(--branch, #a3e635);
+  box-shadow: 0 0 26px color-mix(in srgb, var(--branch, #a3e635) 55%, transparent),
+              inset 0 0 16px rgba(0, 0, 0, .8);
+  animation: bloomPulse 2.2s ease-in-out infinite;
+}
+@keyframes bloomPulse {
+  50% {
+    box-shadow: 0 0 34px color-mix(in srgb, var(--branch, #a3e635) 72%, transparent),
+                inset 0 0 18px rgba(0, 0, 0, .8);
+  }
+}
+.theme-bloom .node.ready .orb-price { color: #f4ffe4; }
+.theme-bloom .node.done .node-orb {
+  background: radial-gradient(circle at 50% 28%, #24361a 0%, #060b07 80%);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--branch, #a3e635) 38%, transparent),
+              inset 0 0 14px rgba(0, 0, 0, .7);
+}
+.theme-bloom .node.done .node-orb::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  border: 1px solid color-mix(in srgb, var(--branch, #a3e635) 42%, transparent);
+  opacity: .6;
+  pointer-events: none;
+}
+.theme-bloom .node.maxed .node-orb { border-color: #ffe98a; box-shadow: 0 0 22px rgba(255, 233, 138, .5); }
+
+/* подписи, шапка, зум, тултип — в тон ростка */
+.theme-bloom .tree-branch-label {
+  border-color: color-mix(in srgb, var(--branch, #a3e635) 62%, transparent);
+  background: rgba(6, 12, 8, .82);
+  color: color-mix(in srgb, var(--branch, #a3e635) 90%, #ffffff);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .5), 0 0 16px color-mix(in srgb, var(--branch, #a3e635) 20%, transparent);
+}
+.theme-bloom .tbl-dot { box-shadow: 0 0 12px color-mix(in srgb, var(--branch, #a3e635) 80%, transparent); }
+.theme-bloom .tree-hud-left {
+  border-color: rgba(163, 230, 53, .24);
+  background: rgba(6, 12, 8, .8);
+}
+.theme-bloom .tree-hud-cores { color: #d9ffa0; text-shadow: 0 0 12px rgba(163, 230, 53, .55); }
+.theme-bloom .tree-zoom-btn { border-color: rgba(163, 230, 53, .22); background: rgba(6, 12, 8, .82); }
+.theme-bloom .tree-zoom-btn:hover { border-color: #a3e635; color: #a3e635; }
+.theme-bloom .tree-tip {
+  border-color: rgba(163, 230, 53, .3);
+  background: rgba(6, 12, 8, .97);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .75), 0 0 26px rgba(163, 230, 53, .12);
+}
+.theme-bloom .tip-title { color: #ecffd0; }
+.theme-bloom .tip-buy { border-color: color-mix(in srgb, #a3e635 42%, transparent); color: #d9ffa0; }
+
+body.no-anim .theme-bloom .tree-hub::after,
+body.no-anim .theme-bloom .hub-core,
+body.no-anim .theme-bloom .node.ready .node-orb,
+body.no-anim .theme-bloom .tree-parallax::after { animation: none !important; }

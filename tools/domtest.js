@@ -2192,6 +2192,56 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     return (state.res.turns || 0) > 0;
   })(), '⧜ ' + Math.floor(state.res.turns || 0));
 
+  /* --- дерево ⧜ (v0.31.0) --- */
+  const tt = G.registry.upgradesOf('turntree');
+  check('в дереве ⧜ 16 узлов и 4 ветви', tt.length === 16 &&
+    (G.content.turntree.branches || []).length === 4,
+    tt.length + ' узлов, ветвей ' + (G.content.turntree.branches || []).length);
+  check('дерево ⧜ — валютное (⧜)', tt.every((u) => u.res === 'turns' && u.scope === 'meta'));
+  state.N = G.BN.fromLog10(12500); state.D = 12500;
+  state.res.turns = 400;
+  for (const u of tt) state.upg[u.id] = 0;
+  const g0 = G.turn.gain(state);
+  state.upg.tt_s4 = 1;                       /* «Оборотный выход»: +1 ⧜ за ОБОРОТ */
+  check('узел «Оборотный выход» даёт +⧜', G.turn.gain(state) === g0 + 1,
+    g0 + ' → ' + G.turn.gain(state));
+  state.upg.tt_s4 = 0;
+  const start0 = G.turn.startDigits(state);
+  state.upg.tt_s1 = 1;                       /* «Ноги»: +100 к старту */
+  check('узел «Ноги» поднимает старт', G.turn.startDigits(state) === start0 + 100,
+    start0 + ' → ' + G.turn.startDigits(state));
+  const mm0 = G.growth.upgProduct(state, 'Mmult');
+  state.upg.tt_p1 = 1;
+  check('узел «Толчок» множит M', Math.abs(G.growth.upgProduct(state, 'Mmult') / mm0 - 1.6) < 1e-9,
+    'Mmult ×' + (G.growth.upgProduct(state, 'Mmult') / mm0).toFixed(2));
+  const sp0 = G.growth.upgProduct(state, 'spanMult');
+  state.upg.tt_d1 = 1;
+  check('узел «Плоскость» расширяет span', G.growth.upgProduct(state, 'spanMult') > sp0);
+  state.upg.tt_d1 = 0; state.upg.tt_d2 = 0;
+  check('узел глубины скрыт без предка',
+    G.upgrades.requirementsMet(state, G.registry.upgrade('tt_d3')) === false &&
+    G.upgrades.requirementsMet(state, G.registry.upgrade('tt_d2')) === false,
+    'tt_d3 требует tt_d2, tt_d2 требует tt_d1');
+  state.upg.tt_d1 = 1; state.upg.tt_d2 = 1;
+  check('после предков узел открывается',
+    G.upgrades.requirementsMet(state, G.registry.upgrade('tt_d3')) === true);
+  check('дерево ⧜ не сбрасывается перерождением', (function () {
+    const keep = G.lvl(state, 'tt_p1');
+    G.resetScopes(state, ['run', 'tier']);
+    return G.lvl(state, 'tt_p1') === keep;
+  })());
+  click(dockBtns().find((b) => b.dataset.id === 'turntree'));
+  G.ui.app.render(state);
+  const ttStage = doc.querySelector('#board .tree-stage');
+  check('доска дерева ⧜ — карта в теме «росто́к»',
+    !!ttStage && ttStage.classList.contains('theme-bloom') &&
+    doc.querySelectorAll('#board .tree-cell').length >= 16,
+    ttStage ? ttStage.className : 'нет .tree-stage');
+  check('на карте есть подписи ветвей «Разбег/Сила/Темп/Глубина»', (function () {
+    const txt = Array.from(doc.querySelectorAll('#board .tree-branch-label')).map((e) => e.textContent).join(' ');
+    return ['Разбег', 'Сила', 'Темп', 'Глубина'].every((n) => txt.indexOf(n) >= 0);
+  })());
+
   section('5t. Цветовые темы ярусов, свои цвета досок, эффекты действий (v0.25.0)');
   const Cc = G.ui.components;
   const allMech = ['core'].concat(G.registry.mechanics().map((m) => m.id));
@@ -2326,7 +2376,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const menuCardIds = () => Array.from(doc.querySelectorAll('.menu-card')).map((c) => c.dataset.id);
   const uniqCards = () => new Set(menuCardIds()).size;   /* есть повторы из «Закреплённых»/«Недавних» */
   const allCards = uniqCards();
-  check('в меню все доски', allCards === 29, allCards + ' уникальных карточек (28 механик + «Рост»)');
+  check('в меню все доски', allCards === 30, allCards + ' уникальных карточек (29 механик + «Рост»)');
 
   setSearch('дерев');
   const foundIds = menuCardIds();
