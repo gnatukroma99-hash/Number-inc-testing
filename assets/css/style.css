@@ -3024,3 +3024,58 @@ body.menu-open { overflow: hidden; }
   #board { padding-bottom: 68px; }
   .hero-number { cursor: pointer; }
 }
+
+/* ================= v0.23.0 — спарклайны и закреплённые в меню ================= */
+.menu-card { padding-bottom: 8px; }
+.menu-card .menu-spark {
+  display: block; width: 100%; height: 26px;
+  margin-top: auto;
+  color: var(--grp, var(--accent));
+  opacity: .8;
+  overflow: visible;
+}
+.menu-card:hover .menu-spark { opacity: 1; }
+.menu-card-pin {
+  position: absolute; top: 7px; right: 8px;
+  width: 20px; height: 20px; border-radius: 6px;
+  display: grid; place-items: center;
+  font-size: 12px; line-height: 1;
+  color: rgba(255, 255, 255, .22);
+  cursor: pointer;
+  transition: color var(--t-fast) linear, background-color var(--t-fast) linear, transform var(--t-fast) var(--e-out);
+}
+.menu-card-pin:hover { color: #ffd166; background: rgba(255, 209, 102, .12); transform: scale(1.12); }
+.menu-card-pin.on { color: #ffd166; text-shadow: 0 0 10px rgba(255, 209, 102, .5); }
+.menu-pins .menu-card { min-height: 78px; }
+.menu-pins .menu-group-dot { background: #8ada6a; box-shadow: 0 0 10px rgba(138, 218, 106, .6); }
+.menu-pins .menu-group-name { color: #8ada6a; }
+
+/* ================= v0.23.0 — подписи ветвей дерева ================= */
+.tree-labels { position: absolute; inset: 0; pointer-events: none; }
+.tree-branch-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--branch, #35e2c0) 45%, transparent);
+  background: rgba(6, 12, 18, .82);
+  backdrop-filter: blur(4px);
+  font: 800 11px/1 var(--mono);
+  letter-spacing: .04em;
+  color: var(--branch, #35e2c0);
+  white-space: nowrap;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .45);
+}
+.tbl-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--branch, #35e2c0);
+  box-shadow: 0 0 8px var(--branch, #35e2c0);
+}
+.tbl-name { text-transform: uppercase; }
+.tbl-count { color: var(--dim2); font-size: 9.5px; }
+.tree-stage.far .tree-branch-label { opacity: .55; }
+@media (max-width: 720px) {
+  .tree-branch-label { font-size: 10px; padding: 4px 8px; }
+  .tbl-count { display: none; }
+}

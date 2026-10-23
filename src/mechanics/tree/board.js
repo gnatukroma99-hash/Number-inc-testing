@@ -116,6 +116,9 @@
       ]);
 
       const map = G.h('div', { class: 'tree-map' });
+      /* подписи ветвей по кругу: видно, где какая ветвь, без наведения на узел */
+      const branchLabels = G.h('div', { class: 'tree-labels', 'aria-hidden': 'true' });
+      map.appendChild(branchLabels);
       map.style.width = SIZE + 'px';
       map.style.height = SIZE + 'px';
 
@@ -157,6 +160,7 @@
       const cards = [];
       const links = [];
 
+      const branchInfo = [];
       branches.forEach((b, i) => {
         const base = Number(b.angle) || 0;
         const color = b.color || '#35e2c0';
@@ -190,6 +194,27 @@
 
       /* узлы без известной ветви — чтобы ничего не потерялось */
       const orphans = all.filter((u) => !branches.some((b) => b.id === u.branch));
+      /* строим подписи: имя ветви + куплено узлов, на внешнем радиусе */
+      branches.forEach((br, i) => {
+        const list = cards.filter((c) => c.u.branch === br.id);
+        let maxDepth = 0;
+        for (const c of list) maxDepth = Math.max(maxDepth, c.u.depth || 0);
+        const rad = R0 + maxDepth * RSTEP + 96;
+        const a = ((Number(br.angle) || 0)) * Math.PI / 180;
+        const x = HUB + Math.cos(a) * rad;
+        const y = HUB + Math.sin(a) * rad;
+        const el = G.h('div', { class: 'tree-branch-label' }, [
+          G.h('span', { class: 'tbl-dot' }),
+          G.h('span', { class: 'tbl-name', text: br.name }),
+          G.h('span', { class: 'tbl-count', text: '' })
+        ]);
+        el.style.left = x.toFixed(0) + 'px';
+        el.style.top = y.toFixed(0) + 'px';
+        el.style.setProperty('--branch', br.color || '#35e2c0');
+        branchLabels.appendChild(el);
+        branchInfo.push({ id: br.id, el: el, count: el.querySelector('.tbl-count'), total: list.length });
+      });
+
       if (orphans.length) {
         const box = G.h('div', { class: 'tree-orphans' });
         orphans.forEach((u) => {
@@ -599,6 +624,15 @@
 
         update(state) {
           onResize();
+          /* счётчики в подписях ветвей: «куплено/всего» */
+          for (const info of branchInfo) {
+            let bought = 0;
+            for (const c of cards) {
+              if (c.u.branch === info.id && G.lvl(state, c.u.id) > 0) bought++;
+            }
+            const txt = bought + '/' + info.total;
+            if (info.txt !== txt) { info.txt = txt; info.count.textContent = txt; }
+          }
           hudCores.textContent = G.fmt.num(state.res.cores || 0) + ' ◆';
           hudNodes.textContent = mech.bought(state) + ' / ' + mech.total();
           hubLabel.textContent = G.fmt.num(state.res.cores || 0);

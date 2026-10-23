@@ -59,6 +59,52 @@
     return (typeof m.status === 'function' ? m.status(G.state) : '') || 'открыто';
   }
 
+  const SPARK_W = 100;
+  const SPARK_H = 26;
+
+  function sparkline(id) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'menu-spark');
+    svg.setAttribute('viewBox', '0 0 ' + SPARK_W + ' ' + SPARK_H);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.setAttribute('aria-hidden', 'true');
+    const series = G.history ? G.history.series(G.state, id) : [];
+    const d = G.history ? G.history.path(series, SPARK_W, SPARK_H, 3) : '';
+    if (d) {
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p.setAttribute('d', d);
+      p.setAttribute('fill', 'none');
+      p.setAttribute('stroke', 'currentColor');
+      p.setAttribute('stroke-width', '1.6');
+      p.setAttribute('stroke-linejoin', 'round');
+      p.setAttribute('stroke-linecap', 'round');
+      svg.appendChild(p);
+    } else {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '3'); line.setAttribute('x2', SPARK_W - 3);
+      line.setAttribute('y1', SPARK_H - 4); line.setAttribute('y2', SPARK_H - 4);
+      line.setAttribute('stroke', 'currentColor');
+      line.setAttribute('stroke-opacity', '.25');
+      line.setAttribute('stroke-width', '1.2');
+      svg.appendChild(line);
+    }
+    return svg;
+  }
+
+  function isPinned(id) {
+    const pins = (G.state && G.state.meta && G.state.meta.pins) || [];
+    return pins.indexOf(id) >= 0;
+  }
+
+  function togglePin(id) {
+    if (!G.state || !G.state.meta) return;
+    const pins = G.state.meta.pins || [];
+    const i = pins.indexOf(id);
+    if (i >= 0) pins.splice(i, 1);
+    else { pins.unshift(id); if (pins.length > 6) pins.length = 6; }
+    G.state.meta.pins = pins;
+  }
+
   function card(m, group) {
     const unlocked = m.always ? true : (!m.isUnlocked || m.isUnlocked(G.state));
     const el = G.h('button', {
@@ -79,6 +125,23 @@
       })()
     ]);
     el.style.setProperty('--grp', group.color || '#35e2c0');
+
+    /* звезда «закрепить» — отдельная кнопка, клик по ней не открывает доску */
+    const pin = G.h('span', {
+      class: 'menu-card-pin' + (isPinned(m.id) ? ' on' : ''),
+      role: 'button',
+      title: isPinned(m.id) ? 'Открепить' : 'Закрепить',
+      text: '★'
+    });
+    pin.addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePin(m.id);
+      S.open();
+    });
+    el.appendChild(pin);
+
+    el.appendChild(sparkline(m.id));
+
     el.addEventListener('click', () => {
       if (!unlocked) { G.ui.toast('Доска закрыта: ' + statusOf(m), 'warn'); return; }
       S.close();
@@ -111,6 +174,30 @@
   function paint() {
     G.dom.clear(body);
     const activeId = document.body.dataset.board || 'core';
+    const pins = ((G.state && G.state.meta && G.state.meta.pins) || []).filter((id) => id);
+    if (pins.length) {
+      const sec = G.h('div', { class: 'menu-group menu-pins' }, [
+        G.h('div', { class: 'menu-group-head' }, [
+          G.h('span', { class: 'menu-group-dot' }),
+          G.h('span', { class: 'menu-group-name', text: 'Закреплённые' }),
+          G.h('span', { class: 'menu-group-hint', text: 'звезда на карточке' })
+        ]),
+        G.h('div', { class: 'menu-grid' }, pins.map((id) => {
+          const mm = id === 'core'
+            ? { id: 'core', name: 'Рост', icon: '×', always: true }
+            : G.registry.mechanic(id);
+          if (!mm) return null;
+          const g = (G.content.groups || []).find((x) => (x.mechs || []).indexOf(id) >= 0) || {};
+          const el = card(mm, g);
+          if (id === activeId) el.classList.add('current');
+          return el;
+        }).filter(Boolean))
+      ]);
+      sec.classList.add('pins');
+      sec.style.setProperty('--grp', '#8ada6a');
+      body.appendChild(sec);
+    }
+
     const recent = ((G.state && G.state.meta && G.state.meta.recent) || []).filter((id) => id);
     if (recent.length) {
       const sec = G.h('div', { class: 'menu-group menu-recent' }, [

@@ -56,6 +56,7 @@
       dt = G.timescale.apply(s, dt);
 
       G.sampling.update(s, dt);
+      if (G.history) G.history.tick(s, dt);
       G.growth.tick(s, dt);
 
       for (const m of G.registry.mechanics()) {

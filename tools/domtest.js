@@ -1832,6 +1832,59 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('открытая группа в рейле следует за доской',
     doc.querySelectorAll('#docks .dock-group.open').length === 1);
 
+  section('5r. Спарклайны, закреплённые доски и подписи ветвей (v0.23.0)');
+  /* история показателей */
+  state.mech.combo = null;
+  state.stats.histD = [];
+  state.stats.histMech = {};
+  for (let i = 0; i < 5; i++) {
+    state.N = G.BN.fromLog10(20 + i * 5); state.D = 20 + i * 5;
+    G.history.tick(state, G.history.STEP + 0.1);
+  }
+  check('история D копится', (state.stats.histD || []).length >= 4,
+    'точек: ' + (state.stats.histD || []).length);
+  check('серия доступна по id', (G.history.series(state, 'core') || []).length >= 4);
+  check('есть серии механик', Object.keys(state.stats.histMech || {}).length > 0,
+    Object.keys(state.stats.histMech || {}).slice(0, 5).join(','));
+  const svgPath = G.history.path([1, 3, 2, 5], 100, 20, 2);
+  check('спарклайн рисует путь', /^M[\d.]/.test(svgPath) && svgPath.split('L').length === 4, svgPath);
+
+  /* закреплённые в меню */
+  state.meta.pins = [];
+  G.ui.menu.open();
+  G.ui.app.render(state);
+  const firstPin = doc.querySelector('.menu-card-pin');
+  check('у карточки есть звезда-закрепление', !!firstPin);
+  click(firstPin);
+  G.ui.app.render(state);
+  check('звезда закрепляет доску', (state.meta.pins || []).length === 1, JSON.stringify(state.meta.pins));
+  check('секция «Закреплённые» появилась', doc.querySelectorAll('.menu-pins').length === 1);
+  check('спарклайн в карточке — SVG', doc.querySelectorAll('.menu-card .menu-spark').length > 0,
+    doc.querySelectorAll('.menu-card .menu-spark').length + ' шт');
+  /* повторный клик снимает закрепление */
+  const pinOn = doc.querySelector('.menu-pins .menu-card-pin');
+  if (pinOn) click(pinOn);
+  G.ui.app.render(state);
+  check('повторная звезда снимает закрепление', (state.meta.pins || []).length === 0,
+    JSON.stringify(state.meta.pins));
+  G.ui.menu.close();
+
+  /* подписи ветвей на карте дерева */
+  state.res.cores = 1e6;
+  click(dockBtns().find((b) => b.dataset.id === 'tree'));
+  G.ui.app.render(state);
+  const labels = Array.from(doc.querySelectorAll('#board .tree-branch-label'));
+  check('подписи ветвей на карте', labels.length === (G.content.tree.branches || []).length,
+    labels.length + ' подписей');
+  check('в подписи есть имя ветви и счётчик', labels.length > 0 &&
+    labels[0].querySelector('.tbl-name').textContent.length > 0 &&
+    /\d+\/\d+/.test(labels[0].querySelector('.tbl-count').textContent),
+    labels[0].querySelector('.tbl-name').textContent + ' · ' + labels[0].querySelector('.tbl-count').textContent);
+  check('подписи не перехватывают клики', (function () {
+    const css = fs.readFileSync(path.join(ROOT, 'assets/css/style.css'), 'utf8');
+    return /\.tree-labels \{[^}]*pointer-events: none/.test(css);
+  })());
+
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
   G.debug.setD(120);
