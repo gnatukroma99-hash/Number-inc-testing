@@ -153,6 +153,15 @@
             state.settings.scientificHints = v;
             document.body.classList.toggle('hide-formulas', !v);
           }),
+          toggle('Всплывающие подписи на экране', s.fxPops !== false, (v) => {
+            state.settings.fxPops = v;
+            if (!v && document.querySelectorAll('.fx-pop').length) {
+              document.querySelectorAll('.fx-pop').forEach((n) => n.remove());
+            }
+          }),
+          G.h('p', { class: 'settings-hint', text:
+            'Цифры узоров мантиссы («7777», палиндром) и «+1 ур.» над кнопками. ' +
+            'Выключи, если экран должен быть тихим — сами механики работают так же.' }),
 
           G.h('h3', { class: 'section-title', text: 'Режим разработчика' }),
           toggle('Ускорение игры (для тестов)', s.devMode, (v) => {

@@ -10,6 +10,14 @@
     return typeof G.animationsOff === 'function' && G.animationsOff();
   }
 
+  /* настройка «всплывающие подписи на экране» (settings.fxPops):
+     выключена — уведомления (узоры мантиссы, «+1 ур.», «⧉») на экран не лезут,
+     сами механики работают как обычно. */
+  function notices() {
+    const s = G.state && G.state.settings;
+    return !s || s.fxPops !== false;
+  }
+
   function once(el, cls, ms) {
     if (!el) return;
     el.classList.remove(cls);
@@ -21,7 +29,7 @@
   const F = {
     /* всплывающий текст над элементом (покупка, выигрыш) */
     pop(el, text) {
-      if (off() || !el) return;
+      if (off() || !notices() || !el) return;
       const r = el.getBoundingClientRect();
       /* если у элемента нет размеров (скрыт/ещё не отрисован) — показываем по центру */
       const has = (r.width > 0 || r.height > 0);
@@ -88,7 +96,7 @@
       G.bus.on('challenge:done', () => { F.flash('rgba(232, 121, 249, .45)'); F.shake(); F.banner('⚑ ИСПЫТАНИЕ ПРОЙДЕНО'); });
       /* узор мантиссы: цифры всплывают над числом, первый раз — баннер */
       G.bus.on('pattern:found', (e) => {
-        if (!e) return;
+        if (!e || !notices()) return;
         F.pop(document.getElementById('heroN'), e.text || '');
         if (e.first) { F.flash('rgba(163, 230, 53, .32)'); F.banner((e.name || 'УЗОР') + ' · ' + e.text, e.color || '#a3e635'); }
       });

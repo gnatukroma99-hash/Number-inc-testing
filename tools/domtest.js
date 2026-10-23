@@ -2317,6 +2317,29 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   }
   check('тумблер включает звук обратно', state.settings.sound === true);
 
+  /* v0.27.1: выключатель всплывающих подписей (узоры мантиссы, «+1 ур.») */
+  const popToggle = Array.from(doc.querySelectorAll('#modal-root input[type="checkbox"]'))
+    .find((i) => /Всплывающие подписи/.test(i.closest('label') ? i.closest('label').textContent : ''));
+  check('есть выключатель всплывающих подписей', !!popToggle);
+  state.settings.animations = true;
+  if (G.ui.mainNumber && G.ui.mainNumber.applySettings) G.ui.mainNumber.applySettings(state);
+  doc.querySelectorAll('.fx-pop, .fx-banner').forEach((n) => n.remove());
+  if (popToggle) { popToggle.checked = true; popToggle.dispatchEvent(new win.Event('change', { bubbles: true })); }
+  check('по умолчанию подписи включены', state.settings.fxPops !== false);
+  G.bus.emit('pattern:found', { type: 'quad', name: 'Квадро', text: '7777' });
+  check('узор всплывает при включённых подписях', doc.querySelectorAll('.fx-pop').length > 0,
+    doc.querySelectorAll('.fx-pop').length + ' шт');
+  doc.querySelectorAll('.fx-pop, .fx-banner').forEach((n) => n.remove());
+  if (popToggle) { popToggle.checked = false; popToggle.dispatchEvent(new win.Event('change', { bubbles: true })); }
+  check('тумблер выключает подписи', state.settings.fxPops === false);
+  G.bus.emit('pattern:found', { type: 'quad', name: 'Квадро', text: '7777', first: true });
+  check('с выключенными подписями экран чист',
+    doc.querySelectorAll('.fx-pop, .fx-banner').length === 0,
+    doc.querySelectorAll('.fx-pop, .fx-banner').length + ' шт');
+  if (popToggle) { popToggle.checked = true; popToggle.dispatchEvent(new win.Event('change', { bubbles: true })); }
+  check('тумблер включает подписи обратно', state.settings.fxPops === true);
+  doc.querySelectorAll('.fx-pop, .fx-banner').forEach((n) => n.remove());
+
   const devToggle = Array.from(doc.querySelectorAll('#modal-root input[type="checkbox"]'))
     .find((i) => /Ускорение/.test(i.closest('label') ? i.closest('label').textContent : ''));
   check('есть переключатель ускорения', !!devToggle);

@@ -7,7 +7,7 @@
   'use strict';
 
   G.SAVE_VERSION = 2;
-  G.VERSION = '0.27.0';
+  G.VERSION = '0.27.1';
 
   const DEFAULT_SETTINGS = {
     numberFormat: 'short',     // short | sci | full
@@ -20,6 +20,7 @@
     buyFilter: false,          // показывать только доступные апгрейды
     buySort: 'price',          // 'price' | 'level' | 'name'              // '1' | '10' | '100' | 'max' — сколько покупать за клик
     sound: true,               // звук покупок/перерождения (WebAudio, без файлов)
+    fxPops: true,              // всплывающие подписи на экране (узоры «7777», «+1 ур.»)
     devMode: false,            // режим разработчика: ускорение всей игры
     devSpeed: 1,               // 1..100 (см. systems/timescale.js)
     cloudAuto: false,           // автосинхронизация с GitHub Gist
