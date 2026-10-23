@@ -3170,3 +3170,17 @@ body.menu-open { overflow: hidden; }
   }
   .dock-items:has(.dock-group-items.open:not(:hover))::after { opacity: 1; }
 }
+
+/* v0.23.3b — жёстко ограничиваем ширину по цепочке (иначе flex тянется по контенту) */
+#docks, .dock-groups, .dock-items { width: 100%; max-width: 100%; min-width: 0; }
+.dock-group-items.open { width: 100%; max-width: 100%; min-width: 0; }
+@media (max-width: 760px) {
+  #docks { max-width: 100vw; }
+  .dock-groups { max-width: 100%; }
+}
+
+/* desktop: доки вертикально, ширина рейла фиксирована */
+@media (min-width: 761px) {
+  .dock-items { width: 100%; }
+  .dock-group-items.open { width: 100%; }
+}
