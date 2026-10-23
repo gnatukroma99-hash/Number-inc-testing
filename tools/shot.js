@@ -87,7 +87,7 @@ const PREP = `
   s.meta.passedBarriers.push('wall_1000');
   s.res.psi = 60;
   s.meta.breaks = 2;
-  ['psi_start', 'psi_speed', 'psi_delta'].forEach((id) => buy(id, 1));
+  ['psi_start', 'psi_speed', 'psi_delta'].forEach((id) => { if (G.registry.upgrade(id)) buy(id, 1); });
   ['ps_freq', 'ps_cut', 'ps_yield', 'ps_boom1'].forEach((id) => { if (G.registry.upgrade(id)) buy(id, 1); });
   s.res.psi = 21;
   /* паттерны: коллекция и активный буфф, чтобы доска была «живой» */
