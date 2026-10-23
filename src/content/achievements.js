@@ -106,6 +106,11 @@
       { id: 'a_combo500', icon: 'target', name: 'Пальцы', desc: '500 тапов по числу',
         cond: 'comboTaps >= 500' },
 
+      /* --- Ярус 3 (v0.24.0) --- */
+      { id: 'a_break', icon: 'burst', name: 'ПРОБОЙ', desc: 'Сломать стену 1e1000', cond: 'breaks >= 1' },
+      { id: 'a_wall1000', icon: 'brick', name: 'Тысяча', desc: 'Дойти до 1000 цифр', cond: 'wall1000 >= 1' },
+      { id: 'a_ch9', icon: 'trophy', name: 'Девять кругов', desc: 'Пройти 9 испытаний', cond: 'challenges >= 9' },
+
       { id: 'a_hour', icon: 'clock', name: 'Час в игре', desc: 'Час суммарного времени',
         cond: 'playtime >= 3600' },
       { id: 'a_collector', icon: 'trophy', name: 'Коллекционер', desc: 'Открыть 12 достижений',

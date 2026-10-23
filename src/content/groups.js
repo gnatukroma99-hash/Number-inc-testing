@@ -19,9 +19,14 @@
       mechs: ['spark', 'prestige', 'tree', 'achievements']
     },
     {
+      id: 'tier3', name: 'Ярус 3', hint: 'после ПРОБОЯ',
+      color: '#ff9de2',
+      mechs: ['breakthrough', 'omega']
+    },
+    {
       id: 'tier2', name: 'Ярус 2', hint: 'после БОЛЬШОГО БУМА',
       color: '#c9a0ff',
-      mechs: ['bigbang', 'constellations', 'glyphs', 'pacttree', 'omega',
+      mechs: ['bigbang', 'constellations', 'glyphs', 'pacttree',
         'challenges', 'pacts', 'duplicator', 'echo', 'chrono', 'rift']
     }
   ];

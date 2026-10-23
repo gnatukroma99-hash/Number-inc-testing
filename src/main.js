@@ -61,6 +61,8 @@
 
       for (const m of G.registry.mechanics()) {
         if (typeof m.isUnlocked === 'function' && !m.isUnlocked(s)) continue;
+        /* механика, выключенная испытанием, не тикает вообще (например эхо не добавляет D) */
+        if (G.challenges && typeof G.challenges.blocked === 'function' && G.challenges.blocked(s, m.id)) continue;
         if (typeof m.tick === 'function') {
           try { m.tick(s, dt); } catch (e) { console.error('[mech]', m.id, e); }
         }

@@ -46,6 +46,31 @@
         reward: { text: 'скорость +0.15', speedBonus: '0.15' }
       },
       {
+        id: 'ch_noglyph', name: 'Без глифов', goal: 130, cost: 12,
+        blockMech: ['glyphs'],
+        text: 'Награда: Δ за БУМ ×1.3 навсегда',
+        reward: { text: 'Δ ×1.3', deltaGainMult: '1.3' }
+      },
+      {
+        id: 'ch_nopact', name: 'Без сделок', goal: 150, cost: 12,
+        blockMech: ['pacts'],
+        text: 'Награда: ◆ за перерождение ×1.5 навсегда',
+        reward: { text: '◆ ×1.5', coreGainMult: '1.5' }
+      },
+      {
+        id: 'ch_noecho', name: 'Без эха', goal: 175, cost: 14,
+        blockMech: ['echo'],
+        text: 'Награда: скорость +0.2 навсегда',
+        reward: { text: 'скорость +0.2', speedBonus: '0.2' }
+      },
+      {
+        id: 'ch_noslot', name: 'Без автомата', goal: 200, cost: 16,
+        blockMech: ['slot', 'glyphs'],
+        dtMult: 1.25,
+        text: 'Награда: M ×1.7 навсегда',
+        reward: { text: 'M ×1.7', Mmult: '1.7' }
+      },
+      {
         id: 'ch_numb', name: 'Онемение', goal: 130, cost: 10,
         blockMech: ['digitsum', 'primefit', 'shop'],
         dtMult: 1.5,

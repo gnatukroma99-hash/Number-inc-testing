@@ -62,6 +62,13 @@
       requires: ['t2_coreadd']
     },
     {
+      id: 't2_span', mech: 'bigbang', scope: 'tier', res: 'delta', icon: 'axe',
+      name: 'Плоскость', base: 6, growth: 2.20, max: 8,
+      formula: '2 ** lvl', fmt: 'x', spanMult: '2 ** lvl',
+      note: 'span (плоскость софткапа) ×= 2^lvl — открывает путь к 1e1000',
+      desc: 'Без этого рост за 1e308 почти останавливается.'
+    },
+    {
       id: 't2_delta', mech: 'bigbang', scope: 'tier', res: 'delta', icon: '◈',
       name: 'Глубокий БУМ', base: 4, growth: 2.30, max: 8,
       formula: '1.3 ** lvl', fmt: 'x', deltaGainMult: '1.3 ** lvl',

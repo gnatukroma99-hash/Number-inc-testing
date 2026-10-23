@@ -137,6 +137,13 @@
       let spanMult = spanMultCache;
       if (!(isFinite(spanMult) && spanMult > 0)) {
         spanMult = W.upgProduct(state, 'spanMult');
+        /* плоскость могут расширять и механики (правило Ω «Плоский мир») */
+        for (const m of G.registry.mechanics()) {
+          if (m.isUnlocked && !m.isUnlocked(state)) continue;
+          if (typeof m.spanMult !== 'function') continue;
+          const k = m.spanMult(state);
+          if (isFinite(k) && k > 0) spanMult *= k;
+        }
         if (!isFinite(spanMult) || spanMult <= 0) spanMult = 1;
       }
       const v = G.formula(hs.formula, {

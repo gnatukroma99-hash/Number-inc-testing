@@ -73,6 +73,7 @@
       return O.has(state, 'w_chrono') ? Math.max(base, 5) : base;
     },
     coreGainMult(state) { return O.has(state, 'w_core') ? 1.5 : 1; },
+    spanMult(state) { return O.has(state, 'w_span') ? 2 : 1; },
     deltaGainMult(state) { return O.has(state, 'w_delta') ? 1.5 : 1; },
 
     restart(state) { if (state.mech) state.mech.omega = null; }
@@ -97,6 +98,7 @@
 
     tick(state, dt) { O.tick(state, dt); },
     coreGainMult(state) { return O.coreGainMult(state); },
+    spanMult(state) { return O.spanMult(state); },
     deltaGainMult(state) { return O.deltaGainMult(state); },
     onReset(state) { O.restart(state); },
 
