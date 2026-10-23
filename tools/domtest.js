@@ -2099,6 +2099,172 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   state.res.psi = psiWas;
   state.meta.breaks = breaksWas;
 
+  section('5v. Поиск по доскам, фильтр групп и ★ «избранное одной кнопкой» (v0.27.0)');
+  G.ui.menu.open();
+  await sleep(20);
+  const menuOv = doc.querySelector('.menu-overlay');
+  const searchInput = doc.querySelector('.menu-search');
+  check('меню открылось', !!menuOv && menuOv.classList.contains('on'));
+  check('поле поиска есть', !!searchInput);
+  const chipCount = doc.querySelectorAll('.menu-chip').length;
+  const grpCount = (G.content.groups || []).length;
+  check('чипы групп: «Все» + все группы', chipCount === grpCount + 1, chipCount + ' чипов, групп ' + grpCount);
+  const setSearch = (v) => { searchInput.value = v; searchInput.dispatchEvent(new win.Event('input', { bubbles: true })); };
+  const menuCardIds = () => Array.from(doc.querySelectorAll('.menu-card')).map((c) => c.dataset.id);
+  const uniqCards = () => new Set(menuCardIds()).size;   /* есть повторы из «Закреплённых»/«Недавних» */
+  const allCards = uniqCards();
+  check('в меню все доски', allCards === 28, allCards + ' уникальных карточек (27 механик + «Рост»)');
+
+  setSearch('дерев');
+  const foundIds = menuCardIds();
+  check('поиск «дерев» находит ◆-дерево и Ψ-дерево',
+    foundIds.indexOf('tree') >= 0 && foundIds.indexOf('psitree') >= 0,
+    foundIds.join(','));
+  check('поиск не тащит Решето/Зеркало по lockHint',
+    foundIds.indexOf('sieve') < 0 && foundIds.indexOf('mirror') < 0, foundIds.join(','));
+  check('в результатах есть заголовок «Найдено»',
+    /Найдено/.test((doc.querySelector('.menu-found .menu-group-name') || {}).textContent || ''),
+    textOf(doc.querySelector('.menu-found .menu-group-name')));
+
+  setSearch('пси');
+  check('алиас «пси» находит Ψ-дерево', menuCardIds().indexOf('psitree') >= 0, menuCardIds().join(','));
+
+  setSearch('zzz-нет-такого');
+  check('пустой результат даёт подсказку', !!doc.querySelector('.menu-empty'),
+    textOf(doc.querySelector('.menu-empty-title')));
+
+  setSearch('');
+  check('сброс поиска возвращает все доски', uniqCards() === allCards, uniqCards() + ' шт');
+
+  const metaChip = Array.from(doc.querySelectorAll('.menu-chip')).find((c) => c.dataset.group === 'meta');
+  click(metaChip);
+  await sleep(10);
+  const menuMetaIds = menuCardIds();
+  const metaExpected = (G.content.groups || []).find((g) => g.id === 'meta').mechs;
+  check('чип «Мета» показывает только мету',
+    menuMetaIds.length === metaExpected.length && menuMetaIds.every((id) => metaExpected.indexOf(id) >= 0),
+    menuMetaIds.join(','));
+  check('чип «Мета» подсвечен', metaChip.classList.contains('on'));
+  click(Array.from(doc.querySelectorAll('.menu-chip')).find((c) => c.dataset.group === 'all'));
+  await sleep(10);
+
+  /* ★ на карточке меню */
+  state.meta.pins = [];
+  const pinOnTree = doc.querySelector('.menu-card[data-id="tree"] .menu-card-pin');
+  check('у карточки есть звезда «закрепить»', !!pinOnTree);
+  click(pinOnTree);
+  await sleep(10);
+  check('звезда закрепляет доску', (state.meta.pins || []).indexOf('tree') >= 0,
+    JSON.stringify(state.meta.pins));
+  check('в меню появилась секция «Закреплённые»', !!doc.querySelector('.menu-pins'));
+
+  /* Esc: сначала чистит поиск, потом закрывает меню */
+  setSearch('глиф');
+  searchInput.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await sleep(10);
+  check('Esc сбрасывает поиск, не закрывая меню',
+    searchInput.value === '' && menuOv.classList.contains('on'), 'value=«' + searchInput.value + '»');
+  searchInput.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await sleep(10);
+  check('второй Esc закрывает меню', !menuOv.classList.contains('on'));
+  G.ui.menu.close();
+
+  /* ★ в полоске над доской — «избранное одной кнопкой» */
+  const coresWas = state.res.cores;
+  state.res.cores = Math.max(1, coresWas || 0);
+  G.ui.docks.select('tree');
+  await sleep(30);
+  const bhPin = doc.querySelector('.bh-pin');
+  check('★ в полоске над доской есть', !!bhPin);
+  check('★ показывает, что доска уже закреплена', bhPin && bhPin.classList.contains('on'),
+    bhPin ? bhPin.className : 'нет кнопки');
+  click(bhPin);
+  await sleep(10);
+  check('★ открепляет доску одним кликом', (state.meta.pins || []).indexOf('tree') < 0,
+    JSON.stringify(state.meta.pins));
+  state.res.cores = coresWas;
+  state.meta.pins = [];
+
+  /* Ctrl+K — меню сразу с поиском */
+  doc.body.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
+  await sleep(20);
+  check('Ctrl+K открывает меню', menuOv.classList.contains('on'));
+  check('Ctrl+K ставит фокус в поиск', doc.activeElement === doc.querySelector('.menu-search'),
+    (doc.activeElement || {}).className);
+  G.ui.menu.close();
+  check('поиск и закрепление без ошибок в логе', errors.length === 0, errors.join(' | '));
+
+  section('5w. Паттерны мантиссы — узоры ловятся сами (v0.27.0)');
+  const patCfg = G.content.patterns;
+  check('типов узоров в данных', (patCfg.types || []).length === 5, (patCfg.types || []).map((t) => t.id).join(','));
+  check('у доски паттернов есть цвет и ярус',
+    Cc.mechColor('patterns').indexOf('#') === 0 && Cc.mechTier('patterns') === '1',
+    Cc.mechColor('patterns') + ' / ' + Cc.mechTier('patterns'));
+
+  /* детектор: все пять типов на своих строках */
+  const hitTypes = (str) => G.patterns.scan(str).map((h) => h.type);
+  check('трипл находится', hitTypes('12347779').indexOf('triple') >= 0, hitTypes('12347779').join(','));
+  check('квадро находится, а не трипл', hitTypes('1237777').indexOf('quad') >= 0, hitTypes('1237777').join(','));
+  check('лесенка находится', hitTypes('1230777').indexOf('run3') >= 0, hitTypes('1230777').join(','));
+  check('штурвал (4 подряд) находится', hitTypes('432100000').indexOf('run4') >= 0, hitTypes('432100000').join(','));
+  check('палиндром находится', hitTypes('1232190000').indexOf('pal') >= 0, hitTypes('1232190000').join(','));
+  check('в ровной мантиссе узоров нет', hitTypes('102030405').length === 0, hitTypes('102030405').join(','));
+
+  /* механика: закрыта на малом D, открыта на D ≥ 10 */
+  const patMech = G.registry.mechanic('patterns');
+  check('паттерны закрыты до 10 цифр', !patMech.isUnlocked({ N: { m: 1, e: 5 }, D: 5, res: {}, meta: {}, mech: {} }));
+
+  const dWas = state.D;
+  state.res.energy = Math.max(state.res.energy || 0, 1e6);
+  G.debug.setD(20);
+  await sleep(60);
+  check('паттерны открылись на D ≥ 10', patMech.isUnlocked(state), 'D=' + G.growth.D(state).toFixed(1));
+
+  /* подсовываем число с узором 7777 — тик должен поймать узор */
+  const pd = G.patterns.data(state);
+  pd.lastScan = 0; pd.clock = 0;
+  state.N = { m: 7.7777, e: 20 };   /* мантисса 77777… — квадро и трипл */
+  state.D = G.growth.D(state);
+  G.patterns.tick(state, 1);
+  const caught = (pd.count.quad || 0) + (pd.count.triple || 0);
+  check('узор ловится автоматически', caught > 0, JSON.stringify(pd.count));
+  check('буфф включился', G.patterns.left(state) > 0, G.patterns.left(state).toFixed(1) + ' с');
+  const multWithBuff = G.patterns.mult(state);
+  check('множитель от узоров больше 1', multWithBuff > 1, '×' + multWithBuff.toFixed(3));
+  check('тик не ловит тот же тип дважды подряд (перезарядка)', (function () {
+    const before = JSON.stringify(pd.count);
+    state.N = { m: 7.7777, e: 20 };
+    G.patterns.tick(state, 0.3);
+    return JSON.stringify(pd.count) === before;
+  })());
+
+  check('постоянный бонус даёт +1 % за тип', (function () {
+    const d2 = G.patterns.data(state);
+    const types = G.patterns.typesFound(state);
+    const saved = d2.buffUntil;
+    d2.buffUntil = 0;                       /* снимаем буфф — смотрим только постоянку */
+    const m = G.patterns.mult(state);
+    d2.buffUntil = saved;
+    const expect = 1 + 0.01 * types + 0.004 * Math.min(d2.total || 0, 40);
+    return Math.abs(m - expect) < 1e-9;
+  })());
+
+  /* доска рисуется и обновляется без мусора */
+  G.ui.docks.select('patterns');
+  await sleep(40);
+  check('доска паттернов открылась', !!doc.querySelector('.pattern-grid'));
+  check('карточек типов пять', doc.querySelectorAll('.pattern-card').length === 5,
+    doc.querySelectorAll('.pattern-card').length + ' шт');
+  for (let i = 0; i < 20; i++) G.ui.app.render(state);
+  check('доска паттернов без Infinity/NaN', !/Infinity|NaN|undefined/.test(doc.querySelector('#board').textContent));
+
+  /* сброс забега чистит коллекцию (scope: run) */
+  G.resetScopes(state, ['run']);
+  check('перерождение сбрасывает коллекцию паттернов',
+    G.patterns.typesFound(state) === 0 && (G.patterns.data(state).total || 0) === 0,
+    'типов ' + G.patterns.typesFound(state));
+  state.D = dWas;
+
   section('6. Перерождение кликом');
   click(dockBtns().find((b) => b.dataset.id === 'prestige'));
   G.debug.setD(120);

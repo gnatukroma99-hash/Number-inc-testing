@@ -23,6 +23,7 @@
     combo: '#38bdf8',
     slot: '#f0b429',
     spark: '#ffd166',
+    patterns: '#a3e635',
     /* Мета «Ядра» — золото и янтарь */
     prestige: '#ffb14d',
     tree: '#ffcc4d',
@@ -47,7 +48,7 @@
   /* какой ярус у доски — для общей цветовой темы */
   const MECH_TIER = {
     core: '1', digitsum: '1', primefit: '1', primeranks: '1', analysis: '1', shop: '1',
-    sieve: '1', mirror: '1', combo: '1', slot: '1', spark: '1',
+    sieve: '1', mirror: '1', combo: '1', slot: '1', spark: '1', patterns: '1',
     prestige: 'meta', tree: 'meta', achievements: 'meta',
     bigbang: '2', constellations: '2', glyphs: '2', pacttree: '2', challenges: '2',
     pacts: '2', duplicator: '2', echo: '2', chrono: '2', rift: '2',

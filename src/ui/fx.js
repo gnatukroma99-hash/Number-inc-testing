@@ -86,6 +86,12 @@
         F.banner('⚑ ' + (c ? c.name : 'ИСПЫТАНИЕ') + ' · до ' + (c ? c.goal : '?') + ' цифр', '#e879f9');
       });
       G.bus.on('challenge:done', () => { F.flash('rgba(232, 121, 249, .45)'); F.shake(); F.banner('⚑ ИСПЫТАНИЕ ПРОЙДЕНО'); });
+      /* узор мантиссы: цифры всплывают над числом, первый раз — баннер */
+      G.bus.on('pattern:found', (e) => {
+        if (!e) return;
+        F.pop(document.getElementById('heroN'), e.text || '');
+        if (e.first) { F.flash('rgba(163, 230, 53, .32)'); F.banner((e.name || 'УЗОР') + ' · ' + e.text, e.color || '#a3e635'); }
+      });
     },
 
     /* на каждом кадре: гасим винетку, когда хроно закончилось */

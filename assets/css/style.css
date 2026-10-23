@@ -3296,3 +3296,131 @@ body.fx-chrono::after {
 @media (prefers-reduced-motion: reduce) { .fx-flash, .fx-shake, .fx-banner, .fx-pop { animation-duration: .01ms !important; } }
 body.no-anim .fx-flash, body.no-anim .fx-banner, body.no-anim .fx-pop { display: none; }
 body.no-anim.fx-chrono::after { display: none; }
+
+/* ================= v0.27.0 — ПОИСК ПО ДОСКАМ и ★ «избранное одной кнопкой» ================= */
+/* строка инструментов под шапкой меню: поиск + чипы групп */
+.menu-tools {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 0 18px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+}
+.menu-search {
+  flex: 1 1 190px; min-width: 0;
+  height: 34px; padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .04);
+  color: #eaf7ff;
+  font: 700 12.5px/1 var(--mono);
+  outline: none;
+  -webkit-appearance: none; appearance: none;
+  transition: border-color var(--t-fast) linear, background-color var(--t-fast) linear;
+}
+.menu-search::placeholder { color: var(--dim2); font-weight: 600; }
+.menu-search:focus { border-color: var(--accent); background: rgba(53, 226, 192, .07); }
+.menu-search::-webkit-search-cancel-button { filter: invert(.6); }
+.menu-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.menu-chip {
+  height: 34px; padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(255, 255, 255, .03);
+  color: var(--dim);
+  font: 800 10.5px/1 var(--mono);
+  letter-spacing: .06em; text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--t-fast) linear, border-color var(--t-fast) linear, background-color var(--t-fast) linear;
+}
+.menu-chip:hover { color: var(--text); border-color: rgba(255, 255, 255, .2); }
+.menu-chip.on {
+  color: #0b1218; border-color: transparent;
+  background: linear-gradient(180deg, #7cf7b0, #35e2c0);
+  box-shadow: 0 0 16px rgba(53, 226, 192, .35);
+}
+/* пустой результат поиска */
+.menu-found .menu-group-name { letter-spacing: 0; text-transform: none; font-size: 11.5px; }
+.menu-empty {
+  padding: 26px 16px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .02);
+  text-align: center;
+}
+.menu-empty-title { font: 800 14px/1.3 system-ui, sans-serif; color: #eaf7ff; }
+.menu-empty-hint { margin-top: 4px; font: 600 11px/1.4 var(--mono); color: var(--dim2); }
+
+/* ★ в полоске над доской: закрепить/открепить текущую доску */
+.bh-pin {
+  width: 22px; height: 22px; margin-left: 2px;
+  border-radius: 7px; border: 1px solid transparent;
+  background: transparent; color: rgba(255, 255, 255, .22);
+  display: inline-grid; place-items: center;
+  font-size: 11px; cursor: pointer;
+  transition: color var(--t-fast) linear, background-color var(--t-fast) linear, transform var(--t-fast) var(--e-out);
+}
+.bh-pin .ico { font-size: 13px; }
+.bh-pin:hover { color: #ffd166; background: rgba(255, 209, 102, .12); transform: scale(1.1); }
+.bh-pin.on { color: #ffd166; text-shadow: 0 0 10px rgba(255, 209, 102, .55); }
+
+@media (max-width: 620px) {
+  .menu-search { flex: 1 1 100%; }
+  .menu-chip { height: 30px; padding: 0 10px; font-size: 9.5px; }
+  .bh-pin { width: 20px; height: 20px; }
+}
+
+/* ================= v0.27.0 — ПАТТЕРНЫ МАНТИССЫ ================= */
+.digit.pattern-ok {
+  color: #0b1218;
+  background: linear-gradient(180deg, #d3f97a, #a3e635);
+  border-color: transparent;
+  box-shadow: 0 0 14px rgba(163, 230, 53, .45);
+  transform: translateY(-1px);
+}
+.pattern-last {
+  margin-top: 8px;
+  font: 700 11px/1.4 var(--mono);
+  color: var(--dim);
+  letter-spacing: .02em;
+}
+.pattern-last::first-letter { color: var(--pat, #a3e635); }
+.pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 9px;
+  margin-top: 8px;
+}
+.pattern-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "ico name count"
+    "sample sample sample"
+    "desc desc desc";
+  gap: 2px 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-left: 3px solid var(--pat, #a3e635);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .015));
+}
+.pattern-ico { grid-area: ico; color: var(--pat, #a3e635); font-size: 13px; }
+.pattern-name { grid-area: name; font: 800 12px/1.2 system-ui, sans-serif; color: #eaf7ff; }
+.pattern-count {
+  grid-area: count;
+  font: 800 13px/1 var(--mono);
+  color: var(--pat, #a3e635);
+  text-align: right;
+  min-width: 18px;
+}
+.pattern-sample {
+  grid-area: sample;
+  margin-top: 4px;
+  font: 800 15px/1 var(--mono);
+  letter-spacing: .22em;
+  color: rgba(234, 247, 255, .5);
+}
+.pattern-desc { grid-area: desc; margin-top: 3px; font: 600 10px/1.35 var(--mono); color: var(--dim2); }
+@media (max-width: 620px) {
+  .pattern-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+}

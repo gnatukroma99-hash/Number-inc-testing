@@ -11,6 +11,12 @@
   let body = null;
   let open = false;
 
+  /* поиск и фильтр по группам (v0.27.0) */
+  let query = '';
+  let filterGroup = 'all';
+  let searchEl = null;
+  let chipEls = [];
+
   function docksOf(group) {
     const out = [];
     for (const id of (group.mechs || [])) {
@@ -30,6 +36,7 @@
     { key: 'signs', total: () => ((G.content.constellations || {}).list || []).length },
     { key: 'glyphs', total: () => ((G.content.glyphs || {}).slots || 3) },
     { key: 'treeNodes', total: () => G.registry.upgradesOf('tree').length },
+    { key: 'patternTypes', total: () => ((G.content.patterns || {}).types || []).length },
     { key: 'achievements', total: () => (G.achievements ? G.achievements.total() : 0) },
     { key: 'comboBest', total: () => ((G.content.combo || {}).maxCombo || 12) }
   ];
@@ -150,15 +157,51 @@
     return el;
   }
 
+  /* строка инструментов: поиск + чипы групп */
+  function buildTools() {
+    searchEl = G.h('input', {
+      class: 'menu-search', type: 'search', 'aria-label': 'Поиск доски',
+      placeholder: 'поиск: дерево, глифы, Ψ, хроно…'
+    });
+    searchEl.addEventListener('input', () => {
+      query = String(searchEl.value || '').trim().toLowerCase();
+      paint();
+    });
+    searchEl.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      if (searchEl.value) { searchEl.value = ''; query = ''; paint(); }
+      else S.close();
+    });
+
+    const mk = (id, name) => {
+      const b = G.h('button', { class: 'menu-chip' + (filterGroup === id ? ' on' : ''), type: 'button', dataset: { group: id } }, [
+        G.h('span', { class: 'menu-chip-text', text: name })
+      ]);
+      b.addEventListener('click', () => {
+        filterGroup = id;
+        for (const el of chipEls) el.classList.toggle('on', el.dataset.group === id);
+        paint();
+      });
+      chipEls.push(b);
+      return b;
+    };
+    const chips = G.h('div', { class: 'menu-chips' }, [mk('all', 'Все')].concat(
+      ((G.content && G.content.groups) || []).map((g) => mk(g.id, g.name))
+    ));
+    return G.h('div', { class: 'menu-tools' }, [searchEl, chips]);
+  }
+
   function build() {
     body = G.h('div', { class: 'menu-body' });
     overlay = G.h('div', { class: 'menu-overlay', role: 'dialog', 'aria-label': 'Все доски' }, [
       G.h('div', { class: 'menu-panel' }, [
         G.h('div', { class: 'menu-head' }, [
           G.h('div', { class: 'menu-title', text: 'Все доски' }),
-          G.h('div', { class: 'menu-sub', text: 'три слоя игры: забег, мета, Ярус 2' }),
+          G.h('div', { class: 'menu-sub', text: 'четыре слоя игры: забег, мета, Ярус 2, Ярус 3' }),
           G.h('button', { class: 'menu-close', type: 'button', text: '×', title: 'Закрыть (Esc)' })
         ]),
+        buildTools(),
         body
       ])
     ]);
@@ -166,14 +209,76 @@
     overlay.addEventListener('click', (e) => { if (e.target === overlay) S.close(); });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && open) S.close();
+      /* Ctrl+K / Cmd+K и «/» — меню с поиском; в полях ввода не перехватываем */
+      const tag = (e.target && e.target.tagName) || '';
+      const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+      if (!typing && (e.key === '/' || (e.key.toLowerCase() === 'k' && (e.ctrlKey || e.metaKey)))) {
+        e.preventDefault();
+        S.openSearch();
+      }
     });
     document.body.appendChild(overlay);
     return overlay;
   }
 
+  /* совпадает ли доска с поиском/фильтром */
+  function matches(m, g) {
+    if (filterGroup !== 'all' && (!g || g.id !== filterGroup)) return false;
+    if (!query) return true;
+    const alias = {
+      'пси': 'psitree ψ', 'psi': 'psitree ψ', 'ядр': 'cores ◆', 'ядра': 'cores ◆',
+      'дерево': 'tree psitree', 'деревья': 'tree psitree'
+    };
+    const q = alias[query] || query;
+    /* ищем по имени, короткому имени, id и названию группы.
+       lockHint НЕ ищем: «…нужен узел дерева» находил Решето и Зеркало на запрос «дерево». */
+    const hay = [
+      m.name || '', m.short || '', m.id || '',
+      (g && g.name) || '', (g && g.hint) || ''
+    ].join(' ').toLowerCase();
+    return q.split(' ').some((part) => part && hay.indexOf(part) >= 0);
+  }
+
+  /* плоский экран результатов: одна сетка без секций */
+  function paintSearch(activeId) {
+    const groups = (G.content && G.content.groups) || [];
+    const hits = [];
+    for (const g of groups) {
+      for (const m of docksOf(g)) if (matches(m, g)) hits.push({ m: m, g: g });
+    }
+    /* «Рост» живёт в группе «Забег», но проверяем всегда: он есть только там */
+    const gName = filterGroup === 'all'
+      ? null
+      : ((groups.find((x) => x.id === filterGroup) || {}).name || filterGroup);
+    const headTxt = query
+      ? 'Найдено: ' + hits.length + (query ? ' · «' + query + '»' : '')
+      : (gName || 'Все') + ' · ' + hits.length;
+    const sec = G.h('div', { class: 'menu-group menu-found' }, [
+      G.h('div', { class: 'menu-group-head' }, [
+        G.h('span', { class: 'menu-group-dot' }),
+        G.h('span', { class: 'menu-group-name', text: headTxt })
+      ])
+    ]);
+    if (!hits.length) {
+      sec.appendChild(G.h('div', { class: 'menu-empty' }, [
+        G.h('div', { class: 'menu-empty-title', text: 'Ничего не нашлось' }),
+        G.h('div', { class: 'menu-empty-hint', text: 'попробуй «дерево», «глифы», «хроно», «пси» или сбрось фильтр' })
+      ]));
+      body.appendChild(sec);
+      return;
+    }
+    sec.appendChild(G.h('div', { class: 'menu-grid' }, hits.map((h) => {
+      const el = card(h.m, h.g);
+      if (h.m.id === activeId) el.classList.add('current');
+      return el;
+    })));
+    body.appendChild(sec);
+  }
+
   function paint() {
     G.dom.clear(body);
     const activeId = document.body.dataset.board || 'core';
+    if (query || filterGroup !== 'all') { paintSearch(activeId); return; }
     const pins = ((G.state && G.state.meta && G.state.meta.pins) || []).filter((id) => id);
     if (pins.length) {
       const sec = G.h('div', { class: 'menu-group menu-pins' }, [
@@ -252,6 +357,22 @@
     },
 
     toggle() { open ? S.close() : S.open(); },
+
+    /* закрепление доски (звезда в меню и в полоске над доской) */
+    pinned(id) { return isPinned(id); },
+
+    pin(id) {
+      togglePin(id);
+      return isPinned(id);
+    },
+
+    /* открыть меню сразу с фокусом в поиске (Ctrl+K или «/» в игре) */
+    openSearch() {
+      S.open();
+      if (searchEl) {
+        try { searchEl.focus(); } catch (e) { /* не критично */ }
+      }
+    },
 
     open() {
       if (!overlay) build();

@@ -10,6 +10,8 @@
   let crumbGroup = null;
   let crumbBoard = null;
   let chipsEl = null;
+  let pinBtn = null;
+  let pinId = null;
   let sig = '';
 
   function groupOf(id) {
@@ -36,12 +38,24 @@
     crumbGroup = G.h('span', { class: 'bh-group' });
     crumbBoard = G.h('span', { class: 'bh-board' });
     chipsEl = G.h('div', { class: 'bh-chips' });
+
+    /* ★ «избранное одной кнопкой» (v0.27.0): закрепить текущую доску, не заходя в меню */
+    pinBtn = G.h('button', { class: 'bh-pin', type: 'button', title: 'Закрепить доску' }, [G.ui.icons.node('star')]);
+    pinBtn.addEventListener('click', () => {
+      if (!pinId || !G.ui.menu || !G.ui.menu.pin) return;
+      const on = G.ui.menu.pin(pinId);
+      pinBtn.classList.toggle('on', on);
+      pinBtn.title = on ? 'Открепить доску' : 'Закрепить доску';
+      G.ui.toast(on ? 'Доска закреплена ★' : 'Доска откреплена', 'accent', 1200);
+    });
+
     el = G.h('div', { class: 'board-head-bar' }, [
       G.h('div', { class: 'bh-crumb' }, [
         G.h('span', { class: 'bh-dot' }),
         crumbGroup,
         G.h('span', { class: 'bh-sep', text: '›' }),
-        crumbBoard
+        crumbBoard,
+        pinBtn
       ]),
       chipsEl
     ]);
@@ -75,6 +89,12 @@
         : (G.registry.mechanic(activeId) || { name: activeId });
       crumbGroup.textContent = g.name;
       crumbBoard.textContent = def.name || activeId;
+      pinId = activeId;
+      if (pinBtn && G.ui.menu && G.ui.menu.pinned) {
+        const on = G.ui.menu.pinned(activeId);
+        pinBtn.classList.toggle('on', on);
+        pinBtn.title = on ? 'Открепить доску' : 'Закрепить доску';
+      }
 
       const list = docksOf(g);
       const next = g.id + '|' + activeId + '|' + list.map((d) => d.id + (d.status ? ':' + d.status(state) : '')).join(',');
