@@ -100,7 +100,8 @@ const PREP = `
   s.res.psi = 60;
   s.meta.breaks = 2;
   ['psi_start', 'psi_speed', 'psi_delta'].forEach((id) => { if (G.registry.upgrade(id)) buy(id, 1); });
-  ['ps_freq', 'ps_cut', 'ps_yield', 'ps_boom1'].forEach((id) => { if (G.registry.upgrade(id)) buy(id, 1); });
+  ['ps_freq', 'ps_cut', 'ps_yield', 'ps_boom1', 'ps_crack1', 'ps_crack2', 'ps_cycle1', 'ps_cycle2']
+    .forEach((id) => { if (G.registry.upgrade(id)) buy(id, 1); });
   s.res.psi = 21;
   /* Ярус 4: обороты и трамплин — чтобы снять доску ОБОРОТА */
   s.res.turns = 24;

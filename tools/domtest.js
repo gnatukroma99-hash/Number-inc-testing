@@ -2356,11 +2356,40 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   section('5u. Ψ-дерево — второе дерево на общем движке (v0.26.0)');
   const psiNodes = G.registry.upgradesOf('psitree');
   const psiBr = (G.content.psitree && G.content.psitree.branches) || [];
-  check('узлов в Ψ-дереве', psiNodes.length >= 12, psiNodes.length + ' узлов');
-  check('ветвей Ψ-дерева', psiBr.length === 4, psiBr.map((b) => b.id).join(','));
+  check('узлов в Ψ-дереве', psiNodes.length >= 20, psiNodes.length + ' узлов');
+  check('ветвей Ψ-дерева', psiBr.length === 6, psiBr.map((b) => b.id).join(','));
   check('корень каждой ветви — глубина 0',
     psiNodes.filter((u) => !u.requires || !u.requires.length).length === psiBr.length,
     psiNodes.filter((u) => !u.requires || !u.requires.length).length + ' корней');
+  check('новые ветви усиливают ⟁ и ⧜', (function () {
+    const ps = G.registry.upgrade;
+    state.res.psi = 5000;
+    for (const u of psiNodes) state.upg[u.id] = 0;
+    const gap0 = G.cracks.gap(state);
+    const rate0 = G.turn.rate(state);
+    state.upg.ps_crack3 = 2;                 /* пауза между трещинами ↓ */
+    state.upg.ps_cycle1 = 2;                 /* ⧜-накат ↑ */
+    const gap1 = G.cracks.gap(state);
+    const rate1 = G.turn.rate(state);
+    state.upg.ps_crack3 = 0; state.upg.ps_cycle1 = 0;
+    return gap1 < gap0 && rate1 > rate0;
+  })(), 'пауза ⟁ ' + G.cracks.gap(state).toFixed(1) + ' с, ⧜/с ' + G.turn.rate(state).toFixed(4));
+  check('ветвь «Трещины»: 4 узла по цепочке', (function () {
+    const ids = ['ps_crack1', 'ps_crack2', 'ps_crack3', 'ps_crack4'];
+    return ids.every((id, i) => {
+      const u = G.registry.upgrade(id);
+      if (!u) return false;
+      return i === 0 ? !u.requires : (u.requires || []).indexOf(ids[i - 1]) >= 0;
+    });
+  })());
+  check('ветвь «Обороты»: 4 узла по цепочке', (function () {
+    const ids = ['ps_cycle1', 'ps_cycle2', 'ps_cycle3', 'ps_cycle4'];
+    return ids.every((id, i) => {
+      const u = G.registry.upgrade(id);
+      if (!u) return false;
+      return i === 0 ? !u.requires : (u.requires || []).indexOf(ids[i - 1]) >= 0;
+    });
+  })());
   check('узлы Ψ стоят в Ψ и в мете',
     psiNodes.every((u) => u.res === 'psi' && u.scope === 'meta'));
   check('у Ψ-дерева есть цвет и ярус', Cc.mechColor('psitree').indexOf('#') === 0 && Cc.mechTier('psitree') === '3',

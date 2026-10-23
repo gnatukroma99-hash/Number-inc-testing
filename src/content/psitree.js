@@ -1,4 +1,4 @@
-/* content/psitree.js — Ψ-ДЕРЕВО (Ярус 3, v0.26.0): 12 узлов, 4 ветви.
+/* content/psitree.js — Ψ-ДЕРЕВО (Ярус 3, v0.35.0): 20 узлов, 6 ветвей.
    Второе дерево на том же движке, что и «Дерево ◆» (mechanics/tree/engine.js):
    узлы — обычные апгрейды с res:'psi' и scope:'meta', поэтому новых полей
    в сейве НЕ нужно (уровни живут в state.upg, Ψ — в state.res.psi).
@@ -17,13 +17,16 @@
   G.content = G.content || {};
   G.content.psitree = {
     res: 'psi',
-    hint: 'Ψ копятся с каждым ПРОБОЕМ и не сгорают. Четыре ветви: плоскость (дорога к 1e1000), ' +
-      'взрыв (быстрее Ярус 2), темп и выход Ψ. Следующий узел ветви виден после покупки предыдущего.',
+    hint: 'Ψ копятся с каждым ПРОБОЕМ, из Ψ-потока и из трещин — и не сгорают. Шесть ветвей: ' +
+      'плоскость (дорога к 1e1000), взрыв (быстрее Ярус 2), темп, выход Ψ, трещины ⟁ и обороты ⧜. ' +
+      'Следующий узел ветви виден после покупки предыдущего.',
     branches: [
       { id: 'plane', name: 'Плоскость', icon: 'chartUp', color: '#7fd1ff', note: 'дорога к 1e1000', angle: -135 },
       { id: 'boom', name: 'Взрыв', icon: 'burst', color: '#c9a0ff', note: 'Ярус 2 быстрее', angle: -45 },
       { id: 'tempo', name: 'Темп', icon: 'fast', color: '#2bb5ff', note: 'ΔT и скорость', angle: 45 },
-      { id: 'psi', name: 'Пси', icon: 'sparkle', color: '#ff9de2', note: 'больше Ψ за ПРОБОЙ', angle: 135 }
+      { id: 'psi', name: 'Пси', icon: 'sparkle', color: '#ff9de2', note: 'больше Ψ за ПРОБОЙ', angle: 135 },
+      { id: 'crack', name: 'Трещины', icon: 'brick', color: '#ff8f5e', note: 'сильнее ⟁', angle: -90 },
+      { id: 'cycle', name: 'Обороты', icon: 'cycle', color: '#a3e635', note: 'сильнее ⧜', angle: 90 }
     ],
     tiers: [
       { id: 't1', name: 'I' },
@@ -143,6 +146,80 @@
       requires: ['ps_rest'],
       note: 'цены магазина за цифры ×0.7 (разово)',
       desc: 'Магазин в забеге дешевле: число не так жалко.'
+    },
+
+    /* ================= ветвь «Трещины» (v0.35.0) ================= */
+    {
+      id: 'ps_crack1', mech: 'psitree', branch: 'crack', depth: 0, tier: 't1',
+      scope: 'meta', res: 'psi', icon: 'brick',
+      name: 'Ψ-скол', base: 6, growth: 1.70, max: 3,
+      formula: '1.3 ** lvl', fmt: 'x', crackPower: '1.3 ** lvl',
+      note: 'Ψ за трещину ×= 1.3^lvl',
+      desc: 'Трещины начинают платить заметно больше.'
+    },
+    {
+      id: 'ps_crack2', mech: 'psitree', branch: 'crack', depth: 1, tier: 't2',
+      scope: 'meta', res: 'psi', icon: 'clock',
+      name: 'Ψ-затяжка', base: 16, growth: 1.80, max: 3,
+      formula: '3 * lvl', fmt: 'num', crackLife: '3 * lvl',
+      requires: ['ps_crack1'],
+      note: 'трещина живёт +3·lvl с',
+      desc: 'Больше времени добежать глазами до осколка.'
+    },
+    {
+      id: 'ps_crack3', mech: 'psitree', branch: 'crack', depth: 2, tier: 't2',
+      scope: 'meta', res: 'psi', icon: 'fast',
+      name: 'Ψ-частота', base: 24, growth: 1.90, max: 3,
+      formula: '0.9 ** lvl', fmt: 'x', crackGap: '0.9 ** lvl',
+      requires: ['ps_crack2'],
+      note: 'пауза между трещинами ×= 0.9^lvl',
+      desc: 'Осколки стены сыплются чаще.'
+    },
+    {
+      id: 'ps_crack4', mech: 'psitree', branch: 'crack', depth: 3, tier: 't3',
+      scope: 'meta', res: 'psi', icon: 'axe',
+      name: 'Ψ-раскол', base: 44, growth: 2.00, max: 2,
+      formula: '1 + 0.5 * lvl', fmt: 'x', crackSpan: '1 + 0.5 * lvl',
+      requires: ['ps_crack3'],
+      note: 'span за каждую трещину ×= (1 + 0.5·ур.)',
+      desc: 'Каждая трещина двигает плоскость сильнее — стена 1e1000 всё ближе.'
+    },
+
+    /* ================= ветвь «Обороты» (v0.35.0) ================= */
+    {
+      id: 'ps_cycle1', mech: 'psitree', branch: 'cycle', depth: 0, tier: 't1',
+      scope: 'meta', res: 'psi', icon: 'cycle',
+      name: 'Ψ-накат', base: 7, growth: 1.70, max: 3,
+      formula: '1.4 ** lvl', fmt: 'x', turnRateMult: '1.4 ** lvl',
+      note: '⧜-накат ×= 1.4^lvl',
+      desc: 'Обороты капают сами быстрее — Ярус 4 ближе, чем кажется.'
+    },
+    {
+      id: 'ps_cycle2', mech: 'psitree', branch: 'cycle', depth: 1, tier: 't2',
+      scope: 'meta', res: 'psi', icon: 'chartUp',
+      name: 'Ψ-оборот', base: 18, growth: 1.80, max: 3,
+      formula: '1.25 ** lvl', fmt: 'x', turnGainMult: '1.25 ** lvl',
+      requires: ['ps_cycle1'],
+      note: '⧜ за ОБОРОТ ×= 1.25^lvl',
+      desc: 'Каждый ОБОРОТ приносит больше ⧜.'
+    },
+    {
+      id: 'ps_cycle3', mech: 'psitree', branch: 'cycle', depth: 2, tier: 't2',
+      scope: 'meta', res: 'psi', icon: 'robot',
+      name: 'Ψ-накат II', base: 26, growth: 1.90, max: 2,
+      formula: '1.4 ** lvl', fmt: 'x', autoStepMult: '1.4 ** lvl',
+      requires: ['ps_cycle2'],
+      note: 'шаг автопокупок ×= 1.4^lvl',
+      desc: 'Забег между оборотами прокручивается автоматикой.'
+    },
+    {
+      id: 'ps_cycle4', mech: 'psitree', branch: 'cycle', depth: 3, tier: 't3',
+      scope: 'meta', res: 'psi', icon: 'facet',
+      name: 'Ψ-виток', base: 48, growth: 2.00, max: 2,
+      formula: '1.3 ** lvl', fmt: 'x', psiRateMult: '1.3 ** lvl',
+      requires: ['ps_cycle3'],
+      note: 'Ψ-поток ×= 1.3^lvl',
+      desc: 'Чем быстрее обороты, тем больше Ψ капает само.'
     }
   ]);
 })(window.G = window.G || {});
