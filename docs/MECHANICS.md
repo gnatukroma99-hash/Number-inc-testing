@@ -8,14 +8,21 @@
 ## Общая картина
 
 ```
-раз в ΔT:   D += log10(M_total) · barrier
-M_total   = M_base × Π(множители механик) ^ exp(магазин) × 1.5^◆
-M_base    = 2 + lvl(mult1) + 500·lvl(shop_plus)
+раз в ΔT:   D += log10(M_total) · barrier · (dt/ΔT)
+M_total   = clamp(10^lg, 1 … 1e300)          // v0.29.1: считается в ЛОГ-пространстве
+lg        = log10(M_base) + Σ log10(M_механик);  lg ×= exp(магазин, ≤ MAX_EXP)
+lg       += log10(Mmult) + log10(1.5^◆) + log10(1 + 0.01·достижения)
+M_base    = 2 + lvl(mult1) + Σ addM (магазин, деревья ◆/Ψ/⧜, Ψ-апгрейды)
 ΔT        = max(0.033, 60 / (1 + speedBonus) · dtMult)
-E_rate    = 1 · (1 + D) · 1.25^lvl(energy1) · Π(energyMult)
-barrier   = hiddenSoftcap(D) · Π(барьеры)
+E_rate    = (1 + D) · 1.25^lvl(energy1) · Π(energyMult) · Π(механики)
+barrier   = hiddenSoftcap(D, span·spanMult) · Π(барьеры)
 D         = log10(N)
 ```
+
+Слои меты: **◆** (P1) → **Ψ** (ПРОБОЙ, + пассивный Ψ/с) → **⧜** (ОБОРОТ, + накат ⧜/с).
+Вечные валюты не сбрасываются никогда: живут в `state.res`, эффекты — в `state.upg`.
+Внимание на потолок: `1.5^◆` при ◆ ≈ 1700 упирает `lg` в максимум, и остальные множители
+перестают быть видны — это открытый вопрос ребалланса (CONTEXT §11.1).
 
 `barrier` режет **приращение цифр**, а не сам множитель.
 С v0.12.1 шаг `dt` дробится на подшаги ≤ 0.1 с (до 400), и барьер пересчитывается на каждом —
@@ -744,7 +751,7 @@ M ×= 1 + 0.06 · серия            → полная серия = ×1.72
 ```
 валюта:   Ψ (state.res.psi, scope: meta — не сбрасывается никогда)
 узлы:     20 апгрейдов, res:'psi', scope:'meta', 6 ветвей, глубина 0..3
-цена:     2…45 Ψ за уровень, всё дерево ≈ 330 Ψ
+цена:     2…48 Ψ за уровень, всё дерево ≈ 1150 Ψ (20 узлов, 6 ветвей)
 эффекты:  spanMult · powM · deltaGainMult · coreGainMult · dtMult · speedBonus ·
           energyMult · psiGainMult · psiGainAdd · shopCostMult
 ```
@@ -765,12 +772,16 @@ M ×= 1 + 0.06 · серия            → полная серия = ×1.72
 ### Общий движок карты
 
 ```
-src/mechanics/tree/engine.js   G.treeBoard.build({ mech, content, res, unit, icon, close })
-src/mechanics/tree/board.js    ◆-дерево = один вызов (res:'cores', unit:'◆')
-src/mechanics/psitree/board.js Ψ-дерево = один вызов (res:'psi', unit:'Ψ')
+src/mechanics/tree/engine.js     G.treeBoard.build({ mech, content, res, unit, icon, close, theme })
+src/mechanics/tree/board.js      ◆-дерево     res:'cores'  unit:'◆'   (космос)
+src/mechanics/psitree/board.js   Ψ-дерево     res:'psi'    unit:'Ψ'   (неон)
+src/mechanics/pacttree/board.js  пакт-дерево  res:'delta'             theme:'rot'   (гниль)
+src/mechanics/turntree/board.js  дерево ⧜     res:'turns'  unit:'⧜'   theme:'bloom' (росток)
 ```
 
-Чтобы завести третье дерево: данные в `src/content/<x>.js` (`branches`, `tiers`, узлы) →
+Движок принимает и хуки: `canBuy`/`buy` (развилки пакт-дерева), `blocked` (зачёркнутые узлы),
+`visible`, `angleOffset` (развод развилок), `theme` (CSS-палитра карты).
+Чтобы завести пятое дерево: данные в `src/content/<x>.js` (`branches`, `tiers`, узлы) →
 `addMechanic({ id:'<x>' })` → один вызов `G.treeBoard.build(...)`. UI не переписывается.
 
 ### 🐞 Фикс `speedBonus` (v0.26.0)
@@ -810,7 +821,7 @@ src/mechanics/psitree/board.js Ψ-дерево = один вызов (res:'psi',
 
 ---
 
-## 30. Ψ-поток (v0.29.0) — пассивный доход Яруса 3
+## 31. Ψ-поток (v0.29.0) — пассивный доход Яруса 3
 
 Раньше Ψ давал только сам ПРОБОЙ: после третьего престижа копить было нечего, и ярус
 выглядел пустым. Теперь Ψ капают сами — **пока ярус 3 открыт** (снята стена `wall_1000`
@@ -845,7 +856,7 @@ src/mechanics/psitree/board.js Ψ-дерево = один вызов (res:'psi',
 
 ---
 
-## 31. Ярус 4 «ОБОРОТ ⧜» (v0.30.0) — четвёртый этап прогресса
+## 32. Ярус 4 «ОБОРОТ ⧜» (v0.30.0) — четвёртый этап прогресса
 
 Число давно летит за 1e10000, и цифры сами по себе перестали быть событием.
 ОБОРОТ — не нерф и не ещё один «+%»: он **сворачивает забег** и поднимает точку старта.
@@ -885,7 +896,7 @@ src/mechanics/psitree/board.js Ψ-дерево = один вызов (res:'psi',
 
 ---
 
-## 32. Дерево ⧜ (v0.31.0) — четвёртая карта на общем движке
+## 33. Дерево ⧜ (v0.31.0) — четвёртая карта на общем движке
 
 ```
 валюта:   ⧜ Обороты (state.res.turns, scope: meta)
@@ -923,7 +934,7 @@ src/mechanics/psitree/board.js Ψ-дерево = один вызов (res:'psi',
 
 ---
 
-## 33. Трещины ⟁ (v0.33.0) — актив Яруса 3
+## 34. Трещины ⟁ (v0.33.0) — актив Яруса 3
 
 ```
 гейт:     ПРОБОЙ (стена 1e1000 снята) или есть Ψ
@@ -942,7 +953,7 @@ src/mechanics/psitree/board.js Ψ-дерево = один вызов (res:'psi',
 
 ---
 
-## 34. Мера ⁿ (v0.34.0) — бонусы от порядка величины
+## 35. Мера ⁿ (v0.34.0) — бонусы от порядка величины
 
 ```
 показатель e = floor(D)                      (число N = 10^D)
