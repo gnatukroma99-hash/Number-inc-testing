@@ -9,6 +9,13 @@
   const OFFLINE_STEP = 10;        // цифр за шаг интегрирования софткапа
   const OFFLINE_STEPS_MAX = 40;   // предел шагов (10 × 40 = 400 цифр за оффлайн)
 
+  /* D2 (Измерение 2) живёт в systems/d2.js. Сейв не должен падать без этого модуля:
+     тогда просто отдаём/принимаем то, что уже есть в state.d2. */
+  function ensureD2(state) {
+    if (G.d2 && typeof G.d2.ensure === 'function') return G.d2.ensure(state);
+    return state.d2 || null;
+  }
+
   const S = {
     KEY: KEY,
 
@@ -26,7 +33,8 @@
         mech: state.mech,
         stats: state.stats,
         settings: state.settings,
-        meta: state.meta
+        meta: state.meta,
+        d2: ensureD2(state)          // D2 тоже снимок (JSON.stringify ниже копирует)
       }));
     },
 
@@ -43,6 +51,7 @@
       if (data.stats) Object.assign(state.stats, data.stats);
       if (data.settings) Object.assign(state.settings, data.settings);
       if (data.meta) Object.assign(state.meta, data.meta);
+      if (data.d2) state.d2 = data.d2;
 
       if (!G.BN.isValid(state.N)) state.N = G.BN.one();
       G.initResources(state);
@@ -62,6 +71,10 @@
       if (typeof state.meta.coresBest !== 'number' || !isFinite(state.meta.coresBest)) {
         state.meta.coresBest = state.res.cores || 0;
       }
+      /* v3: D2 живёт в state.d2 (в v2 и старше его нет — сейв получает дефолт).
+         ensure нужен и для v3: он же чинит частично записанный/импортированный D2.
+         Поля D1 (N, res, upg, mech, stats, settings, meta) не трогаются. */
+      ensureD2(state);
       state.version = G.SAVE_VERSION;
       return state;
     },

@@ -6,8 +6,8 @@
 (function (G) {
   'use strict';
 
-  G.SAVE_VERSION = 2;
-  G.VERSION = '0.35.0';
+  G.SAVE_VERSION = 3;
+  G.VERSION = '0.36.0';
 
   const DEFAULT_SETTINGS = {
     numberFormat: 'short',     // short | sci | full
@@ -69,7 +69,11 @@
         totalRuns: 0,
         bestD: 0,
         coresBest: 0            // рекорд ядер (для узла «Ядра не сгорают»)
-      }
+      },
+
+      /* Измерение 2 (D2) — отдельный мир, см. systems/d2.js. Модуль может быть ещё
+         не подключён (порядок загрузки/тест) — тогда null, и G.d2.ensure() создаст его. */
+      d2: (G.d2 && typeof G.d2.newState === 'function') ? G.d2.newState() : null
     };
   };
 

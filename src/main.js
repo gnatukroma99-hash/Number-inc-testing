@@ -19,6 +19,9 @@
       G.initResources(state);
     }
 
+    /* D2: старый сейв получает state.d2 с дефолтами; без модуля — no-op */
+    if (G.d2 && typeof G.d2.ensure === 'function') G.d2.ensure(state);
+
     /* оффлайн-прогресс */
     let offline = null;
     if (loaded) {
@@ -58,6 +61,10 @@
       G.sampling.update(s, dt);
       if (G.history) G.history.tick(s, dt);
       G.growth.tick(s, dt);
+      /* D2 идёт своим тиком; D1-поля не трогает. Тикает и в фоне, чтобы оси не стояли. */
+      if (G.d2Growth && G.d2 && G.d2.unlocked(s)) {
+        try { G.d2Growth.tick(s, dt); } catch (e) { console.error('[d2]', e); }
+      }
 
       for (const m of G.registry.mechanics()) {
         if (typeof m.isUnlocked === 'function' && !m.isUnlocked(s)) continue;
@@ -101,6 +108,16 @@
       state: () => G.state,
       give(n) { G.state.res.energy += n; },
       setD(d) { G.state.N = G.BN.fromLog10(d); G.state.D = d; G.state.disp = null; },
+      /* отладка D2: открыть второе измерение, не проходя 10 ⧜ вручную */
+      unlockD2() {
+        const s = G.state;
+        if (!s || !G.d2) return false;
+        G.d2.ensure(s);
+        s.d2.unlocked = true;
+        s.res.turns = Math.max(s.res.turns || 0, 10);
+        if (G.ui.d2World) G.ui.d2World.update(s);
+        return true;
+      },
       summary: () => G.registry.summary(),
       /* из чего собрался M: если число вдруг «замерло» — видно, какой слой виноват */
       mParts() {

@@ -154,7 +154,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   check('ошибок при загрузке нет', errors.length === 0, errors.join(' | '));
   /* 8 с, а не 3: при параллельном verify на слабом телефоне jsdom стартует дольше,
      и короткий таймаут давал ложный «boot() не отработал». */
-  const booted = await waitBoot(win, 8000);
+  const booted = await waitBoot(win, 20000);
   check('boot() отработал (DOMContentLoaded)', booted);
 
   section('2. Игровой цикл (реальное время 1.5 с)');
@@ -218,8 +218,10 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.upgrades.buy(state, G.registry.upgrade('tree_sieve'));
   check('узел «Решето» открыл механику', G.registry.mechanic('sieve').isUnlocked(state));
   const ids = dockBtns().map((b) => b.dataset.id);
-  check('досок на навигации', ids.length === G.registry.mechanics().length + 1,
-    ids.length + ' шт (механик ' + G.registry.mechanics().length + ' + core): ' + ids.join(','));
+  const d2Mechs = new Set(((G.content.groups || []).find((g) => g.world === 'd2') || {}).mechs || []);
+  const d1MechCount = G.registry.mechanics().filter((m) => !d2Mechs.has(m.id)).length;
+  check('досок на навигации', ids.length === d1MechCount + 1,
+    ids.length + ' шт (D1-механик ' + d1MechCount + ' + core; D2 скрыт в мире D1): ' + ids.join(','));
 
   for (const id of ids) {
     const btn = dockBtns().find((b) => b.dataset.id === id);
@@ -1776,7 +1778,8 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.echo.toggle(state);
 
   /* --- группы доков --- */
-  const groupList = G.content.groups || [];
+  /* в мире D1 рейл показывает только группы D1; D2 — после переключателя */
+  const groupList = (G.content.groups || []).filter((g) => g.world !== 'd2');
   click(Array.from(doc.querySelectorAll('#docks .dock')).find((b) => b.dataset.id === 'core'));
   G.ui.docks.refresh(state);
   G.ui.app.render(state);
@@ -1890,7 +1893,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
 
   section('5p. Навигация: пилюли групп, мобильная раскладка, меню «Все доски»');
   const cssAll = fs.readFileSync(path.join(ROOT, 'assets/css/style.css'), 'utf8');
-  check('пилюли-«слои» в рейле', doc.querySelectorAll('#docks .dock-pill').length === (G.content.groups || []).length,
+  check('пилюли-«слои» в рейле', doc.querySelectorAll('#docks .dock-pill').length === ((G.content.groups || []).filter((g) => g.world !== 'd2')).length,
     doc.querySelectorAll('#docks .dock-pill').length + ' пилюль');
   check('раскрыта только активная группа досок', doc.querySelectorAll('#docks .dock-group-items.open').length === 1);
   check('свернутые слои прячут свои доки', /\.dock-group-items \{ display: none/.test(cssAll) &&
@@ -2307,7 +2310,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
     const set = new Set(allMech.map((id) => Cc.mechColor(id)));
     return set.size >= allMech.length - 3;
   })(), new Set(allMech.map((id) => Cc.mechColor(id))).size + ' уникальных');
-  check('у каждой доски есть ярус', allMech.every((id) => ['1', 'meta', '2', '3', '4'].indexOf(Cc.mechTier(id)) >= 0),
+  check('у каждой доски есть ярус', allMech.every((id) => ['1', 'meta', '2', '3', '4', 'd2'].indexOf(Cc.mechTier(id)) >= 0),
     allMech.map((id) => id + ':' + Cc.mechTier(id)).slice(0, 6).join(' '));
 
   /* смена доски меняет тему и цвет */
@@ -2460,7 +2463,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const menuCardIds = () => Array.from(doc.querySelectorAll('.menu-card')).map((c) => c.dataset.id);
   const uniqCards = () => new Set(menuCardIds()).size;   /* есть повторы из «Закреплённых»/«Недавних» */
   const allCards = uniqCards();
-  check('в меню все доски', allCards === 32, allCards + ' уникальных карточек (31 механика + «Рост»)');
+  check('в меню все доски', allCards === G.registry.mechanics().length + 1, allCards + ' уникальных карточек (' + G.registry.mechanics().length + ' механик + «Рост»)');
 
   setSearch('дерев');
   const foundIds = menuCardIds();

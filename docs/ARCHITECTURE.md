@@ -267,13 +267,14 @@ meta — Δ/Ψ/Ω, auto3, ачивки, разблокировки, настро
 Порядок в `tools/verify.js` и CI:
 
 ```
-checkall → checkcontent → unit → domtest → sim
+checkall → checkcontent → unit → d2 → domtest → sim
 ```
 
 - `checkall` — синтаксис, версии, `?v=`, подключения, нет `^`/ESM;
 - `checkcontent` — дубли id, ссылки `mech`/`res`/`requires`, группы, `startVars`, деревья, формулы;
 - `unit` — `BN`, `formula`, `digits`, `format`, `registry` без DOM;
+- `d2` — 10 тестов Измерения 2 (оси, Схлопывание, связи, доски, сейв v3) + `sim-d2`;
 - `domtest` — реальный `index.html` в jsdom (616 проверок);
-- `sim` — кривая баланса по формулам.
+- `sim` — кривая баланса D1 по формулам.
 
 Тест «1e308 за ≥ 60 мин» удалён вместе с `tools/bench.js` по решению пользователя.

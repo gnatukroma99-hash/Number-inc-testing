@@ -55,6 +55,12 @@ jobs:
         env:
           TOOL_LIMIT: 120
 
+      # D2: 8 осей, Схлопывание, связи, доски, сейв v3, симулятор баланса
+      - name: d2 — тесты и симулятор
+        run: node tools/tests/run-d2.js && node tools/sim-d2.js 60 0.25
+        env:
+          TOOL_LIMIT: 300
+
       # реальный UI в jsdom: цикл, доски, клики, дерево, P1, сейв, зум
       - name: domtest — UI в jsdom
         run: node tools/domtest.js

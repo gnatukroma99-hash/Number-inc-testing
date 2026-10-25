@@ -64,6 +64,53 @@
     return list;
   }
 
+  /* ---------- миры D1 / D2 (ТЗ docs/DIMENSION2.md §5.2, §9.1) ----------
+     Группа досок знает свой мир полем `world` (content/groups.js); у D1-групп его нет,
+     поэтому для них мир по умолчанию — 'd1' и прежнее поведение навигации не меняется. */
+  const WORLD_D1 = 'd1';
+  const WORLD_D2 = 'd2';
+
+  /* открыт ли мир D2: гейт из G.d2 (ТЗ §10.2), с запасным чтением поля сейва */
+  function d2Open(s) {
+    const d2 = s && s.d2;
+    if (!d2) return false;
+    if (G.d2 && typeof G.d2.unlocked === 'function') return !!G.d2.unlocked(s);
+    return !!d2.unlocked;
+  }
+
+  /* какой мир показываем: D2 — только когда он открыт и включён игроком */
+  function worldState(s) {
+    const st = s || state;
+    return (st && st.d2 && st.d2.active && d2Open(st)) ? WORLD_D2 : WORLD_D1;
+  }
+
+  function groupWorld(g) { return (g && g.world === WORLD_D2) ? WORLD_D2 : WORLD_D1; }
+
+  /* мир конкретной доски: по группе, где она перечислена; доска без группы — D1 */
+  function worldOfDock(id) {
+    for (const g of (G.content.groups || [])) {
+      if ((g.mechs || []).indexOf(id) >= 0) return groupWorld(g);
+    }
+    return WORLD_D1;
+  }
+
+  function inWorld(d) { return worldOfDock(d.id) === worldState(); }
+
+  /* первая доступная доска текущего мира — для сброса и переключателя D1|D2 */
+  function firstBoard() {
+    const blocks = groups();
+    for (const bl of blocks) {
+      const hit = bl.list.find(isAvailable);
+      if (hit) return hit;
+    }
+    return (blocks[0] && blocks[0].list[0]) || null;
+  }
+
+  /* отпечаток навигации: мир + какие доски открыты (по нему build() пересобирается) */
+  function snapshot() {
+    return worldState() + '|' + docks().map((d) => d.id + (isAvailable(d) ? '1' : '0')).join('|');
+  }
+
   function isAvailable(d) {
     if (d.always) return true;
     return d.isUnlocked ? d.isUnlocked(state) : true;
@@ -80,19 +127,26 @@
     return 'заблокировано';
   }
 
-  /* какие механики в какой группе (данные — content/groups.js) */
+  /* какие механики в какой группе (данные — content/groups.js).
+     Показываются только группы текущего мира: группа D2 не видна, пока мир D2 закрыт. */
   function groups() {
     const all = docks();
     const byId = {};
     for (const d of all) byId[d.id] = d;
-    const out = [];
     const used = {};
+    /* занятые считаются по ВСЕМ группам (в т.ч. D2): иначе в мире D2 все D1-доски
+       уехали бы в «Прочее» — на телефоне это лишний ряд доков */
     for (const g of (G.content.groups || [])) {
+      for (const id of (g.mechs || [])) used[id] = true;
+    }
+    const world = worldState();
+    const out = [];
+    for (const g of (G.content.groups || [])) {
+      if (groupWorld(g) !== world) continue;
       const list = (g.mechs || []).map((id) => byId[id]).filter(Boolean);
-      list.forEach((d) => { used[d.id] = true; });
       if (list.length) out.push({ g: g, list: list });
     }
-    const rest = all.filter((d) => !used[d.id]);
+    const rest = all.filter((d) => !used[d.id] && worldOfDock(d.id) === world);
     if (rest.length) out.push({ g: { id: 'other', name: 'Прочее', color: '#7d94a6' }, list: rest });
     return out;
   }
@@ -171,6 +225,16 @@
     if (!isAvailable(d)) {
       G.ui.toast('Доска закрыта: ' + describeLock(d), 'warn');
       return;
+    }
+    /* доска другого мира: меню и крошка про миры не знают — переключаем мир и открываем её */
+    if (!inWorld(d)) {
+      const w = worldOfDock(id);
+      if (!G.ui.d2World || typeof G.ui.d2World.set !== 'function') return;
+      G.ui.d2World.set(state, w);
+      if (!inWorld(d)) {
+        G.ui.toast(w === WORLD_D2 ? 'Измерение 2 ещё закрыто' : 'Доска другого мира', 'warn');
+        return;
+      }
     }
     activeId = id;
     stateMech = id;
@@ -306,8 +370,14 @@
       navEl = document.getElementById('docks');
       boardEl = document.getElementById('board');
       build();
-      G.bus.on('state:reset', () => { activeBoard = null; select('core'); });
-      select('core');
+      G.bus.on('state:reset', () => {
+        activeBoard = null;
+        const first = firstBoard();
+        if (first) select(first.id);
+      });
+      /* при загрузке сейва открываем первую доску ТЕКУЩЕГО мира, а не всегда D1 */
+      const boot = firstBoard();
+      if (boot) select(boot.id); else select('core');
       /* страховка: делегированный клик по докам — если конкретный обработчик
          не сработал (перекрытие, ошибка в монтировании), навигация всё равно работает */
       document.addEventListener('click', (e) => {
@@ -322,15 +392,15 @@
         const i = '123456789'.indexOf(e.key);
         if (i < 0) return;
         if (document.body.classList.contains('modal-open')) return;
-        const list = docks().filter(isAvailable);
+        const list = docks().filter((d) => inWorld(d) && isAvailable(d));
         if (list[i]) select(list[i].id);
       });
     },
 
     update(s) {
       state = s;
-      /* пересобрать навигацию, если набор открытых досок изменился */
-      const snap = docks().map((d) => d.id + (isAvailable(d) ? '1' : '0')).join('|');
+      /* пересобрать навигацию, если сменился мир или набор открытых досок */
+      const snap = snapshot();
       if (snap !== unlockedSnapshot) {
         unlockedSnapshot = snap;
         build();
@@ -355,14 +425,28 @@
 
     select,
 
-    /* сбросить кэш навигации (например, после импорта сейва) */
-    refresh(s) {
+    /* сбросить кэш навигации и открыть первую доску текущего мира
+       (после импорта сейва / смены мира D1↔D2) */
+    rebuild(s) {
       if (s) state = s;
       if (!navEl) return;      // ещё не инициализировано
       unlockedSnapshot = '';
       activeBoard = null;
-      select('core');
-    }
+      activeId = null;
+      build();
+      const first = firstBoard();
+      if (first) select(first.id);
+    },
+
+    /* прежнее имя rebuild() — его зовут app.applyState и tools/domtest.js */
+    refresh(s) { D.rebuild(s); },
+
+    /* мир, который сейчас показан: 'd1' | 'd2' (чистая функция от state) */
+    world(s) { return worldState(s); },
+    /* открыт ли мир D2 (гейт) */
+    d2Open(s) { return d2Open(s); },
+    /* мир доски по данным групп */
+    worldOf: worldOfDock
   };
 
   G.ui.docks = D;

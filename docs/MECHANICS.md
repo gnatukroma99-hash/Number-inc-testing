@@ -985,3 +985,28 @@ src/mechanics/turntree/board.js  дерево ⧜     res:'turns'  unit:'⧜'   
   (быстрый отсев простыми до 997, затем пробное деление до √e, но не дороже 5000 шагов).
 - Хуки механики: `mult`, `spanMult` (красивые порядки), `tick`, `vars` (`measurePrime` и др.
   доступны в условиях достижений без правок движка).
+
+---
+
+## 36. Измерение 2 (D2) — «Оси Ξ» (v0.36.0)
+
+Второй мир: отдельное `state.d2`, свой `N₂/D₂`, валюты **Ξ** (оси) и **⌬** (эссенция).
+Открывается после **10 ⧜** и Яруса 4; переключатель **D1 | D2** в шапке.
+
+```text
+8 осей:  amount_i += baseRate_i · (1+0.25·lvl_i) · (1+0.05·amount_{i+1}) · 2^boost
+         · (1+0.02·Σlvl) · Π d2RateMult · dt
+Ξ/с:     axisRate(0) · (1+0.02·Σlvl) · Π d2XiMult
+M₂:      Π (1 + amount_i)^0.2
+D₂:      += log10(M₂) / ΔT₂ · barrier₂ · dt;  N₂ = 10^D₂
+ΔT₂:     max(0.1, 60/(1+0.02·Σlvl))
+barrier₂:1/(1+pow(max(0,D₂−50)/(25·d2SpanMult),1.5))
+Схлопывание: ⌬ = max(1, floor(((D₂−100)/10)^0.8 · (1+0.1·collapses) · d2CollapseMult))
+старт D₂: 10 + 5·⌬ + 20·link_start + 10·d2_start + d2StartAdd + D1-бонус
+```
+
+- **Boost** — цена `50 · 4^boost · d2BoostCostMult` в Ξ, `2^boost` к осям, максимум 20.
+- **6 апгрейдов** за ⌬ и **4 связи**: `link_start`, `link_m` (M D1 ×1…×11), `link_xi`, `link_collapse`.
+- **Дерево D2** — 16 узлов в 4 ветвях, `d2StartAdd/d2RateMult/d2XiMult/d2CollapseMult/d2SpanMult`.
+- Всё D2 — отдельные системы `d2-growth.js` / `d2-collapse.js` / `d2-links.js`; D1-сбросы D2 не трогают.
+- Полное ТЗ: `docs/DIMENSION2.md`.

@@ -14,7 +14,7 @@
 
 Онлайн-версия (если включён GitHub Pages): `https://<твой-логин>.github.io/<репозиторий>/`
 
-## Что уже есть (v0.35.0)
+## Что уже есть (v0.36.0)
 
 | Система | Статус |
 |---|---|
@@ -28,6 +28,7 @@
 | **Цифровой анализ** — Бенфорд + корень + нули на одной доске | ✅ |
 | **Авто-апгрейды** — 6 досок покупают себя сами, переживают P1 (покупаются вручную) | ✅ |
 | **Перерождение P1** — ◆ Ядра, `M ×= 1.5^(◆^0.4)` | ✅ |
+| **Измерение 2 (D2)** — второе измерение: 8 осей Ξ, Boost, Схлопывание ⌬, связи D1↔D2, дерево 16 | ✅ |
 | **Дерево ◆** — 47 узлов в 8 ветвях + **ярус IV** (5000+ ◆); ветви «Ядра», «✦ Искра» и «⌾ Автомат» | ✅ |
 | **Золотая искра ✦** — ловля искр: буффы, ⚡, ◆, ❖ + **«искровой раж»** за серию поимок | ✅ |
 | **Анимации** — появление доски, вспышка покупки, пульс чисел, подсветка достижений | ✅ |
@@ -84,6 +85,8 @@
 | **Одна кнопка на релиз** — `PUBLISH.bat`: бамп версии → тесты → коммит → тег → пуш | ✅ |
 | Оффлайн без отката D>308 · ребалланс `1.5^(◆^0.4)` · дерево ⧜ 24 · Ω-правила 3/4 | ✅ |
 
+ТЗ и контракты D2: [docs/DIMENSION2.md](docs/DIMENSION2.md).
+
 ## Управление
 
 - **`1..9`** — доски, **`S` / `Ы`** — сохранить, **`Esc`** — закрыть настройки
@@ -98,19 +101,21 @@ index.html          точка входа (все скрипты классич�
 assets/css/         стили
 src/core/           bignum, formula, digits, format, dom, registry, eventbus
 src/systems/        state, growth, upgrades, sampling, primes, prestige, automation, save, cloud,
-                    breakthrough, patterns, cracks, measure, turn (Ярусы 3/4)
-src/content/        ДАННЫЕ: ресурсы, апгрейды, ярусы, барьеры, деревья (tree/psitree/pacttree/turntree)
+                    breakthrough, patterns, cracks, measure, turn (Ярусы 3/4),
+                    d2, d2-growth, d2-collapse, d2-links (Измерение 2)
+src/content/        ДАННЫЕ: ресурсы, апгрейды, ярусы, барьеры, деревья (tree/psitree/pacttree/turntree), d2, d2-tree
 src/mechanics/      по папке на механику (index.js + board.js); tree/engine.js — ОБЩИЙ движок карт,
-                    tree/geometry.js + node.js — его вынесенные части
-src/ui/             главное число (с микро-графиками M/ΔT), доки, доски, настройки, тосты
+                    tree/geometry.js + node.js — его вынесенные части; d2axes/d2collapse/d2links/d2tree — D2
+src/ui/             главное число (с микро-графиками M/ΔT), доки, доски, настройки, тосты, d2-world.js
 tools/sim.js        симулятор баланса по формулам (node)
+tools/sim-d2.js     симулятор Измерения 2: время до первого Схлопывания
 tools/checkcontent.js линтер графа контента (дубли id, ссылки, деревья, формулы)
 tools/unit.js       юнит-тесты ядра без DOM
-tools/tests/        отдельные тесты (offline, prestige, turntree, omega, patterns, history, tree-engine)
+tools/tests/        отдельные тесты (offline, prestige, turntree, omega, patterns, history, tree-engine, d2-*)
 tools/bump.js       версия одной командой: VERSION · G.VERSION · ?v= · package*.json
-tools/verify.js     все проверки параллельно + один отчёт (checkall/checkcontent/unit/domtest/sim)
+tools/verify.js     все проверки параллельно + один отчёт (checkall/checkcontent/unit/d2/domtest/sim)
 tools/layout.js     измерение раскладки в реальном Chrome (CI): прокрутка доков, высоты, стили
-.github/workflows/  ci.yml — GitHub Actions: checkall → checkcontent → unit → domtest → sim
+.github/workflows/  ci.yml — GitHub Actions: checkall → checkcontent → unit → d2 → domtest → sim
 PUBLISH.bat         одна кнопка на релиз (бамп + тесты + коммит + тег + пуш), PULL.bat — забрать
 docs/               ТЗ, ARCHITECTURE, MECHANICS, CHANGELOG, GIT
 ```

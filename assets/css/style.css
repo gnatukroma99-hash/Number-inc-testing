@@ -4151,3 +4151,212 @@ body.pos-minimal .hero-sparks { display: none; }
   .hero-sparks { gap: 8px; }
   .hero-spark { width: 52px; height: 20px; }
 }
+
+
+/* ============================================================
+   v0.36.0 — ИЗМЕРЕНИЕ 2 (D2): ПЕРЕКЛЮЧАТЕЛЬ МИРОВ, ШАПКА D2, ОБЩИЕ КЛАССЫ ДОСОК.
+   Тема D2 — розовый неон (цвет группы «Измерение 2» из content/groups.js).
+   Всё ниже включается только при body.d2-unlocked / body.world-d2,
+   поэтому в мире D1 вёрстка и цвета остаются прежними.
+   ============================================================ */
+
+/* --- переключатель D1 | D2 в шапке (создаётся в src/ui/d2-world.js) --- */
+.d2-world-switch {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid rgba(255, 157, 226, .28);
+  border-radius: 999px;
+  background: rgba(255, 157, 226, .07);
+}
+/* закрытый D2: пилюль нет вообще (JS ставит hidden) */
+.d2-world-switch[hidden] { display: none; }
+.d2-world-pill {
+  min-width: 34px;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dim);
+  font: 800 11.5px/1 var(--mono);
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: background .16s, color .16s;
+}
+.d2-world-pill:hover { color: #ffd9f4; }
+.d2-world-pill.on {
+  color: #1a0f18;
+  background: linear-gradient(180deg, #ffb8ef, #ff9de2);
+  box-shadow: 0 0 14px rgba(255, 157, 226, .35);
+}
+
+/* --- второй hero-блок: N₂ / D₂ / Ξ / Ξ÷с / ⌬ / M₂ --- */
+#heroD2 { display: none; }
+body.world-d2 #hero { display: none; }
+body.world-d2 #heroD2 { display: flex; }
+.d2-hero {
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 18px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 157, 226, .30);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(38, 22, 34, .95), rgba(18, 13, 20, .96));
+  box-shadow: 0 10px 34px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+.d2-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(520px 140px at 18% 50%, rgba(255, 157, 226, .16), transparent 72%),
+    radial-gradient(420px 130px at 78% 40%, rgba(176, 107, 255, .14), transparent 70%);
+}
+.d2-hero-main { flex: 1 1 auto; min-width: 0; }
+.d2-hero-number {
+  font-size: clamp(24px, 4.2vw, 46px);
+  font-weight: 700;
+  letter-spacing: -.5px;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  color: #fdeef9;
+  text-shadow: 0 0 26px rgba(255, 157, 226, .5), 0 0 60px rgba(176, 107, 255, .28);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.d2-hero-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin-top: 4px;
+  color: var(--dim);
+  font-size: 12.5px;
+}
+.d2-hero-metric { font-variant-numeric: tabular-nums; }
+.d2-hero-sep { color: var(--dim2); }
+.d2-hero-res {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.d2-res {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 157, 226, .22);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255, 157, 226, .09), rgba(255, 157, 226, .03));
+  color: #ffd9f4;
+  font: 700 12.5px/1 var(--mono);
+}
+.d2-res-icon { color: #ff9de2; font-weight: 800; }
+.d2-res-rate { color: var(--dim); font-weight: 600; }
+
+/* --- краска доски D2: своя ярусная палитра поверх темы яруса --- */
+body.world-d2 #board {
+  --tier-a: #ff9de2;
+  --tier-b: #b06bff;
+  --tier-glow: rgba(255, 157, 226, .24);
+  border-color: rgba(255, 157, 226, .26);
+}
+
+/* --- общие классы досок D2 (Оси Ξ, Схлопывание, Связи, Древо) --- */
+.d2-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+}
+.d2-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, #ff9de2 18%, rgba(255, 255, 255, .08));
+  border-radius: 11px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+}
+.d2-card.on {
+  border-color: color-mix(in srgb, #ff9de2 55%, transparent);
+  box-shadow: 0 0 20px rgba(255, 157, 226, .16);
+}
+.d2-card.maxed { opacity: .72; }
+.d2-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.d2-card-name { color: #f6eaf3; font: 800 13px/1.2 var(--sans, sans-serif); }
+.d2-card-lvl { color: #ff9de2; font: 800 11.5px/1 var(--mono); }
+.d2-card-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  color: var(--dim);
+  font: 600 11.5px/1.3 var(--mono);
+}
+.d2-card-stats b { color: #ffd9f4; font-weight: 700; }
+.d2-card-btn {
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, #ff9de2 40%, transparent);
+  border-radius: 9px;
+  background: linear-gradient(180deg, rgba(255, 157, 226, .22), rgba(255, 157, 226, .08));
+  color: #fff0fb;
+  font: 800 12px/1 var(--sans, sans-serif);
+  cursor: pointer;
+}
+.d2-card-btn:hover:not(:disabled) { filter: brightness(1.12); }
+.d2-card-btn:disabled { opacity: .45; cursor: default; }
+.d2-softcap {
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, .08);
+}
+.d2-softcap i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #ff9de2, #b06bff);
+}
+.d2-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid rgba(255, 157, 226, .35);
+  border-radius: 999px;
+  color: #ffd9f4;
+  font: 700 10.5px/1.4 var(--mono);
+}
+
+/* --- мобильный вид: шапка D2 переносится вниз и не растягивает экран --- */
+@media (max-width: 760px) {
+  .d2-hero { flex-wrap: wrap; gap: 10px; padding: 12px 14px; }
+  .d2-hero-number { font-size: clamp(22px, 7vw, 34px); }
+  .d2-hero-res { width: 100%; }
+  .d2-world-pill { padding: 4px 7px; }
+  .d2-grid { grid-template-columns: 1fr 1fr; }
+  .d2-card { padding: 8px 10px; }
+}
+
+/* --- минимальный режим: на экране только главное число мира --- */
+body.pos-minimal.world-d2 #heroD2 {
+  flex: 1 1 auto;
+  justify-content: center;
+  text-align: center;
+}
+body.pos-minimal.world-d2 .d2-hero-main { flex: 0 1 auto; }
+body.pos-minimal.world-d2 .d2-hero-number { font-size: clamp(40px, 11vw, 120px); }
+body.pos-minimal.world-d2 .d2-hero-sub { justify-content: center; }
+body.pos-minimal.world-d2 .d2-hero-res { justify-content: center; }

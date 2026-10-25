@@ -49,12 +49,16 @@
   /* Применить новое состояние (старт / импорт / сброс) */
   G.applyState = function (state) {
     G.state = state;
+    /* D2: старый сейв получает state.d2 с дефолтами до того, как доки
+       посчитают группы по миру (система есть — миграция обязательна) */
+    if (G.d2 && typeof G.d2.ensure === 'function') G.d2.ensure(state);
     G.initResources(state);
     state.D = G.growth.D(state);
     if (!G.ui.mainNumber) return;
     G.ui.mainNumber.applySettings(state);
     document.body.classList.toggle('hide-formulas', !state.settings.scientificHints);
     if (G.ui.docks) G.ui.docks.refresh(state);
+    if (G.ui.d2World) G.ui.d2World.update(state);
     G.bus.emit('state:applied', state);
   };
 
@@ -66,6 +70,7 @@
       G.ui.mainNumber.init();
       G.ui.mainNumber.applySettings(state);
       G.ui.docks.init(state);
+      if (G.ui.d2World) G.ui.d2World.init(state);
       if (G.ui.spark) G.ui.spark.mount();
       if (G.ui.rift) G.ui.rift.mount();
       if (G.ui.cracks) G.ui.cracks.mount();
@@ -108,6 +113,7 @@
       if (G.ui.hints) G.ui.hints.update(state);
       if (G.ui.boardhead) G.ui.boardhead.tick(state);
       if (G.ui.fx) G.ui.fx.update(state);
+      if (G.ui.d2World) G.ui.d2World.update(state);
       G.ui.docks.update(state);
       if (G.ui.settings.isOpen()) {
         /* лёгкое обновление превью формата */

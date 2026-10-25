@@ -27,8 +27,12 @@ const JOBS = [
   { id: 'checkall', title: 'checkall', args: ['tools/checkall.js'] },
   { id: 'checkcontent', title: 'checkcontent', args: ['tools/checkcontent.js'] },
   { id: 'unit', title: 'unit (ядро)', args: ['tools/unit.js'] },
-  { id: 'domtest', title: 'domtest (jsdom)', args: ['tools/domtest.js'] },
-  { id: 'sim', title: 'sim 160 900', args: ['tools/sim.js', '160', '900'] }
+  { id: 'd2', title: 'd2 tests', args: ['tools/tests/run-d2.js'], heavy: true },
+  /* при параллельном verify на телефоне jsdom получает меньше CPU: даём запас по перфу.
+     CI запускает domtest отдельно с PERF_MS=40. */
+  { id: 'domtest', title: 'domtest (jsdom)', args: ['tools/domtest.js'], env: { PERF_MS: process.env.PERF_MS || '120' }, heavy: true },
+  { id: 'sim', title: 'sim 160 900', args: ['tools/sim.js', '160', '900'] },
+  { id: 'simd2', title: 'sim-d2 60', args: ['tools/sim-d2.js', '60', '0.25'] }
 ];
 
 /* что вытащить из лога в итоговую строку */
@@ -50,6 +54,14 @@ const PICK = {
   sim: (t) => {
     const m = /1e308 достигнуто на ([\d.]+) мин/.exec(t);
     return m ? '1e308 за ' + m[1] + ' мин' : 'цель 1e308 не достигнута';
+  },
+  d2: (t) => {
+    const m = /D2-тестов: (\d+), провалено: (\d+)/.exec(t);
+    return m ? m[1] + ' тестов, провалов ' + m[2] : (t.match(/ПРОВАЛЕНО.*/) || ['провал'])[0].slice(0, 70);
+  },
+  simd2: (t) => {
+    const m = /D₂=100 впервые на ([\d.]+) мин/.exec(t);
+    return m ? 'D₂=100 за ' + m[1] + ' мин' : 'D₂=100 не достигнуто';
   }
 };
 
@@ -64,7 +76,7 @@ function run(job) {
     const out = [];
     const child = spawn(process.execPath, job.args, {
       cwd: ROOT,
-      env: Object.assign({}, process.env, { TOOL_LIMIT: process.env.TOOL_LIMIT || '900' }),
+      env: Object.assign({}, process.env, { TOOL_LIMIT: process.env.TOOL_LIMIT || '900' }, job.env || {}),
       stdio: ['ignore', 'pipe', 'pipe']
     });
     child.stdout.on('data', (b) => out.push(b));
@@ -87,19 +99,24 @@ function run(job) {
   });
 }
 
-console.log('Параллельные проверки' + (mode === 'fast' ? ' (fast)' : '') + ':');
-Promise.all(JOBS.map(run)).then(() => {
+console.log('Проверки' + (mode === 'fast' ? ' (fast)' : '') + ':' +
+  ' лёгкие — параллельно, тяжёлые (d2/domtest) — последовательно:');
+const LIGHT = JOBS.filter((j) => !j.heavy);
+/* тяжёлые — сначала domtest (на холодном телефоне), потом D2; иначе jsdom ловит троттлинг */
+const HEAVY = JOBS.filter((j) => j.heavy).sort((a, b) => (a.id === 'domtest' ? -1 : b.id === 'domtest' ? 1 : 0));
+(async () => {
+  for (const j of HEAVY) await run(j);
+  await Promise.all(LIGHT.map(run));
   const total = Date.now() - started;
   const seq = results.reduce((s, r) => s + r.ms, 0);
   const bad = results.filter((r) => r.code !== 0);
   console.log('');
-  console.log('Итого: ' + (total / 1000).toFixed(1) + ' с параллельно' +
-    ' (последовательно было бы ' + (seq / 1000).toFixed(1) + ' с)' +
-    ' · сэкономлено ' + ((seq - total) / 1000).toFixed(1) + ' с');
+  console.log('Итого: ' + (total / 1000).toFixed(1) + ' с' +
+    ' · самый долгий шаг ' + (Math.max.apply(null, results.map((r) => r.ms)) / 1000).toFixed(1) + ' с');
   if (bad.length) {
     console.log('ПРОВАЛЕНО: ' + bad.map((r) => r.title).join(', ') + ' · логи в .verify/');
     process.exitCode = 1;
   } else {
     console.log('ВСЁ ОК');
   }
-});
+})();

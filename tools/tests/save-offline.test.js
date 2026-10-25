@@ -206,7 +206,7 @@ console.log('\n1. Потолок оффлайна — ближайшая НЕП�
 {
   const state = makeState(500, ['wall_308'], 2);
   const raw = JSON.parse(JSON.stringify(G.save.serialize(state)));
-  ok('serialize пишет v = SAVE_VERSION (2)', raw.v === 2, 'v = ' + raw.v);
+  ok('serialize пишет v = SAVE_VERSION', raw.v === G.SAVE_VERSION, 'v = ' + raw.v);
   const back = G.save.deserialize(raw);
   ok('deserialize сохраняет D', Math.abs(G.BN.log10(back.N) - 500) < 1e-9,
     'D = ' + G.BN.log10(back.N).toFixed(3));
