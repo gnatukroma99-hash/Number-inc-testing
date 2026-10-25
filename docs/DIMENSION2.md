@@ -233,8 +233,10 @@ perform   = добавить gain к ⌬; collapses++; bestD = max(bestD, D₂);
 - 4 ветви × 4 узла, `res: 'essence'`, `scope: 'meta-d2'`, тема `d2` (CSS).
 - Ветви: **Старт** (start D₂), **Поток** (Ξ/оси), **Сброс** (⌬/collapse), **Связь** (D1↔D2).
 - Использовать общий `mechanics/tree/engine.js` (`G.treeBoard.build`) без правок движка.
-- Узлы — данные; хуки: `Mmult` (для D1 через links), `spanMult` (D2), `autoStepMult`,
-  `coreGainMult` и новые D2-поля только если они уже читаются `d2-growth`/`d2-collapse`.
+- Узлы — данные; D2-хуки читаются **общими свипами** `G.growth.upgSum/upgProduct`:
+  `d2StartAdd` (сумма к старту D₂), `d2RateMult` (скорость осей), `d2XiMult` (доход Ξ),
+  `d2CollapseMult` (⌬ за Схлопывание), `d2SpanMult` (плоскость софткапа).
+  `Mmult`/`spanMult` использовать только если их реально читает D1/D2; не дублировать эффект.
 - Древо открывается после первого Схлопывания. До этого — locked.
 
 ---
@@ -330,6 +332,9 @@ G.d2Links.d1Mult(state)            // 1, если D2 закрыт
 G.d2Links.d2StartBonus(state)
 G.d2Links.linkCost(state, id)
 G.d2Links.buyLink(state, id)
+
+// D2-tree: данные узлов читаются общими свипами в d2-growth/d2-collapse:
+// d2StartAdd (upgSum), d2RateMult/d2XiMult/d2CollapseMult/d2SpanMult (upgProduct).
 
 G.ui.d2World.init(state)
 G.ui.d2World.set(state, 'd1'|'d2')
