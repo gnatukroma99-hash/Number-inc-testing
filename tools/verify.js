@@ -28,6 +28,7 @@ const JOBS = [
   { id: 'checkcontent', title: 'checkcontent', args: ['tools/checkcontent.js'] },
   { id: 'unit', title: 'unit (ядро)', args: ['tools/unit.js'] },
   { id: 'd2', title: 'd2 tests', args: ['tools/tests/run-d2.js'], heavy: true },
+  { id: 'celestials', title: 'celestials', args: ['tools/tests/run-celestials.js'], heavy: true },
   /* при параллельном verify на телефоне jsdom получает меньше CPU: даём запас по перфу.
      CI запускает domtest отдельно с PERF_MS=40. */
   { id: 'domtest', title: 'domtest (jsdom)', args: ['tools/domtest.js'], env: { PERF_MS: process.env.PERF_MS || '120' }, heavy: true },
@@ -57,6 +58,10 @@ const PICK = {
   },
   d2: (t) => {
     const m = /D2-тестов: (\d+), провалено: (\d+)/.exec(t);
+    return m ? m[1] + ' тестов, провалов ' + m[2] : (t.match(/ПРОВАЛЕНО.*/) || ['провал'])[0].slice(0, 70);
+  },
+  celestials: (t) => {
+    const m = /Тестов фазы 2: (\d+), провалено: (\d+)/.exec(t);
     return m ? m[1] + ' тестов, провалов ' + m[2] : (t.match(/ПРОВАЛЕНО.*/) || ['провал'])[0].slice(0, 70);
   },
   simd2: (t) => {

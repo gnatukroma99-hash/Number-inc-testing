@@ -217,10 +217,11 @@ section("5. Группа 'd2' в content/groups.js");
   check('цвет задан', typeof g.color === 'string' && /^#[0-9a-f]{6}$/i.test(g.color), String(g.color));
 
   const mechs = g.mechs || [];
-  check('в группе 4 доски', mechs.length === 4, mechs.join(','));
+  check('в группе 7 досок', mechs.length === 7, mechs.join(','));
   check('доски группы уникальны', new Set(mechs).size === mechs.length, mechs.join(','));
-  check('доски группы — d2axes/d2collapse/d2links/d2tree',
-    ['d2axes', 'd2collapse', 'd2links', 'd2tree'].every((id) => mechs.indexOf(id) >= 0), mechs.join(','));
+  check('доски группы — D2 + целестиалы/ачивки/милстоуны',
+    ['d2axes', 'd2collapse', 'd2links', 'd2tree', 'celestials', 'd2achievements', 'd2milestones']
+      .every((id) => mechs.indexOf(id) >= 0), mechs.join(','));
   check("группа 'd2' стоит последней (D1-группы не переставлены)",
     groups[groups.length - 1].id === 'd2', groups.map((x) => x.id).join(','));
 

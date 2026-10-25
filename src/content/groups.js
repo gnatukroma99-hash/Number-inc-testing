@@ -39,7 +39,8 @@
     {
       id: 'd2', name: 'Измерение 2',
       color: '#ff9de2', world: 'd2',
-      mechs: ['d2axes', 'd2collapse', 'd2links', 'd2tree']
+      mechs: ['d2axes', 'd2collapse', 'd2links', 'd2tree',
+        'celestials', 'd2achievements', 'd2milestones']
     }
   ];
 })(window.G = window.G || {});

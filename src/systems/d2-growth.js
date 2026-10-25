@@ -2,12 +2,15 @@
    Считает скорость осей, доход Ξ, объём M₂, интервал ΔT₂ и объём D₂, а также покупки
    осей и Boost. Работает только с state.d2 — state.N / state.D (D1) не трогает.
 
-   Множители («Π link/upgrade-множителей» из §5.3) приходят из двух мест:
+   Множители («Π link/upgrade-множителей» из §5.3) приходят из трёх мест:
      • узлы дерева D2 — общий свип G.growth.upgProduct(state, field) (уровни в state.upg);
      • апгрейды Схлопывания и связи — свой свип по G.content.d2.upgrades/links
        (уровни в state.d2.upgrades / state.d2.links), поля те же, что у дерева:
-       d2RateMult / d2XiMult / d2SpanMult / d2BoostCostMult (docs/DIMENSION2.md §8).
-   Нет данных — множитель 1. */
+       d2RateMult / d2XiMult / d2SpanMult / d2BoostCostMult (docs/DIMENSION2.md §8);
+     • награды фазы 2 — целестиалы (state.cel), D2-милстоуны и D2-достижения
+       (docs/CELESTIALS.md §9): G.celestials.bonusMult / G.d2Milestones.mult /
+       G.d2Achievements.mult.
+   Нет данных или модуля — множитель 1. */
 (function (G) {
   'use strict';
 
@@ -89,6 +92,30 @@
     return isFinite(p) && p > 0 ? p : 1;
   }
 
+  /* ---- награды фазы 2 (docs/CELESTIALS.md §9) ----
+     Целестиалы, милстоуны и достижения живут в отдельных файлах, которых может не быть
+     в сборке; поэтому только typeof-guard: нет модуля/метода или вернулся не-множитель — 1. */
+  function celestialMult(state, field) {
+    const c = G.celestials;
+    if (!c || typeof c.bonusMult !== 'function') return 1;
+    const v = c.bonusMult(state, field);
+    return isFinite(v) && v > 0 ? v : 1;
+  }
+
+  function milestoneMult(state, field) {
+    const m = G.d2Milestones;
+    if (!m || typeof m.mult !== 'function') return 1;
+    const v = m.mult(state, field);
+    return isFinite(v) && v > 0 ? v : 1;
+  }
+
+  function achievementMult(state) {
+    const a = G.d2Achievements;
+    if (!a || typeof a.mult !== 'function') return 1;
+    const v = a.mult(state);
+    return isFinite(v) && v > 0 ? v : 1;
+  }
+
   /* общий свип (узлы дерева D2) × апгрейды/связи D2 */
   function mult(state, field) {
     let p = d2UpgProduct(state, field);
@@ -114,7 +141,10 @@
       + (i + 1 < list.length ? logMul(1 + C.chain * next) : 0)
       + boostOf(state) * Math.log10(C.boostBase)
       + logMul(1 + C.lvlSum * lvlSum(state))
-      + logMul(mult(state, 'd2RateMult'));
+      + logMul(mult(state, 'd2RateMult'))
+      + logMul(celestialMult(state, 'd2RateMult'))
+      + logMul(milestoneMult(state, 'd2RateMult'))
+      + logMul(achievementMult(state));
     return fromLog(lg);
   }
 
@@ -123,7 +153,9 @@
     const r0 = axisRate(state, 0);
     if (!(r0 > 0)) return 0;
     return fromLog(Math.log10(r0) + logMul(1 + C.lvlSum * lvlSum(state)) +
-      logMul(mult(state, 'd2XiMult')));
+      logMul(mult(state, 'd2XiMult')) +
+      logMul(celestialMult(state, 'd2XiMult')) +
+      logMul(milestoneMult(state, 'd2XiMult')));
   }
 
   /* log10(M₂): объём собирается в логарифмах, иначе 8 осей по 1e300 дают Infinity */
@@ -145,7 +177,8 @@
   /* softcap: 1 / (1 + pow(max(0, D₂ - 50) / (25·spanMult), 1.5)) */
   function barrier(state, d) {
     const D = isFinite(d) ? d : dOf(state);
-    const span = C.span * mult(state, 'd2SpanMult');
+    /* награды §9 расширяют плоскость софткапа: span × целестиалы */
+    const span = C.span * mult(state, 'd2SpanMult') * celestialMult(state, 'd2SpanMult') * milestoneMult(state, 'd2SpanMult');
     const x = Math.max(0, D - C.knee) / (isFinite(span) && span > 0 ? span : C.span);
     const v = 1 / (1 + Math.pow(x, C.power));
     if (!isFinite(v) || v <= 0) return C.minBarrier;

@@ -61,6 +61,12 @@ jobs:
         env:
           TOOL_LIMIT: 300
 
+      # Hall of Celestials, карта миров и новые D2-модули
+      - name: celestials — Hall и карта
+        run: node tools/tests/run-celestials.js
+        env:
+          TOOL_LIMIT: 300
+
       # реальный UI в jsdom: цикл, доски, клики, дерево, P1, сейв, зум
       - name: domtest — UI в jsdom
         run: node tools/domtest.js

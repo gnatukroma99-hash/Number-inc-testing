@@ -105,8 +105,9 @@ async function main() {
     check('D2 hero показывает D₂', /D₂/.test(doc.getElementById('d2HeroD').textContent),
       doc.getElementById('d2HeroD').textContent);
     const d2Docks = Array.from(doc.querySelectorAll('#docks .dock')).map((b) => b.dataset.id);
-    check('в доке только доски D2', d2Docks.length === 4 &&
-      ['d2axes', 'd2collapse', 'd2links', 'd2tree'].every((id) => d2Docks.indexOf(id) >= 0),
+    check('в доке только доски D2', d2Docks.length === 7 &&
+      ['d2axes', 'd2collapse', 'd2links', 'd2tree', 'celestials', 'd2achievements', 'd2milestones']
+        .every((id) => d2Docks.indexOf(id) >= 0),
       d2Docks.join(','));
     check('групп D2 одна', doc.querySelectorAll('#docks .dock-pill').length === 1,
       doc.querySelectorAll('#docks .dock-pill').length + ' пилюль');

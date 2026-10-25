@@ -7,7 +7,7 @@
    системам, которые читают только state и G.* по контракту §10.2.
 
    Проверяем:
-     1) форму state.d2 и SAVE_VERSION = 3;
+     1) форму state.d2 и SAVE_VERSION = 4;
      2) гейт открытия (Ярус 4 + 10 ⧜), защёлку, active/setActive;
      3) rate по M₂/ΔT₂ из d2-growth, status-строку;
      4) resetD2 сбрасывает только D2 и не трогает ⌬/апгрейды/связи/статистику/D1;
@@ -89,7 +89,7 @@ function fresh() {
 
 /* ---------- 1. форма state.d2 ---------- */
 section('1. Форма state.d2 (ТЗ §5.1) и SAVE_VERSION');
-check('G.SAVE_VERSION = 3', G.SAVE_VERSION === 3, 'v=' + G.SAVE_VERSION);
+check('G.SAVE_VERSION = 4', G.SAVE_VERSION === 4, 'v=' + G.SAVE_VERSION);
 const API = ['newState', 'ensure', 'unlocked', 'active', 'setActive', 'D', 'N', 'rate', 'resetD2', 'status'];
 for (const k of API) check('G.d2.' + k + ' есть', typeof G.d2[k] === 'function');
 
@@ -254,7 +254,7 @@ d2s.stats = { bestD: 120, collapses: 2, totalEssence: 20, playtime: 5, lastColla
 d2s.lastSeen = 4242;
 
 const ser = G.save.serialize(sv);
-check('serialize(): v = 3', ser.v === 3, 'v=' + ser.v);
+check('serialize(): v = SAVE_VERSION', ser.v === G.SAVE_VERSION, 'v=' + ser.v);
 check('serialize(): есть d2', !!ser.d2);
 check('serialize(): D1-поля на месте',
   !!ser.N && !!ser.res && !!ser.upg && !!ser.mech && !!ser.stats && !!ser.settings && !!ser.meta);
@@ -263,7 +263,7 @@ sv.d2.res.essence = 999;                      // правка живого state
 check('serialize(): d2 — снимок, а не ссылка', ser.d2.res.essence === 13, String(ser.d2.res.essence));
 
 const back = G.save.deserialize(JSON.parse(JSON.stringify(ser)));
-check('deserialize(): version = 3', back.version === 3, String(back.version));
+check('deserialize(): version = SAVE_VERSION', back.version === G.SAVE_VERSION, String(back.version));
 check('deserialize(): D1 N сохранён', Math.abs(G.BN.log10(back.N) - 321) < 1e-9);
 check('deserialize(): D1 ресурсы/апгрейды/механики',
   back.res.cores === 11 && back.res.turns === 12 && back.upg.tr_start === 4 &&
@@ -294,7 +294,7 @@ const oldSave = {
   meta: { totalRuns: 3, bestD: 300 }
 };
 const mig = G.save.deserialize(JSON.parse(JSON.stringify(oldSave)));
-check('v2 → version = 3', mig.version === 3, String(mig.version));
+check('v2 → version = SAVE_VERSION', mig.version === G.SAVE_VERSION, String(mig.version));
 check('v2 → state.d2 создан', !!mig.d2 && typeof mig.d2 === 'object');
 check('v2 → D2 по умолчанию пустой',
   mig.d2.v === 1 && mig.d2.unlocked === false && mig.d2.active === false &&

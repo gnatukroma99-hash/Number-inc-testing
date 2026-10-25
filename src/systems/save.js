@@ -16,6 +16,12 @@
     return state.d2 || null;
   }
 
+  /* Зал Целестиалов (systems/celestials.js) — по тому же правилу: без модуля берём state.cel как есть. */
+  function ensureCel(state) {
+    if (G.celestials && typeof G.celestials.ensure === 'function') return G.celestials.ensure(state);
+    return state.cel || null;
+  }
+
   const S = {
     KEY: KEY,
 
@@ -34,7 +40,8 @@
         stats: state.stats,
         settings: state.settings,
         meta: state.meta,
-        d2: ensureD2(state)          // D2 тоже снимок (JSON.stringify ниже копирует)
+        d2: ensureD2(state),         // D2 тоже снимок (JSON.stringify ниже копирует)
+        cel: ensureCel(state)        // целестиалы — тоже снимок
       }));
     },
 
@@ -52,6 +59,7 @@
       if (data.settings) Object.assign(state.settings, data.settings);
       if (data.meta) Object.assign(state.meta, data.meta);
       if (data.d2) state.d2 = data.d2;
+      if (data.cel) state.cel = data.cel;
 
       if (!G.BN.isValid(state.N)) state.N = G.BN.one();
       G.initResources(state);
@@ -75,6 +83,9 @@
          ensure нужен и для v3: он же чинит частично записанный/импортированный D2.
          Поля D1 (N, res, upg, mech, stats, settings, meta) не трогаются. */
       ensureD2(state);
+      /* v4: Зал Целестиалов живёт в state.cel. В v3 и старше его нет — сейв получает дефолт;
+         для v4 вызов чинит частично записанный/импортированный cel. Поля D1 и D2 не трогаются. */
+      ensureCel(state);
       state.version = G.SAVE_VERSION;
       return state;
     },

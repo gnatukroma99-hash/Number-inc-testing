@@ -6,8 +6,8 @@
 (function (G) {
   'use strict';
 
-  G.SAVE_VERSION = 3;
-  G.VERSION = '0.36.1';
+  G.SAVE_VERSION = 4;
+  G.VERSION = '0.37.0';
 
   const DEFAULT_SETTINGS = {
     numberFormat: 'short',     // short | sci | full
@@ -73,7 +73,11 @@
 
       /* Измерение 2 (D2) — отдельный мир, см. systems/d2.js. Модуль может быть ещё
          не подключён (порядок загрузки/тест) — тогда null, и G.d2.ensure() создаст его. */
-      d2: (G.d2 && typeof G.d2.newState === 'function') ? G.d2.newState() : null
+      d2: (G.d2 && typeof G.d2.newState === 'function') ? G.d2.newState() : null,
+
+      /* Зал Целестиалов — мета-слой над D2, см. systems/celestials.js. Ни D1-престижи,
+         ни D2, ни Схлопывание его не сбрасывают (resetScopes его не знает). */
+      cel: (G.celestials && typeof G.celestials.newState === 'function') ? G.celestials.newState() : null
     };
   };
 

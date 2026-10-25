@@ -278,3 +278,19 @@ checkall → checkcontent → unit → d2 → domtest → sim
 - `sim` — кривая баланса D1 по формулам.
 
 Тест «1e308 за ≥ 60 мин» удалён вместе с `tools/bench.js` по решению пользователя.
+
+### Фаза 2 (v0.37.0)
+
+```
+systems/celestials.js        state.cel, сигилы, bonusMult/Sum
+systems/celestial-trials.js  check/complete/progress испытаний
+systems/d2-achievements.js   12 достижений D2
+systems/d2-milestones.js     8 порогов D2
+systems/d2-offline.js        оффлайн D2 50 %/8 ч
+content/celestials.js        данные 8 целестиалов
+content/d2-achievements.js   12 условий
+content/d2-milestones.js     8 порогов
+content/worlds.js            D1/D2/D3-locked
+ui/world-map.js              карта миров
+mechanics/{celestials,d2achievements,d2milestones}/
+```

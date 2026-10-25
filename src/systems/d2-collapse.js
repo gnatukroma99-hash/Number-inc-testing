@@ -2,7 +2,10 @@
    Даёт ⌬ (эссенцию), сбрасывает оси/Ξ/Boost и НЕ трогает ⌬, апгрейды, связи,
    статистику D2 и весь D1. Данные — G.content.d2.collapse / G.content.d2.upgrades.
    Апгрейды и связи живут в state.d2.upgrades / state.d2.links (scope meta-d2),
-   поэтому G.lvl(state, ...) (state.upg) здесь не используется. */
+   поэтому G.lvl(state, ...) (state.upg) здесь не используется.
+   Награды фазы 2 (docs/CELESTIALS.md §9): ⌬ × целестиалы × милстоуны (d2CollapseMult),
+   старт D₂ + сумма целестиалов + сумма милстоунов (d2StartAdd). Модулей может не быть
+   в сборке — только typeof-guard, иначе множитель 1 / прибавка 0. */
 (function (G) {
   'use strict';
 
@@ -49,6 +52,37 @@
     return isFinite(v) && v > 0 ? v : 1;
   }
 
+  /* ---- награды фазы 2 (docs/CELESTIALS.md §9) ----
+     Целестиалы и милстоуны живут в отдельных файлах, которых может не быть в сборке;
+     нет модуля/метода или вернулся не-множитель — 1, не-прибавка — 0. */
+  function celestialMult(state, field) {
+    const c = G.celestials;
+    if (!c || typeof c.bonusMult !== 'function') return 1;
+    const v = c.bonusMult(state, field);
+    return isFinite(v) && v > 0 ? v : 1;
+  }
+
+  function celestialSum(state, field) {
+    const c = G.celestials;
+    if (!c || typeof c.bonusSum !== 'function') return 0;
+    const v = c.bonusSum(state, field);
+    return isFinite(v) ? v : 0;
+  }
+
+  function milestoneMult(state, field) {
+    const m = G.d2Milestones;
+    if (!m || typeof m.mult !== 'function') return 1;
+    const v = m.mult(state, field);
+    return isFinite(v) && v > 0 ? v : 1;
+  }
+
+  function milestoneSum(state, field) {
+    const m = G.d2Milestones;
+    if (!m || typeof m.sum !== 'function') return 0;
+    const v = m.sum(state, field);
+    return isFinite(v) ? v : 0;
+  }
+
   /* Апгрейды/связи D2 живут в G.content.d2, а их уровни — в state.d2;
      общий G.growth.upgProduct видит только state.upg (дерево), поэтому свип локальный. */
   function contentProduct(state, field) {
@@ -88,9 +122,11 @@
     return isFinite(c.minD) ? c.minD : 100;
   }
 
-  /* множитель ⌬: узлы дерева/апгрейды (d2CollapseMult) и связь link_collapse */
+  /* множитель ⌬: узлы дерева/апгрейды/связи D2 (d2CollapseMult), связь link_collapse,
+     награды фазы 2 — целестиалы × D2-милстоуны (docs/CELESTIALS.md §9) */
   function collapseMult(state) {
-    let mult = upgProduct(state, 'd2CollapseMult') * contentProduct(state, 'd2CollapseMult');
+    let mult = upgProduct(state, 'd2CollapseMult') * contentProduct(state, 'd2CollapseMult') *
+      celestialMult(state, 'd2CollapseMult') * milestoneMult(state, 'd2CollapseMult');
     const lvl = bagLevel(d2(state).links, LINK_COLLAPSE_ID);
     if (lvl > 0) mult *= Math.pow(LINK_COLLAPSE_POW, lvl);
     return isFinite(mult) && mult > 0 ? mult : 1;
@@ -137,6 +173,9 @@
         }
       );
       start += upgSum(state, 'd2StartAdd');                 // узлы дерева D2
+      /* награды фазы 2: целестиалы и D2-милстоуны (docs/CELESTIALS.md §9) */
+      start += celestialSum(state, 'd2StartAdd');
+      start += milestoneSum(state, 'd2StartAdd');
       if (G.d2Links && typeof G.d2Links.d2StartBonus === 'function') {
         const bonus = G.d2Links.d2StartBonus(state);        // бонус D1 → D2
         if (isFinite(bonus) && bonus > 0) start += bonus;

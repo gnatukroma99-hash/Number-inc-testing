@@ -71,6 +71,7 @@
       G.ui.mainNumber.applySettings(state);
       G.ui.docks.init(state);
       if (G.ui.d2World) G.ui.d2World.init(state);
+      if (G.ui.worldMap) G.ui.worldMap.init(state);
       if (G.ui.spark) G.ui.spark.mount();
       if (G.ui.rift) G.ui.rift.mount();
       if (G.ui.cracks) G.ui.cracks.mount();

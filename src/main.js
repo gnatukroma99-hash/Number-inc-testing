@@ -24,8 +24,14 @@
 
     /* оффлайн-прогресс */
     let offline = null;
+    let offlineD2 = null;
     if (loaded) {
       offline = G.save.applyOffline(state);
+      /* D2-оффлайн считаем после D1 и с тем же elapsed (50 %, 8 ч) */
+      if (offline && G.d2Offline && G.d2 && G.d2.unlocked(state)) {
+        try { offlineD2 = G.d2Offline.apply(state, offline.seconds); }
+        catch (e) { console.error('[d2-offline]', e); }
+      }
     }
 
     G.ui.app.init(state);
@@ -38,6 +44,10 @@
         'accent',
         6000
       );
+    }
+    if (offlineD2 && offlineD2.gainedD2 > 0.01) {
+      G.ui.toast('Измерение 2: +' + offlineD2.gainedD2.toFixed(1) + ' D₂, +' +
+        G.fmt.num(offlineD2.xi, state.settings.numberFormat) + ' Ξ', 'accent', 6000);
     }
 
     /* ---------- логика ---------- */
@@ -64,6 +74,9 @@
       /* D2 идёт своим тиком; D1-поля не трогает. Тикает и в фоне, чтобы оси не стояли. */
       if (G.d2Growth && G.d2 && G.d2.unlocked(s)) {
         try { G.d2Growth.tick(s, dt); } catch (e) { console.error('[d2]', e); }
+      }
+      if (G.d2Achievements && G.d2 && G.d2.unlocked(s)) {
+        try { G.d2Achievements.update(s, dt); } catch (e) { console.error('[d2ach]', e); }
       }
 
       for (const m of G.registry.mechanics()) {

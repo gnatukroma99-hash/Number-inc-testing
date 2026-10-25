@@ -48,7 +48,8 @@
     psitree: '#ff8fa8',
     omega: '#ff9de2',
     /* Измерение 2 */
-    d2axes: '#ff6bcb', d2collapse: '#a855f7', d2links: '#7dd3fc', d2tree: '#fda4af'
+    d2axes: '#ff6bcb', d2collapse: '#a855f7', d2links: '#7dd3fc', d2tree: '#fda4af',
+    celestials: '#ffe08a', d2achievements: '#f6c453', d2milestones: '#b794f6'
   };
 
   /* какой ярус у доски — для общей цветовой темы */
@@ -60,7 +61,8 @@
     pacts: '2', duplicator: '2', echo: '2', chrono: '2', rift: '2',
     breakthrough: '3', cracks: '3', measure: '3', psitree: '3', omega: '3',
     turn: '4', turntree: '4',
-    d2axes: 'd2', d2collapse: 'd2', d2links: 'd2', d2tree: 'd2'
+    d2axes: 'd2', d2collapse: 'd2', d2links: 'd2', d2tree: 'd2',
+    celestials: 'd2', d2achievements: 'd2', d2milestones: 'd2'
   };
 
   const MECH_ICON = {
