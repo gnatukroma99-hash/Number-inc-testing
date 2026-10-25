@@ -1,6 +1,7 @@
 /* systems/history.js — короткая история показателей для спарклайнов (v0.23.0).
    Каждые HISTORY_STEP секунд игрового времени кладём в кольцо:
      • D (рост числа) — для спарклайна в меню/на доске «Рост»;
+     • M и ΔT — для микро-графиков в шапке (сессия №47);
      • первый числовой счётчик механики из её vars() — для мини-графика в её карточке.
    Кольцо короткое (24 точки ≈ 48 с), поэтому и память, и цена копеечные. */
 (function (G) {
@@ -25,6 +26,8 @@
     ensure(state) {
       const st = state.stats || (state.stats = {});
       if (!Array.isArray(st.histD)) st.histD = [];
+      if (!Array.isArray(st.histM)) st.histM = [];
+      if (!Array.isArray(st.histDt)) st.histDt = [];
       if (!st.histMech || typeof st.histMech !== 'object') st.histMech = {};
       return st;
     },
@@ -36,6 +39,12 @@
       acc = 0;
 
       push(st.histD, Number(G.growth.D(state).toFixed(3)));
+
+      /* микро-графики шапки: M и ΔT — только конечные числа (Infinity/NaN испортили бы путь) */
+      const M = G.growth.M(state);
+      if (isFinite(M)) push(st.histM, M);
+      const dT = G.growth.dt(state);
+      if (isFinite(dT)) push(st.histDt, dT);
 
       for (const m of G.registry.mechanics()) {
         if (typeof m.vars !== 'function') continue;
@@ -54,10 +63,13 @@
       return st.histD.length;
     },
 
-    /* серия для механики: берём первый числовой счётчик (тот же, что писали) */
+    /* серия по имени: 'core' = D, 'M' = множитель, 'dT' = интервал,
+       иначе — первый числовой счётчик механики (тот же, что писали) */
     series(state, id) {
       const st = H.ensure(state);
       if (id === 'core') return st.histD || [];
+      if (id === 'M') return st.histM || [];
+      if (id === 'dT') return st.histDt || [];
       return (st.histMech && st.histMech[id]) || [];
     },
 
@@ -81,6 +93,8 @@
     restart(state) {
       if (!state.stats) return;
       state.stats.histD = [];
+      state.stats.histM = [];
+      state.stats.histDt = [];
       state.stats.histMech = {};
       acc = 0;
     }

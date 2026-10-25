@@ -25,6 +25,12 @@ index.html                  единственная страница, поря�
 assets/css/style.css
 docs/{ТЗ,ARCHITECTURE,MECHANICS,CHANGELOG}.md
 tools/sim.js                офлайн-симулятор баланса (Node)
+tools/checkall.js           синтаксис/версии/подключения
+tools/checkcontent.js       линтер графа контента
+tools/unit.js               юнит-тесты ядра
+tools/domtest.js            UI-тест в jsdom
+tools/verify.js             все проверки параллельно
+tools/tests/                отдельные тесты (offline/prestige/turntree/omega/patterns/...)
 
 src/
 ├── main.js                 точка входа, цикл логики 20 Гц + отрисовка 30 Гц
@@ -253,3 +259,21 @@ meta — Δ/Ψ/Ω, auto3, ачивки, разблокировки, настро
 | 10 | Ключ-эхо | пассивные ключи для барьера 1000 |
 
 **Дальше Яруса 2 не проектируем** — по договорённости, чтобы не тратить время впустую.
+
+---
+
+## 8. Проверки
+
+Порядок в `tools/verify.js` и CI:
+
+```
+checkall → checkcontent → unit → domtest → sim
+```
+
+- `checkall` — синтаксис, версии, `?v=`, подключения, нет `^`/ESM;
+- `checkcontent` — дубли id, ссылки `mech`/`res`/`requires`, группы, `startVars`, деревья, формулы;
+- `unit` — `BN`, `formula`, `digits`, `format`, `registry` без DOM;
+- `domtest` — реальный `index.html` в jsdom (616 проверок);
+- `sim` — кривая баланса по формулам.
+
+Тест «1e308 за ≥ 60 мин» удалён вместе с `tools/bench.js` по решению пользователя.

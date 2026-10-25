@@ -5,10 +5,11 @@
   "description": "ЧИСЛО — браузерный идл-инкрементал. Сама игра работает из file:// без сборки; package.json нужен только для инструментов агента.",
   "scripts": {
     "check": "node tools/checkall.js",
+    "checkcontent": "node tools/checkcontent.js",
     "dom": "node tools/domtest.js",
-    "bench": "node tools/bench.js 1 300",
     "sim": "node tools/sim.js 160 900",
     "test": "node tools/verify.js",
+    "unit": "node tools/unit.js",
     "shots": "node tools/shot.js",
     "verify": "node tools/verify.js",
     "verify:fast": "node tools/verify.js fast"

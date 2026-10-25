@@ -4115,3 +4115,39 @@ body.no-anim .crack-float.fading .crack-shard { animation: none !important; }
 .measure-card.on .measure-val { color: var(--ms, #38bdf8); }
 .measure-card.owned .measure-name { color: #f4fbff; }
 .measure-card.idle { opacity: .62; }
+
+
+/* ============================================================
+   v0.36.0 — МИКРО-ГРАФИКИ M И ΔT В ШАПКЕ.
+   Два спарклайна из systems/history.js: stroke + двухбуквенный тег.
+   Высота шапки не меняется (высота графиков меньше строки подписи снизу).
+   ============================================================ */
+.hero-sparks {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-spark-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.hero-spark-tag {
+  font: 800 10px/1 var(--mono, monospace);
+  color: var(--dim2, #5c6b7a);
+  letter-spacing: .04em;
+}
+.hero-spark {
+  display: block;
+  width: 64px;
+  height: 22px;
+  color: rgba(53, 226, 192, .8);
+}
+.hero-spark-box.micro-dt .hero-spark { color: rgba(43, 181, 255, .8); }
+/* в минимальном режиме на экране только число — графики лишние */
+body.pos-minimal .hero-sparks { display: none; }
+@media (max-width: 760px) {
+  .hero-sparks { gap: 8px; }
+  .hero-spark { width: 52px; height: 20px; }
+}

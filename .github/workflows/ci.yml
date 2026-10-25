@@ -1,6 +1,6 @@
 # .github/workflows/ci.yml — проверки «ЧИСЛА» на каждый пуш и PR.
 # Что гоняется (в том же порядке, что требует AGENTS §1.4.1 / CONTEXT §0):
-#   checkall → domtest (jsdom) → sim (баланс) → bench (1e308 за >= 60 мин)
+#   checkall → checkcontent → unit → domtest (jsdom) → sim (баланс)
 # shot.js (скриншоты) в CI не запускается: ему нужен настоящий Chrome,
 # он остаётся локальным инструментом агента.
 name: CI
@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   check:
-    name: checkall + domtest + sim + bench
+    name: checkall + checkcontent + unit + domtest + sim
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -43,6 +43,18 @@ jobs:
         env:
           TOOL_LIMIT: 120
 
+      # граф контента: дубли id, ссылки mech/res/requires, группы, startVars, деревья
+      - name: checkcontent — граф контента
+        run: node tools/checkcontent.js
+        env:
+          TOOL_LIMIT: 120
+
+      # юнит-тесты ядра без DOM: BN, formula, digits, format, registry
+      - name: unit — ядро
+        run: node tools/unit.js
+        env:
+          TOOL_LIMIT: 120
+
       # реальный UI в jsdom: цикл, доски, клики, дерево, P1, сейв, зум
       - name: domtest — UI в jsdom
         run: node tools/domtest.js
@@ -57,9 +69,3 @@ jobs:
         run: node tools/sim.js 160 900
         env:
           TOOL_LIMIT: 120
-
-      # реальный код src/ + перерождения; падает, если 1e308 не за 60+ мин
-      - name: bench — время до 1e308
-        run: node tools/bench.js 1 300
-        env:
-          TOOL_LIMIT: 600

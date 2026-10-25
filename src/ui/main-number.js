@@ -4,6 +4,10 @@
 
   G.ui = G.ui || {};
 
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const SPARK_W = 64;   /* система координат микро-графиков шапки (масштаб — через CSS) */
+  const SPARK_H = 22;
+
   const refs = {};
   let lastDrawn = '';
 
@@ -15,6 +19,50 @@
     refs.res = document.getElementById('heroRes');
     refs.hero = document.getElementById('hero');
     buildRes();
+    buildSparks();
+  }
+
+  /* микро-графики M и ΔT: SVG строятся ОДИН раз, в update() правится только атрибут `d`.
+     Контейнер создаём здесь, а не в index.html — шапку не переписываем. */
+  function buildSparks() {
+    refs.sparks = document.getElementById('heroSparks');
+    if (!refs.sparks) {
+      refs.sparks = G.h('div', { class: 'hero-sparks', id: 'heroSparks', 'aria-hidden': 'true' });
+      const before = refs.hero.querySelector('.icon-btn');
+      if (before) refs.hero.insertBefore(refs.sparks, before);
+      else refs.hero.appendChild(refs.sparks);
+    }
+    G.dom.clear(refs.sparks);
+    refs.sparkM = spark(refs.sparks, 'M', 'micro-m', 'Множитель M');
+    refs.sparkDt = spark(refs.sparks, 'ΔT', 'micro-dt', 'Интервал ΔT, секунды');
+  }
+
+  function spark(host, label, cls, title) {
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '1.6');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('vector-effect', 'non-scaling-stroke');
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('class', 'hero-spark');
+    svg.setAttribute('viewBox', '0 0 ' + SPARK_W + ' ' + SPARK_H);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.appendChild(path);
+    host.appendChild(G.h('span', { class: 'hero-spark-box ' + cls, title: title }, [
+      G.h('span', { class: 'hero-spark-tag', text: label }),
+      svg
+    ]));
+    return path;
+  }
+
+  /* перерисовываем путь только когда он реально изменился (30 fps и так хватает) */
+  function drawSpark(pathEl, values) {
+    const d = G.history.path(values, SPARK_W, SPARK_H, 3);
+    if (pathEl.getAttribute('d') === d) return;
+    if (d) pathEl.setAttribute('d', d);
+    else pathEl.removeAttribute('d');
   }
 
   function buildRes() {
@@ -57,6 +105,11 @@
     const spd = G.timescale.scale(state);
     refs.rate.textContent = '×' + G.fmt.num(M, mode) + ' / ' + (dT < 1 ? dT.toFixed(3) : dT.toFixed(2)) + ' с' +
       (spd > 1 ? '  ≫×' + spd : '');
+
+    if (refs.sparkM && G.history) {
+      drawSpark(refs.sparkM, G.history.series(state, 'M'));
+      drawSpark(refs.sparkDt, G.history.series(state, 'dT'));
+    }
 
     const r = G.growth.rate(state);
     /* маленький, но живой темп нельзя показывать как «0 цифр/с» — игрок читает это

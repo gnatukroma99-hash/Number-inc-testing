@@ -32,7 +32,7 @@
         G.h('div', { class: 'formula-card' }, [
           G.h('div', { class: 'block-label', text: 'Формулы' }),
           G.h('code', { text: '◆ = floor(((D − ' + G.content.prestige.minD + ') / 4)^0.75)' }),
-          G.h('code', { text: 'M ×= 1.5^◆' })
+          G.h('code', { text: 'M ×= 1.5^(◆^0.4)' })
         ])
       ]);
       root.appendChild(el);

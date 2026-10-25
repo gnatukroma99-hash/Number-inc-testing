@@ -46,9 +46,9 @@
         ]),
         G.h('div', { class: 'formula-card' }, [
           G.h('div', { class: 'block-label', text: 'Формулы' }),
-          G.h('code', { text: 'типы: трипл · квадро · лесенка · штурвал · палиндром (5+)' }),
+          G.h('code', { text: 'типы: ' + (cfg().types || []).map((t) => t.name.toLowerCase()).join(' · ') }),
           G.h('code', { text: 'M ×= 1 + 0.01·типы + 0.004·поймано (≤ 40)' }),
-          G.h('code', { text: 'пока горит буфф: M ×= (1.5 + 0.25·lvl(pt_power))' })
+          G.h('code', { text: 'пока горит буфф: M ×= (1.5 + 0.25·lvl(pt_power)) · buffMultX типа' })
         ]),
         G.h('div', { class: 'block-label', text: 'Коллекция узоров' }),
         cardsGrid,
@@ -59,7 +59,7 @@
       return {
         update(state) {
           const d = G.patterns.data(state);
-          const b = G.patterns.buff(state);
+          const b = G.patterns.active(state);
           const left = G.patterns.left(state);
           const types = cfg().types || [];
 

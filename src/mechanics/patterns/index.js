@@ -38,7 +38,7 @@
 
     status(state) {
       const left = G.patterns.left(state);
-      if (left > 0) return '×' + G.fmt.num(G.patterns.buff(state).mult) + ' · ' + left.toFixed(1) + ' с';
+      if (left > 0) return '×' + G.fmt.num(G.patterns.active(state).mult) + ' · ' + left.toFixed(1) + ' с';
       const d = G.patterns.data(state);
       return 'поймано ' + (d.total || 0) + ' · типов ' + G.patterns.typesFound(state) + '/' + (cfg().types || []).length;
     }

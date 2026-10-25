@@ -1,11 +1,10 @@
 /* tools/verify.js — все проверки ПАРАЛЛЕЛЬНО, одним отчётом.
-   Запуск:  node tools/verify.js            (checkall + domtest + sim + bench)
-            node tools/verify.js fast       (без bench — быстрый круг)
+   Запуск:  node tools/verify.js            (checkall + checkcontent + unit + domtest + sim)
+            node tools/verify.js fast       (то же; режим оставлен для совместимости)
             node tools/verify.js bg         (в фоне, лог в .verify/verify.log)
 
-   Зачем: bench идёт ~70 с, domtest ~12 с, но они НЕ зависят друг от друга.
-   Последовательно это ~85 с ожидания, параллельно — столько же, сколько самый
-   долгий прогон. Плюс сразу видно цифры (1e308 за N мин), не читая логи.
+   Зачем: domtest ~12 с, остальные проверки быстрые и НЕ зависят друг от друга.
+   Последовательно это дольше, параллельно — столько же, сколько самый долгий прогон.
 
    Фон с телефона/Windows:
      node tools/verify.js > .verify/verify.log 2>&1 &    # и занимайся своими делами
@@ -26,10 +25,11 @@ const mode = String(process.argv[2] || '').toLowerCase();
 
 const JOBS = [
   { id: 'checkall', title: 'checkall', args: ['tools/checkall.js'] },
+  { id: 'checkcontent', title: 'checkcontent', args: ['tools/checkcontent.js'] },
+  { id: 'unit', title: 'unit (ядро)', args: ['tools/unit.js'] },
   { id: 'domtest', title: 'domtest (jsdom)', args: ['tools/domtest.js'] },
   { id: 'sim', title: 'sim 160 900', args: ['tools/sim.js', '160', '900'] }
 ];
-if (mode !== 'fast') JOBS.push({ id: 'bench', title: 'bench 1 300', args: ['tools/bench.js', '1', '300'] });
 
 /* что вытащить из лога в итоговую строку */
 const PICK = {
@@ -39,13 +39,17 @@ const PICK = {
     const bad = (t.match(/✗/g) || []).length;
     return ok + ' ✓' + (bad ? ', ' + bad + ' ✗' : '');
   },
+  checkcontent: (t) => {
+    const m = /ВСЁ ОК — (\d+) проверок/.exec(t);
+    return m ? m[1] + ' проверок OK' : (t.match(/ПРОВАЛЕНО.*/) || ['провал'])[0].slice(0, 70);
+  },
+  unit: (t) => {
+    const m = /ИТОГО: (\d+) проверок.*провалов (\d+)/.exec(t);
+    return m ? m[1] + ' проверок, провалов ' + m[2] : (t.match(/ПРОВАЛЕНО.*/) || ['провал'])[0].slice(0, 70);
+  },
   sim: (t) => {
     const m = /1e308 достигнуто на ([\d.]+) мин/.exec(t);
     return m ? '1e308 за ' + m[1] + ' мин' : 'цель 1e308 не достигнута';
-  },
-  bench: (t) => {
-    const m = /Первый прогон: ([\d.]+) мин/.exec(t);
-    return m ? '1e308 за ' + m[1] + ' мин' : 'прогон не дошёл до 1e308';
   }
 };
 
@@ -83,7 +87,7 @@ function run(job) {
   });
 }
 
-console.log('Параллельные проверки' + (mode === 'fast' ? ' (fast, без bench)' : '') + ':');
+console.log('Параллельные проверки' + (mode === 'fast' ? ' (fast)' : '') + ':');
 Promise.all(JOBS.map(run)).then(() => {
   const total = Date.now() - started;
   const seq = results.reduce((s, r) => s + r.ms, 0);

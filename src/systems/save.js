@@ -6,6 +6,8 @@
   const KEY = 'number_incremental_save_v1';
   const OFFLINE_CAP = 8 * 3600;   // сек
   const OFFLINE_EFF = 0.5;        // 50% эффективности оффлайн
+  const OFFLINE_STEP = 10;        // цифр за шаг интегрирования софткапа
+  const OFFLINE_STEPS_MAX = 40;   // предел шагов (10 × 40 = 400 цифр за оффлайн)
 
   const S = {
     KEY: KEY,
@@ -107,6 +109,25 @@
     },
 
     /* ---- оффлайн: закрытая форма, без пошаговой симуляции ---- */
+
+    /* Потолок оффлайн-прогресса: ближайшая НЕПРОЙДЕННАЯ стена из данных
+       G.content.barriers (wall_308 / wall_1000 и любые будущие).
+       Пройденная стена (её снимает БОЛЬШОЙ БУМ навсегда) оффлайн больше не держит.
+       Раньше здесь стоял хардкод Math.min(d, 308) — и сейв с D > 308 откатывался
+       до 1e308 при каждом возвращении в игру.
+       Ниже текущего D потолок не опускается: оффлайн не уменьшает число. */
+    offlineCap(state, before) {
+      let cap = Infinity;
+      for (const b of (G.content && G.content.barriers) || []) {
+        if (G.growth.passed(state, b.id)) continue;
+        if (typeof b.requires === 'function' && !b.requires(state)) continue;
+        const wall = Number(b.wall);
+        if (isFinite(wall) && wall < cap) cap = wall;
+      }
+      if (!isFinite(cap)) return Infinity;
+      return Math.max(before, cap);
+    },
+
     applyOffline(state) {
       const now = Date.now();
       const last = state.lastSeen || now;
@@ -120,16 +141,20 @@
       const gainD = Math.max(0, Math.log10(M)) * steps;
 
       const before = G.BN.log10(state.N);
+      const cap = S.offlineCap(state, before);
+
       /* невидимый софткап применяем к оффлайну тоже — шагами по 10 цифр */
       let d = before;
       let left = gainD;
-      for (let i = 0; i < 40 && left > 1e-9; i++) {
+      for (let i = 0; i < OFFLINE_STEPS_MAX && left > 1e-9 && d < cap; i++) {
         const f = G.growth.hiddenFactor(state, d);
-        const step = Math.min(left, 10);
-        d += step * f;
+        const step = Math.min(left, OFFLINE_STEP);
+        d = Math.min(cap, d + step * f);
         left -= step;
       }
-      const after = Math.min(d, 308);   // первый барьер
+      /* оффлайн никогда не уменьшает D и не переходит непройденную стену */
+      let after = Math.min(d, cap);
+      if (!isFinite(after) || after < before) after = before;
       state.N = G.BN.fromLog10(after);
       state.disp = null;
 

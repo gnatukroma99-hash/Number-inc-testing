@@ -152,7 +152,9 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const summary = G.registry.summary();
   check('реестр', summary.mechanics >= 7, JSON.stringify(summary));
   check('ошибок при загрузке нет', errors.length === 0, errors.join(' | '));
-  const booted = await waitBoot(win, 3000);
+  /* 8 с, а не 3: при параллельном verify на слабом телефоне jsdom стартует дольше,
+     и короткий таймаут давал ложный «boot() не отработал». */
+  const booted = await waitBoot(win, 8000);
   check('boot() отработал (DOMContentLoaded)', booted);
 
   section('2. Игровой цикл (реальное время 1.5 с)');
@@ -523,7 +525,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   const noKeep = G.prestige.mult(state);
   state.upg.tree_corekeep = 1;
   const keep = G.prestige.mult(state);
-  check('«Ядра не сгорают» держат множитель на рекорде', keep > noKeep * 100,
+  check('«Ядра не сгорают» держат множитель на рекорде', keep > noKeep * 10,
     '×' + G.fmt.num(noKeep) + ' → ×' + G.fmt.num(keep));
   state.upg.tree_corekeep = 0;
   state.upg.tree_corenodes = 0;
@@ -2194,7 +2196,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
 
   /* --- дерево ⧜ (v0.31.0) --- */
   const tt = G.registry.upgradesOf('turntree');
-  check('в дереве ⧜ 16 узлов и 4 ветви', tt.length === 16 &&
+  check('в дереве ⧜ 24 узла и 4 ветви', tt.length === 24 &&
     (G.content.turntree.branches || []).length === 4,
     tt.length + ' узлов, ветвей ' + (G.content.turntree.branches || []).length);
   check('дерево ⧜ — валютное (⧜)', tt.every((u) => u.res === 'turns' && u.scope === 'meta'));
@@ -2694,12 +2696,12 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   })());
 
   const patCfg = G.content.patterns;
-  check('типов узоров в данных', (patCfg.types || []).length === 5, (patCfg.types || []).map((t) => t.id).join(','));
+  check('типов узоров в данных', (patCfg.types || []).length === 7, (patCfg.types || []).map((t) => t.id).join(','));
   check('у доски паттернов есть цвет и ярус',
     Cc.mechColor('patterns').indexOf('#') === 0 && Cc.mechTier('patterns') === '1',
     Cc.mechColor('patterns') + ' / ' + Cc.mechTier('patterns'));
 
-  /* детектор: все пять типов на своих строках */
+  /* детектор: все семь типов на своих строках */
   const hitTypes = (str) => G.patterns.scan(str).map((h) => h.type);
   check('трипл находится', hitTypes('12347779').indexOf('triple') >= 0, hitTypes('12347779').join(','));
   check('квадро находится, а не трипл', hitTypes('1237777').indexOf('quad') >= 0, hitTypes('1237777').join(','));
@@ -2751,7 +2753,7 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
   G.ui.docks.select('patterns');
   await sleep(40);
   check('доска паттернов открылась', !!doc.querySelector('.pattern-grid'));
-  check('карточек типов пять', doc.querySelectorAll('.pattern-card').length === 5,
+  check('карточек типов семь', doc.querySelectorAll('.pattern-card').length === 7,
     doc.querySelectorAll('.pattern-card').length + ' шт');
   for (let i = 0; i < 20; i++) G.ui.app.render(state);
   check('доска паттернов без Infinity/NaN', !/Infinity|NaN|undefined/.test(doc.querySelector('#board').textContent));

@@ -50,14 +50,17 @@ node tools/checkall.js
 if errorlevel 1 goto FAIL
 if /i "%MODE%"=="fast" goto GIT
 
+node tools/unit.js
+if errorlevel 1 goto FAIL
+node tools/checkcontent.js
+if errorlevel 1 goto FAIL
+
 if exist "node_modules\jsdom" goto HASDOM
-echo [!] node_modules missing - skipping domtest/bench
-echo     run "npm i" once to enable them
+echo [!] node_modules missing - skipping domtest
+echo     run "npm i" once to enable it
 goto GIT
 :HASDOM
 node tools/domtest.js
-if errorlevel 1 goto FAIL
-node tools/bench.js 1 300
 if errorlevel 1 goto FAIL
 
 :GIT

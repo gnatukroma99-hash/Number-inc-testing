@@ -75,6 +75,11 @@
     coreGainMult(state) { return O.has(state, 'w_core') ? 1.5 : 1; },
     spanMult(state) { return O.has(state, 'w_span') ? 2 : 1; },
     deltaGainMult(state) { return O.has(state, 'w_delta') ? 1.5 : 1; },
+    /* Ярус 3/4: Ψ и ⧜ — и разовый доход престижа, и пассивный поток */
+    psiGainMult(state) { return O.has(state, 'w_psi') ? 1.5 : 1; },
+    psiRateMult(state) { return O.has(state, 'w_psi_rate') ? 1.5 : 1; },
+    turnGainMult(state) { return O.has(state, 'w_turn') ? 1.5 : 1; },
+    turnRateMult(state) { return O.has(state, 'w_turn_rate') ? 1.5 : 1; },
 
     restart(state) { if (state.mech) state.mech.omega = null; }
   };
@@ -100,6 +105,10 @@
     coreGainMult(state) { return O.coreGainMult(state); },
     spanMult(state) { return O.spanMult(state); },
     deltaGainMult(state) { return O.deltaGainMult(state); },
+    psiGainMult(state) { return O.psiGainMult(state); },
+    psiRateMult(state) { return O.psiRateMult(state); },
+    turnGainMult(state) { return O.turnGainMult(state); },
+    turnRateMult(state) { return O.turnRateMult(state); },
     onReset(state) { O.restart(state); },
 
     status(state) {

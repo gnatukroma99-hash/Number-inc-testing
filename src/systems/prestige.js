@@ -47,11 +47,11 @@
       let cores = state.res.cores || 0;
       if (P.keepCores(state)) cores = Math.max(cores, state.meta.coresBest || 0);
       if (!cores) return 1;
-      const v = G.formula(P.cfg().coreMultFormula || '1.5 ** cores', { cores: cores });
+      const v = G.formula(P.cfg().coreMultFormula || 'pow(1.5, pow(cores, 0.4))', { cores: cores });
       if (isFinite(v) && v > 0) return v > 1e300 ? 1e300 : v;
-      /* G.formula отдаёт 0, когда результат переполнил double (1.5^cores при больших
-         ядрах). Это «множитель больше представимого», а не «множителя нет»:
-         раньше на 6 млн ◆ весь вклад ядер молча исчезал, и M падал в 1. */
+      /* G.formula отдаёт 0, когда результат переполнил double (pow(1.5, pow(cores, 0.4))
+         переполняется примерно с 1e9 ◆). Это «множитель больше представимого», а не
+         «множителя нет»: раньше на 6 млн ◆ весь вклад ядер молча исчезал, и M падал в 1. */
       return 1e300;
     },
 

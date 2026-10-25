@@ -138,8 +138,8 @@
         cond: 'turns >= 200' },
       { id: 'a_ttree4', icon: 'tree', name: 'Росток', desc: 'Купить 4 узла дерева ⧜',
         cond: 'turnNodes >= 4' },
-      { id: 'a_ttree16', icon: 'tree', name: 'Всё дерево ⧜', desc: 'Купить все 16 узлов дерева ⧜',
-        cond: 'turnNodes >= 16' },
+      { id: 'a_ttree16', icon: 'tree', name: 'Всё дерево ⧜', desc: 'Купить все 24 узла дерева ⧜',
+        cond: 'turnNodes >= 24' },
       { id: 'a_turnrate', icon: 'fast', name: 'Накат', desc: 'Разогнать ⧜-накат до 1 в секунду',
         cond: 'turnRate >= 1' },
 
