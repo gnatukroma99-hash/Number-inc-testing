@@ -78,6 +78,8 @@ async function main() {
     check('body без world-d2', !doc.body.classList.contains('world-d2'));
     check('переключатель скрыт', doc.getElementById('d2WorldSwitch').hidden === true);
     check('D2 hero есть в DOM', !!doc.getElementById('heroD2'));
+    const d1ResTitles = Array.from(doc.querySelectorAll('#heroRes .res')).map((el) => el.title || '');
+    check('⌬ не торчит в шапке D1', !d1ResTitles.some((t) => /Эссенция/.test(t)), d1ResTitles.join(' | '));
     check('D2 hero скрыт классом мира', !doc.body.classList.contains('world-d2'));
 
     section('3. Гейт 10 ⧜ + Ярус 4');

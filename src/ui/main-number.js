@@ -69,6 +69,8 @@
     G.dom.clear(refs.res);
     refs.resMap = {};
     for (const r of G.registry.allResources()) {
+      /* служебные ресурсы (D2 ⌬) живут в своём hero и не должны раздувать шапку D1 */
+      if (r.hidden) continue;
       const icon = G.ui.components.resIcon(r.id);
       const val = G.h('span', { class: 'res-val' });
       const box = G.h('div', { class: 'res' + (r.id === 'prime' ? ' prime' : '') + (r.id === 'cores' ? ' cores' : ''), title: r.name }, [

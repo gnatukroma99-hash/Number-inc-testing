@@ -17,6 +17,11 @@
   --shadow: 0 10px 30px rgba(0, 0, 0, .45);
 }
 * { box-sizing: border-box; }
+html {
+  /* мобильный Chrome не должен сам увеличивать шрифты и пересчитывать вёрстку */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 html, body {
   margin: 0;
   padding: 0;
@@ -26,9 +31,17 @@ html, body {
   font-family: "Segoe UI", system-ui, -apple-system, "Inter", Roboto, sans-serif;
   font-size: 15px;
   overflow: hidden;
+  overscroll-behavior: none;
+  /* числа меняются каждый кадр: scroll anchoring Chrome дёргал бы #board */
+  overflow-anchor: none;
+}
+#app, #main, #docks, #board {
+  overflow-anchor: none;
 }
 #app {
-  height: 100%;
+  /* 100svh не меняется при показе/скрытии адресной строки на телефоне. */
+  height: 100vh;
+  height: 100svh;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -175,6 +188,8 @@ html, body {
   flex: 1 1 auto;
   min-width: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -4360,3 +4375,40 @@ body.pos-minimal.world-d2 .d2-hero-main { flex: 0 1 auto; }
 body.pos-minimal.world-d2 .d2-hero-number { font-size: clamp(40px, 11vw, 120px); }
 body.pos-minimal.world-d2 .d2-hero-sub { justify-content: center; }
 body.pos-minimal.world-d2 .d2-hero-res { justify-content: center; }
+
+/* ============================================================
+   МОБИЛЬНАЯ СТАБИЛЬНОСТЬ ШАПКИ (v0.36.0)
+   Числа меняются каждый кадр; нельзя давать шапке переразбиваться на строки.
+   Ресурсы — одна строка с горизонтальной прокруткой, подпись — одна строка.
+   ============================================================ */
+@media (max-width: 760px) {
+  .hero-sub {
+    flex-wrap: nowrap;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .hero-res {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+  }
+  .res { flex: 0 0 auto; }
+  /* графики M/ΔT — не главное на телефоне; убираем, чтобы не отнимать ширину */
+  .hero-sparks { display: none; }
+  .d2-hero-sub {
+    flex-wrap: nowrap;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .d2-hero-res {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .d2-res { flex: 0 0 auto; }
+}

@@ -21,7 +21,7 @@
   /* ⌬ — вечная валюта D2. Регистрируем как ресурс, чтобы общий checkcontent видел
      ссылки d2tree-узлов (res: 'essence'), а G.initResources держал зеркало в state.res. */
   if (G.registry && typeof G.registry.addResource === 'function') {
-    G.registry.addResource({ id: 'essence', name: '⌬ Эссенция', scope: 'meta-d2', value: 0 });
+    G.registry.addResource({ id: 'essence', name: '⌬ Эссенция', scope: 'meta-d2', value: 0, hidden: true });
   }
 
   G.content.d2 = {

@@ -1893,6 +1893,10 @@ async function runTests({ dom, win, G, srcs, loadMs, doc }) {
 
   section('5p. Навигация: пилюли групп, мобильная раскладка, меню «Все доски»');
   const cssAll = fs.readFileSync(path.join(ROOT, 'assets/css/style.css'), 'utf8');
+  check('мобильная шапка не дёргается (scroll anchoring / text autosizing / svh)',
+    /overflow-anchor:\s*none/.test(cssAll) && /text-size-adjust:\s*100%/.test(cssAll) &&
+    /height:\s*100svh/.test(cssAll),
+    'overflow-anchor + text-size-adjust + 100svh');
   check('пилюли-«слои» в рейле', doc.querySelectorAll('#docks .dock-pill').length === ((G.content.groups || []).filter((g) => g.world !== 'd2')).length,
     doc.querySelectorAll('#docks .dock-pill').length + ' пилюль');
   check('раскрыта только активная группа досок', doc.querySelectorAll('#docks .dock-group-items.open').length === 1);
